@@ -18,17 +18,17 @@ Begin VB.Form Serial2
    Begin VB.CheckBox check_wok_aehci 
       Caption         =   "A&&HCI"
       Height          =   375
-      Left            =   1920
+      Left            =   5040
       TabIndex        =   21
-      Top             =   3240
+      Top             =   4440
       Width           =   975
    End
    Begin VB.CheckBox check_wok_ssci 
       Caption         =   "SSCI"
       Height          =   375
-      Left            =   1080
+      Left            =   4080
       TabIndex        =   20
-      Top             =   3240
+      Top             =   4440
       Width           =   975
    End
    Begin VB.CommandButton CmdSave 
@@ -71,21 +71,21 @@ Begin VB.Form Serial2
       Top             =   120
       Width           =   7455
       Begin VB.ListBox List_wok_area 
-         Height          =   960
+         Height          =   1185
          ItemData        =   "frm_Serial_2.frx":030A
          Left            =   120
          List            =   "frm_Serial_2.frx":030C
          Style           =   1  'Checkbox
          TabIndex        =   22
-         Top             =   3600
-         Width           =   7095
+         Top             =   3120
+         Width           =   7215
       End
       Begin VB.CheckBox check_wok_scie 
          Caption         =   "SCI-E"
          Height          =   375
-         Left            =   120
+         Left            =   3000
          TabIndex        =   19
-         Top             =   3120
+         Top             =   4320
          Width           =   1095
       End
       Begin VB.Frame FrameIdxRange 
@@ -193,13 +193,21 @@ Begin VB.Form Serial2
          Top             =   480
          Width           =   2895
       End
-      Begin VB.Label Label1 
+      Begin VB.Label LabelWokSubjects 
          Caption         =   "Web of Knowledge"
          Height          =   255
          Left            =   120
-         TabIndex        =   23
+         TabIndex        =   24
          Top             =   2880
-         Width           =   2775
+         Width           =   3615
+      End
+      Begin VB.Label LabelWokDB 
+         Caption         =   "Web of Knowledge's databases"
+         Height          =   255
+         Left            =   120
+         TabIndex        =   23
+         Top             =   4440
+         Width           =   2295
       End
       Begin VB.Label LabSubject 
          AutoSize        =   -1  'True
@@ -282,6 +290,8 @@ Sub MySetLabels()
     LabStudyArea.Caption = .getLabel("ser2_StudyArea")
     FrameIdxRange.Caption = .getLabel("ser4_idxRange")
     
+    LabelWokDB.Caption = .getLabel("ser2_wok_db")
+    LabelWokSubjects.Caption = .getLabel("ser2_wok_subjects")
     
     End With
     
