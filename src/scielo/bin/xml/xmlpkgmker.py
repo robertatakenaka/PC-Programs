@@ -711,7 +711,7 @@ class XMLMetadata:
         if data:
             issn, vol, issueno, suppl, fpage, seq, elocation_id, order = data
 
-            if xml_name != '':
+            if not xml_name.endswith('.sgm.xml'):
                 issn = xml_name[0:9]
 
             if elocation_id is not None:
@@ -2334,13 +2334,15 @@ class XPM5(object):
     def make_packages(self, files, ctrl_filename, work_path, scielo_val_res, pmc_val_res):
         old_names = {}
 
-        for path in [scielo_val_res.pkg_path, pmc_val_res.pkg_path]:
-            if os.path.isdir(path):
-                for f in os.listdir(path):
-                    if os.path.isfile(path + '/' + f):
-                        os.unlink(path + '/' + f)
-            else:
-                os.makedirs(path)
+        if len(files) == 1:
+            if not files[0].endswith('.sgm.xml'):
+                for path in [scielo_val_res.pkg_path, pmc_val_res.pkg_path]:
+                    if os.path.isdir(path):
+                        for f in os.listdir(path):
+                            if os.path.isfile(path + '/' + f):
+                                os.unlink(path + '/' + f)
+                    else:
+                        os.makedirs(path)
 
         for xml_filename in files:
             xml_path = os.path.dirname(xml_filename)
