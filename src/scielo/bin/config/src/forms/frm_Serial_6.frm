@@ -540,14 +540,12 @@ Function WarnMandatoryFields() As Boolean
     Dim warning As String
     Dim i As Long
     
-    
     With Fields
     
     warning = warning + .isA_mandatoryField(Serial1.TxtISSN.text, "ser1_issn")
     warning = warning + .isA_mandatoryField(Serial1.TxtSerTitle.text, "ser1_Title")
     warning = warning + .isA_mandatoryField(Serial1.TxtShortTitle.text, "ser1_ShortTitle")
     warning = warning + .isA_mandatoryField(Serial1.TxtISOStitle.text, "ser1_ISOStitle")
-    
     
     For i = 1 To idiomsinfo.count
         warning = warning + .isA_mandatoryField(Serial2.TxtMission(i).text, "ser2_Mission")
@@ -591,7 +589,8 @@ Function WarnMandatoryFields() As Boolean
     warning = warning + .isA_mandatoryField(Serial4.TxtAddress.text, "ser4_Address")
     warning = warning + .isA_mandatoryField(Serial4.TxtEmail.text, "ser4_email")
     warning = warning + .isA_mandatoryField(JOURNAL5.TxtCprighter.text, "ser4_cprighter")
-    
+    warning = warning + .isA_mandatoryField(JOURNAL5.ComboLicText.text, "title_License")
+    warning = warning + .isA_mandatoryField(JOURNAL5.ComboLicVersion.text, "title_LicVersion")
     
     warning = warning + .isA_mandatoryField(SERIAL7.TxtSiglum.text, "ser5_siglum")
     warning = warning + .isA_mandatoryField(SERIAL7.TxtPubId.text, "ser5_PubId")

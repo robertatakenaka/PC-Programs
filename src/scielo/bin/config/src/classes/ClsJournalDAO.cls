@@ -49,7 +49,7 @@ Function getJournalStandardList() As MyCollection
     Set getJournalStandardList = journals
 End Function
 
-Function getHistory(mfn As Long) As ClsHistory
+Function getHistory(Mfn As Long) As ClsHistory
     Dim q As Long
     Dim occs() As String
     Dim i As Long
@@ -58,7 +58,7 @@ Function getHistory(mfn As Long) As ClsHistory
     
     
     
-    q = isis.FieldContentGetAll(mfn, 51, occs)
+    q = isis.FieldContentGetAll(Mfn, 51, occs)
     For i = q To 1 Step -1
         Set journalStatus = New ClsJournalStatus
         
@@ -106,40 +106,95 @@ Function tagHistory(history As ClsHistory) As String
     tagHistory = tagged
 End Function
 
-Function getJournalCreativeCommons(mfn As Long) As clsCreativeCommons
+Function getJournalCreativeCommons(Mfn As Long) As clsCreativeCommons
     Dim languages() As String
     Dim texts() As String
     Dim creativeCommons As New clsCreativeCommons
+        
+    creativeCommons.Code = Serial_TxtContent(Mfn, 541)
+    creativeCommons.version = Serial_TxtContent(Mfn, 542)
     
-    
-    creativeCommons.Code = Serial_TxtContent(mfn, 541)
-    
-    q = isis.SubfieldContentGet(mfn, 540, "l", languages)
-    q = isis.SubfieldContentGet(mfn, 540, "t", texts)
-    
-    For i = 1 To q
-        Call creativeCommons.add(texts(i), languages(i))
-    Next
-    If q = 0 Then
-        For i = 1 To idiomsinfo.count
-            Call creativeCommons.add("", idiomsinfo(i).Code)
-        Next
-    End If
     Set getJournalCreativeCommons = creativeCommons
 End Function
-Function tagCreativeCommons(cc As clsCreativeCommons) As String
+Function tagCreativeCommons(lic As String, lic_version As String) As String
     Dim i As Long
     Const tag = "540"
     Dim tagged As String
     
-    For i = 1 To cc.count
-        If Len(cc.getLicenseByIndex(i).text) > 0 Then
-            tagged = tagged + "<" + tag + ">^t" + cc.getLicenseByIndex(i).text + "^l" + cc.getLicenseByIndex(i).lang + "</" + tag + ">"
-        End If
-    Next
+    If lic = "nd" Then
+        tagged = tagged + "<" + tag + ">^t<p></p>^len</" + tag + ">"
+        tagged = tagged + "<" + tag + ">^t<p></p>^les</" + tag + ">"
+        tagged = tagged + "<" + tag + ">^t<p></p>^lpt</" + tag + ">"
+    ElseIf lic = "" Then
     
+    Else
+        Call license_locations(lic, lic_version, license_location, license_img_location)
+        If Len(license_location) > 0 Then
+            tagged = tagged + "<" + tag + ">^t" + get_license(license_location, license_img_location, "en") + "^len</" + tag + ">"
+            tagged = tagged + "<" + tag + ">^t" + get_license(license_location, license_img_location, "es") + "^les</" + tag + ">"
+            tagged = tagged + "<" + tag + ">^t" + get_license(license_location, license_img_location, "pt") + "^lpt</" + tag + ">"
+        End If
+    End If
     tagCreativeCommons = tagged
 End Function
+Private Function get_license(license_location As String, license_img_location As String, lang As String) As String
+    Dim link As String
+    Dim text As String
+    Dim translation As String
+    
+    Select Case lang
+    Case "pt"
+        translation = "deed.pt"
+        link = license_link("Atributição de Licença Creative Commons", license_location & translation)
+        text = "Todo o conteúdo deste periódico, exceto onde está identificado, está baixo uma "
+    Case "en"
+        translation = ""
+        link = license_link("Creative Commons Attribution License", license_location)
+        text = "All the contents of this journal, except where otherwise noted, is licensed under a "
+    Case "es"
+        translation = "deed.es"
+        link = license_link("Atribución de Licencia Creative Commons", license_location & translation)
+        text = "Todo el contenido de esta revista, excepto dónde está identificado, está bajo una "
+    End Select
+    get_license = license_link(license_img(license_img_location) & text & link, license_location & translation)
+End Function
+Private Function format_attribute(name As String, value As String) As String
+    format_attribute = " " & name & "=" & Chr(34) & value & Chr(34)
+End Function
+
+Private Function format_attribute(name As String, value As String) As String
+    format_attribute = " " & name & "=" & Chr(34) & value & Chr(34)
+End Function
+
+Private Sub license_locations(lic As String, lic_version As String, ByRef license_location As String, ByRef license_img_location As String)
+    license_location = "http://creativecommons.org/licenses/" & LCase(lic) & "/" & lic_version & "/"
+    license_img_location = "http://i.creativecommons.org/l/" & LCase(lic) & "/" & lic_version & "/80x15.png"
+End Sub
+
+Private Function license_link(text As String, href As String) As String
+    Dim tag As String
+    
+    tag = "<a "
+    tag = tag & format_attribute("rel", "license")
+    tag = tag & format_attribute("href", href)
+    tag = tag & ">"
+    
+    tag = tag & text
+    tag = tag & "</a>"
+    license_link = tag
+End Function
+
+Private Function license_img(img_src As String) As String
+    Dim img As String
+    
+    img = "<img "
+    img = img & format_attribute("alt", "Creative Commons License")
+    img = img & format_attribute("style", "border-width:0")
+    img = img & format_attribute("src", img_src)
+    img = img & "/>"
+    license_img = img
+End Function
+
 
 Private Sub Class_Initialize()
     Set isis = New ClIsisdll
@@ -212,7 +267,7 @@ Function existRecord(key As String, format As String, Optional Prefix As String)
     Dim found As Boolean
     Dim value As String
     Dim ID As String
-    Dim mfn As Long
+    Dim Mfn As Long
     
     ID = key
     If Len(key) > 30 Then key = Mid(Prefix + key, 1, 30)
@@ -223,7 +278,7 @@ Function existRecord(key As String, format As String, Optional Prefix As String)
         i = i + 1
         value = isis.UsePft(mfns(i), format)
         If StrComp(value, ID) = 0 Then
-            mfn = mfns(i)
+            Mfn = mfns(i)
             found = True
         End If
     Wend
@@ -232,14 +287,14 @@ Function existRecord(key As String, format As String, Optional Prefix As String)
         i = 0
         While (i < isis.MfnQuantity) And (Not found)
             i = i + 1
-            value = isis.UsePft(mfn, format)
+            value = isis.UsePft(Mfn, format)
             If StrComp(Trim(value), Trim(ID)) = 0 Then
                 found = True
-                mfn = i
+                Mfn = i
             End If
         Wend
     End If
-    existRecord = mfn
+    existRecord = Mfn
 End Function
 
 Function existJournalTitle(journalTitle As String) As Long
@@ -249,20 +304,19 @@ Function existISSN(journal_ISSN As String) As Long
     existISSN = existRecord(journal_ISSN, "v400", "pbn=")
 End Function
 
-Function getFieldContentByLanguage(mfn As Long, tag As Long, Optional language As String) As String
-'xxx
+Function getFieldContentByLanguage(Mfn As Long, tag As Long, Optional language As String) As String
     Dim subf As String
     If language <> "" Then subf = "*"
     
-    getFieldContentByLanguage = isis.getFieldContentByLanguage(mfn, tag, language, subf)
+    getFieldContentByLanguage = isis.getFieldContentByLanguage(Mfn, tag, language, subf)
 End Function
 
-Function getDecodedValue(Code As ColCode, mfn As Long, tag As Long, Optional DefaultOption As String) As String
+Function getDecodedValue(Code As ColCode, Mfn As Long, tag As Long, Optional DefaultOption As String) As String
     Dim content As String
     Dim exist As Boolean
     Dim itemCode As ClCode
     
-        content = isis.UsePft(mfn, "v" + CStr(tag))
+        content = isis.UsePft(Mfn, "v" + CStr(tag))
         If (Len(content) = 0) And (Len(DefaultOption) > 0) Then content = DefaultOption
         
         If Len(content) > 0 Then
@@ -277,13 +331,12 @@ Function getDecodedValue(Code As ColCode, mfn As Long, tag As Long, Optional Def
     getDecodedValue = content
 End Function
 
-
-Function getRepetitiveFieldValue(mfn As Long, tag As Long, sep As String) As String
-     getRepetitiveFieldValue = isis.UsePft(mfn, "(v" + CStr(tag) + "|" + sep + "|)")
+Function getRepetitiveFieldValue(Mfn As Long, tag As Long, sep As String) As String
+     getRepetitiveFieldValue = isis.UsePft(Mfn, "(v" + CStr(tag) + "|" + sep + "|)")
 End Function
 
 Function delete(journal_ISSN As String) As Boolean
-    Dim mfn As Long
+    Dim Mfn As Long
     Dim issueDAO As New ClsIssueDAO
     Dim issueMFNs() As Long
     Dim i As Long
@@ -294,13 +347,13 @@ Function delete(journal_ISSN As String) As Boolean
     Call issueDAO.create(.Path, .FileName, .key)
     End With
     
-    mfn = existRecord(journal_ISSN, "v400", "pbn=")
-    If mfn > 0 Then
+    Mfn = existRecord(journal_ISSN, "v400", "pbn=")
+    If Mfn > 0 Then
         issueMFNs = issueDAO.getIssuesMfnByJournalID(journal_ISSN)
         For i = 1 To UBound(issueMFNs)
             r = issueDAO.deleteRecord(issueMFNs(i))
         Next
-        r = isis.RecordDel(mfn)
+        r = isis.RecordDel(Mfn)
         'r = save(mfn, "d*")
     End If
     delete = r

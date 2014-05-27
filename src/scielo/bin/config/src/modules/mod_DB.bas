@@ -295,12 +295,9 @@ Function Serial_Save(MfnTitle As Long) As Long
     reccontent = reccontent + SERIAL6.getDataToSave
     
     JOURNAL5.receiveData
-    reccontent = reccontent + journalDAO.tagCreativeCommons(JOURNAL5.getCreativeCommons)
-    If InStr(JOURNAL5.ComboLicText.text, "*") > 0 Then
-        reccontent = reccontent + TagTxtContent(Mid(JOURNAL5.ComboLicText.text, 1, InStr(JOURNAL5.ComboLicText.text, "*") - 1), 541)
-    Else
-        reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicText.text, 541)
-    End If
+    reccontent = reccontent + journalDAO.tagCreativeCommons(JOURNAL5.ComboLicText.text, JOURNAL5.ComboLicVersion.text)
+    reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicText.text, 541)
+    reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicVersion.text, 542)
     
     If MfnTitle = 0 Then
         If journalDAO.existISSN(Serial1.TxtISSN.text) > 0 Then
@@ -380,7 +377,7 @@ Sub FillList(list As ListBox, Code As ColCode)
     Next
 End Sub
 
-Sub FillCombo(combo As ComboBox, Code As ColCode, Optional valueEqCode As Boolean = False)
+Sub FillCombo(combo As ComboBox, Code As ColCode, Optional valueEqCode As Boolean = False, Optional add_empty_item As Boolean = False)
     Dim i As Long
     
     combo.Clear
@@ -393,6 +390,9 @@ Sub FillCombo(combo As ComboBox, Code As ColCode, Optional valueEqCode As Boolea
             End If
         End If
     Next
+    If add_empty_item Then
+        combo.AddItem ""
+    End If
 End Sub
 
 Sub UnselectList(list As ListBox)
