@@ -89,7 +89,7 @@ End Sub
 
 Private Sub CmdOK_Click()
     MousePointer = vbHourglass
-    ChangeInterfaceIdiom = CodeIdiom(ComboIdiomHelp.text).code
+    ChangeInterfaceIdiom = CodeIdiom(ComboIdiomHelp.text).Code
     MousePointer = vbArrow
     Unload Me
 End Sub
@@ -103,7 +103,7 @@ Sub OpenConfig()
     CmdCan.Caption = .getLabel("ButtonCancel")
     End With
     Call FillCombo(ComboIdiomHelp, CodeIdiom)
-    ComboIdiomHelp.text = CodeIdiom(CurrIdiomHelp).value
+    ComboIdiomHelp.text = CodeIdiom(program_interface_language).value
     
     Show vbModal
 End Sub

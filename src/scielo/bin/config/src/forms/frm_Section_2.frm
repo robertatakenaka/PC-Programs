@@ -290,18 +290,18 @@ Private currentItemClickedTimes As Long
 
 Sub OpenSection(sertitle As String, IsFromSection As Boolean)
     Dim i As Long
-    Dim mfn As Long
+    Dim Mfn As Long
     
     
     
-    mfn = Serial_CheckExisting(sertitle)
+    Mfn = Serial_CheckExisting(sertitle)
     Set journal = New ClsJournal
-    journal.pubid = Serial_TxtContent(mfn, 930)
+    journal.pubid = Serial_TxtContent(Mfn, 930)
     
     If Len(journal.pubid) > 0 Then
     
         
-        journal.Title = Serial_TxtContent(mfn, 100)
+        journal.Title = Serial_TxtContent(Mfn, 100)
         
         With ConfigLabels
         Caption = App.Title + " - " + SECTION_FORM_CAPTION + sertitle
@@ -320,15 +320,15 @@ Sub OpenSection(sertitle As String, IsFromSection As Boolean)
         CmdDel.Enabled = Unlocked
         
         'Idiomas
-        For i = 1 To IdiomsInfo.count
-            LabSecTit(i).Caption = IdiomsInfo(i).label + ": "
-            ListView1.ColumnHeaders(i + 1).text = IdiomsInfo(i).label
+        For i = 1 To idiomsinfo.count
+            LabSecTit(i).Caption = idiomsinfo(i).label + ": "
+            ListView1.ColumnHeaders(i + 1).text = idiomsinfo(i).label
             ListView1.ColumnHeaders(i + 1).Width = ListView1.Width / 5
         Next
         
         
-        journal.issn = Serial_TxtContent(mfn, 400)
-        journal.shorttitle = Serial_TxtContent(mfn, 150)
+        journal.ISSN = Serial_TxtContent(Mfn, 400)
+        journal.shorttitle = Serial_TxtContent(Mfn, 150)
         
         Call journalTOCManager.create(journal)
         Call LoadSections(journalTOCManager.toc)
@@ -365,7 +365,7 @@ Private Sub CmdNew_Click()
 End Sub
 
 Private Sub CmdAju_Click()
-    Call openHelp(Paths("Help of Section").path, Paths("Help of Section").FileName)
+    Call cmd_exe(Paths("Help of Section").Path, Paths("Help of Section").FileName)
 End Sub
 
 Private Sub CmdDel_Click()
@@ -377,12 +377,12 @@ Private Sub CmdDel_Click()
     If Not IslockedCode(TxtSecCode.text) Then
         message = ConfigLabels.getLabel("sec_deletequestion") + vbCrLf
         
-        For i = 1 To IdiomsInfo.count
+        For i = 1 To idiomsinfo.count
             If Len(TxtSecTit(i).text) > 0 Then message = message + TxtSecCode.text + "-" + TxtSecTit(i).text + vbCrLf
         Next
     
         If MsgBox(message, vbYesNo + vbDefaultButton2) = vbYes Then
-            ListView1.ListItems.Remove (ListView1.FindItem(TxtSecCode.text).Index)
+            ListView1.ListItems.remove (ListView1.FindItem(TxtSecCode.text).index)
         End If
     End If
     clearForm
@@ -407,9 +407,9 @@ Private Sub ShowSelectedSectitle()
     If l Is Nothing Then
     
     Else
-        k = ListView1.FindItem(TxtSecCode.text).Index
+        k = ListView1.FindItem(TxtSecCode.text).index
         If TxtSecCode.text = ListView1.ListItems(k).text Then
-            For i = 1 To IdiomsInfo.count
+            For i = 1 To idiomsinfo.count
                 TxtSecTit(i).text = ListView1.ListItems(k).SubItems(i)
             Next
         End If
@@ -426,16 +426,16 @@ Private Sub LoadSections(toc As ClsTOC)
     If toc Is Nothing Then
     
     Else
-    For i = 1 To IdiomsInfo.count
-        TxtHeader(i).text = toc.names.getItemByLang(IdiomsInfo(i).Code).text
+    For i = 1 To idiomsinfo.count
+        TxtHeader(i).text = toc.names.getItemByLang(idiomsinfo(i).Code).text
     Next
     For j = 1 To toc.sections.count
         TxtSecCode.text = toc.sections.item(j).sectionCode
-        For i = 1 To IdiomsInfo.count
-            If toc.sections.item(j).sectionNames.getItemByLang(IdiomsInfo(i).Code) Is Nothing Then
+        For i = 1 To idiomsinfo.count
+            If toc.sections.item(j).sectionNames.getItemByLang(idiomsinfo(i).Code) Is Nothing Then
             
             Else
-                TxtSecTit(i).text = toc.sections.item(j).sectionNames.getItemByLang(IdiomsInfo(i).Code).text
+                TxtSecTit(i).text = toc.sections.item(j).sectionNames.getItemByLang(idiomsinfo(i).Code).text
             End If
             
         Next
@@ -457,7 +457,7 @@ Private Sub ListView1_BeforeLabelEdit(Cancel As Integer)
 End Sub
 
 Private Sub ListView1_ColumnClick(ByVal ColumnHeader As ComctlLib.ColumnHeader)
-ListView1.SortKey = ColumnHeader.Index - 1
+ListView1.SortKey = ColumnHeader.index - 1
     ListView1.Sorted = True
     ListView1.SortOrder = lvwAscending
 End Sub
@@ -484,13 +484,13 @@ Private Sub ListView1_ItemClick(ByVal item As ComctlLib.ListItem)
         
     If doit Then
         Code = item.text
-        currentItemClickedIndex = item.Index
+        currentItemClickedIndex = item.index
         If IslockedCode(Code) Then
             clearForm
         Else
-            k = item.Index
+            k = item.index
             TxtSecCode.text = item.text
-            For i = 1 To IdiomsInfo.count
+            For i = 1 To idiomsinfo.count
                 TxtSecTit(i).text = item.SubItems(i)
             Next
         End If
@@ -544,7 +544,7 @@ Private Sub UpdateTable(Optional argue As Boolean = True)
             End If
             
             
-            For i = 1 To IdiomsInfo.count
+            For i = 1 To idiomsinfo.count
                 If Len(lvitem.SubItems(i)) > 0 Then
                     If StrComp(lvitem.SubItems(i), TxtSecTit(i).text, vbTextCompare) <> 0 Then
                         answer = MsgBox(ConfigLabels.getLabel("Sec_QMsgReplaceSection") + vbCrLf + "CODE:" + TxtSecCode.text + vbCrLf + "CORRENTE:" + lvitem.SubItems(i) + vbCrLf + "NOVO:" + TxtSecTit(i).text, vbYesNo + vbDefaultButton2)
@@ -575,7 +575,7 @@ Private Function areValidSectionTitles(argue As Boolean) As Boolean
     Dim x As String
     Dim Code As String
     
-    For i = 1 To IdiomsInfo.count
+    For i = 1 To idiomsinfo.count
         x = x + TxtSecTit(i).text
     Next
         
@@ -612,7 +612,7 @@ End Function
 Sub clearForm()
     Dim i As Long
 
-    For i = 1 To IdiomsInfo.count
+    For i = 1 To idiomsinfo.count
         TxtSecTit(i).text = ""
     Next
     TxtSecCode.text = ""
@@ -667,9 +667,9 @@ Private Function getNewTOC() As ClsTOC
     ListView1.SortOrder = lvwAscending
     
     Set toc.names = New ColTextByLang
-    For i = 1 To IdiomsInfo.count
+    For i = 1 To idiomsinfo.count
         Set titleAndLang = New ClsTextByLang
-        titleAndLang.lang = IdiomsInfo(i).Code
+        titleAndLang.lang = idiomsinfo(i).Code
         titleAndLang.text = TxtHeader(i).text
                 
         Call toc.names.add(titleAndLang)
@@ -681,9 +681,9 @@ Private Function getNewTOC() As ClsTOC
         Set section = New ClsSection
         section.sectionCode = ListView1.ListItems(k).text
         
-        For i = 1 To IdiomsInfo.count
+        For i = 1 To idiomsinfo.count
             Set titleAndLang = New ClsTextByLang
-            titleAndLang.lang = IdiomsInfo(i).Code
+            titleAndLang.lang = idiomsinfo(i).Code
             titleAndLang.text = ListView1.ListItems(k).SubItems(i)
     
             section.sectionNames.add titleAndLang

@@ -111,7 +111,7 @@ Private Sub mnAbout_Click()
 End Sub
 
 Private Sub mnContent_Click()
-    Call openHelp(Paths("Help of Config").Path, Paths("Help of Config").FileName)
+    Call cmd_exe(Paths("Help of Config").Path, Paths("Help of Config").FileName)
 End Sub
 
 

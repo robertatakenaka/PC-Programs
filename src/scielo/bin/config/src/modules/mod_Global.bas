@@ -23,7 +23,7 @@ Public NoSiglum As String
 Public SupplVolSiglum  As String
 Public SupplNoSiglum  As String
 Public BrowserPath  As String
-Public CurrIdiomHelp As String
+Public program_interface_language As String
 Public IssueCloseDenied As Integer
 Public TitleCloseDenied As Integer
 Public PathsConfigurationFile As String
@@ -43,7 +43,6 @@ Public FileNotRequired() As Boolean
 Public Counter As Long
 
 
-Public LicensesList As ColLicenses
 Public LicensesListByLang As ColObjByLang
 Public CodeLicText As ColCode
 Public CodeLicVersion As ColCode
@@ -77,8 +76,6 @@ Public ErrorMessages As ClsErrorMessages
 
 Public isisfn As Long
 
-
-
 Property Get NotRequiredFile(i As Long) As Boolean
     NotRequiredFile = FileNotRequired(i)
 End Property
@@ -100,7 +97,6 @@ End Function
 Function TagSubf(ByVal conteudo As String, ByVal subf As String) As String
     If conteudo <> "" Then TagSubf = "^" + subf + conteudo
 End Function
-
 
 Private Sub Main()
     Dim CodeDB As ClFileInfo
@@ -133,7 +129,7 @@ Private Sub Main()
         Close #fn_wok
         
         
-        ChangeInterfaceIdiom = CurrIdiomHelp
+        ChangeInterfaceIdiom = program_interface_language
         Set CodeDB = Paths("NewCode Database")
         Call codedao.create(CodeDB.Path, CodeDB.FileName, CodeDB.key)
         Call codedao.getTable("", "ccode", CodeCCode)
@@ -145,7 +141,7 @@ Private Sub Main()
         Call codedao.getTable("", "scielonet", CodeScieloNet)
         
         Set ErrorMessages = New ClsErrorMessages
-        ErrorMessages.load ("langs\" + CurrIdiomHelp + "_err.txt")
+        ErrorMessages.load ("langs\" + program_interface_language + "_err.txt")
         
         Set Months = New ColIdiomMeses
         Months.ReadMonthTable
@@ -182,7 +178,7 @@ Function ConfigGet() As Boolean
     Input #fn, key, SupplVolSiglum
     Input #fn, key, SupplNoSiglum
     Input #fn, key, BrowserPath
-    Input #fn, key, CurrIdiomHelp
+    Input #fn, key, program_interface_language
     Input #fn, key, IssueCloseDenied
     Input #fn, key, TitleCloseDenied
     Input #fn, key, PathsConfigurationFile
@@ -204,7 +200,7 @@ Sub ConfigSet()
     Write #fn, "SglVolSuppl", SupplVolSiglum
     Write #fn, "SglNoSuppl", SupplNoSiglum
     Write #fn, "BrowserPath", BrowserPath
-    Write #fn, "CurrIdiomHelp", CurrIdiomHelp
+    Write #fn, "program_interface_language", program_interface_language
     Write #fn, "IssueCloseDenied", IssueCloseDenied
     Write #fn, "TitleCloseDenied", TitleCloseDenied
     Write #fn, "PathsConfigurationFile", PathsConfigurationFile
@@ -433,7 +429,7 @@ Property Let ChangeInterfaceIdiom(idiom As String)
     Dim CodeDB As ClFileInfo
     Dim codedao As New ClsCodesDAO
     
-    CurrIdiomHelp = idiom
+    program_interface_language = idiom
     Set Paths = New ColFileInfo
     Set Paths = ReadPathsConfigurationFile(PathsConfigurationFile)
     Set ConfigLabels = New ClLabels
@@ -446,15 +442,9 @@ Property Let ChangeInterfaceIdiom(idiom As String)
 
     Set CodeDB = Paths("Code Database")
     Call codedao.create(CodeDB.Path, CodeDB.FileName, CodeDB.key)
-    If LicensesList Is Nothing Then
-        Set LicensesList = New ColLicenses
-        Call codedao.getMultilingueTable("license_text", LicensesListByLang)
-        Call LicensesList.load(LicensesListByLang)
-    End If
-    'Set CodeLicText = LicensesListByLang.getItemByLang(idiom)
     
-    Call codedao.getTable("", "license", ComboLicText)
-    Call codedao.getTable("", "licversion", ComboLicVersion)
+    Call codedao.getTable("", "license", CodeLicText)
+    Call codedao.getTable("", "licversion", CodeLicVersion)
     
     Call codedao.getTable(idiom, "idiom interface", CodeIdiom)
     
@@ -562,9 +552,9 @@ Sub loadIssueIdPart(CurrCodeIdiom As String)
     Close fn
 End Sub
 
-Sub openHelp(Path As String, Optional File As String)
+Sub cmd_exe(Path As String, Optional File As String)
     Dim f As String
-    If Len(File) > 0 Then f = "\" & CurrIdiomHelp & File
+    If Len(File) > 0 Then f = "\" & program_interface_language & File
     Call Shell("cmd.exe /k start " & Path & f, vbHide)
     
 End Sub

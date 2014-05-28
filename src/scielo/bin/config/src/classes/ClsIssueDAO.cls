@@ -157,18 +157,13 @@ Function returnIssue(Mfn As Long, Optional format As String) As ClsIssue
         
         Set issue.toc = New ClsTOC
         Set issue.toc = issue_TOC_DAO.getTOC(Mfn, issue.toc)
-        Set issue.licenses = New clsCreativeCommons
-        issue.licenses.Code = isis.UsePft(Mfn, "v541")
-        issue.licenses.version = isis.UsePft(Mfn, "v542")
-        
+        Set issue.licenses = get_cc(isis, Mfn)
         
         For i = 1 To idiomsinfo.count
             Set t = New ClsTextByLang
             t.lang = idiomsinfo.item(i).Code
             t.text = isis.getFieldContentByLanguage(Mfn, 33, idiomsinfo.item(i).Code, "*")
             issue.issueTitle.add t
-            
-            Call issue.licenses.add(isis.getFieldContentByLanguage(Mfn, 540, idiomsinfo.item(i).Code, "t"), idiomsinfo.item(i).Code)
             
             Set obj = New ClsBibStrip
             Call isis.getSubFieldsContentByLanguage(Mfn, 43, idiomsinfo.item(i).Code, subf, content)
@@ -403,17 +398,11 @@ Function tag(issue As ClsIssue) As String
         Next
         
         For i = 1 To idiomsinfo.count
-            If Len(Trim(.licenses.getLicense(idiomsinfo(i).Code).text)) > 0 Then
-                s = s + TagContent(TagSubf(.licenses.getLicense(idiomsinfo(i).Code).text, "t") + TagSubf(idiomsinfo(i).Code, "l"), 540)
-            End If
-        Next
-        s = s + TagContent(.licenses.Code, 541)
-        For i = 1 To idiomsinfo.count
             If Len(.issueTitle.getItemByIndex(i).text) > 0 Then
               s = s + TagContent(.issueTitle.getItemByIndex(i).text + "^l" + idiomsinfo(i).Code, 33)
             End If
         Next
-        
+        s = s + .licenses.tagged()
     End With
     tag = s
 End Function

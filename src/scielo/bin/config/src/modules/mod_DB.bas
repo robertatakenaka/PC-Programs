@@ -294,10 +294,7 @@ Function Serial_Save(MfnTitle As Long) As Long
     
     reccontent = reccontent + SERIAL6.getDataToSave
     
-    JOURNAL5.receiveData
-    reccontent = reccontent + journalDAO.tagCreativeCommons(JOURNAL5.ComboLicText.text, JOURNAL5.ComboLicVersion.text)
-    reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicText.text, 541)
-    reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicVersion.text, 542)
+    reccontent = reccontent + JOURNAL5.interface_cc.tagged()
     
     If MfnTitle = 0 Then
         If journalDAO.existISSN(Serial1.TxtISSN.text) > 0 Then
@@ -756,3 +753,35 @@ Function isTitleFormCompleted(Mfn As Long) As Boolean
     
     isTitleFormCompleted = completed
 End Function
+Function get_cc(isis As ClIsisdll, Mfn As Long) As clsCreativeCommons
+    Dim creativeCommons As New clsCreativeCommons
+    Dim text As String
+    Dim p As Long
+    Dim t As String
+    Dim v As String
+    Dim c As String
+    
+    creativeCommons.Code = isis.UsePft(Mfn, "v541")
+    creativeCommons.version = isis.UsePft(Mfn, "v542^v")
+    creativeCommons.COMPLEMENT = isis.UsePft(Mfn, "v542^c")
+    text = isis.UsePft(Mfn, "v540[1]")
+    
+    If creativeCommons.version = "" Then
+        p = InStr(text, "http://creativecommons.org/licenses/")
+        If p > 0 Then
+            text = Mid(text, p)
+            text = Replace(text, "http://creativecommons.org/licenses/", "")
+            t = UCase(Mid(text, 1, InStr(text, "/") - 1))
+            v = Mid(text, InStr(text, "/") + 1)
+            v = Mid(v, 1, InStr(v, "/") - 1)
+            If InStr(text, "/igo") > 0 Then
+                c = "igo"
+            End If
+            creativeCommons.Code = t
+            creativeCommons.version = v
+            creativeCommons.COMPLEMENT = c
+        End If
+    End If
+    Set get_cc = creativeCommons
+End Function
+

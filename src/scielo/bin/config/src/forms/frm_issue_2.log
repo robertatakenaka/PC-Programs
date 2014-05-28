@@ -1,4 +1,19 @@
-Line 43: Cannot load control SSTab1.
-Line 911: Cannot load control lvSortedSections.
-Line 957: Cannot load control DispoSections.
-Line 1011: Cannot load control LVSections.
+Line 88: Class SHDocVwCtl.WebBrowser of control WebBrowser1 was not a loaded control class.
+Line 94: The property name ExtentX in WebBrowser1 is invalid.
+Line 95: The property name ExtentY in WebBrowser1 is invalid.
+Line 96: The property name ViewMode in WebBrowser1 is invalid.
+Line 97: The property name Offline in WebBrowser1 is invalid.
+Line 98: The property name Silent in WebBrowser1 is invalid.
+Line 99: The property name RegisterAsBrowser in WebBrowser1 is invalid.
+Line 100: The property name RegisterAsDropTarget in WebBrowser1 is invalid.
+Line 101: The property name AutoArrange in WebBrowser1 is invalid.
+Line 102: The property name NoClientEdge in WebBrowser1 is invalid.
+Line 103: The property name AlignLeft in WebBrowser1 is invalid.
+Line 104: The property name NoWebView in WebBrowser1 is invalid.
+Line 105: The property name HideFileNames in WebBrowser1 is invalid.
+Line 106: The property name SingleClick in WebBrowser1 is invalid.
+Line 107: The property name SingleSelection in WebBrowser1 is invalid.
+Line 108: The property name NoFolders in WebBrowser1 is invalid.
+Line 109: The property name Transparent in WebBrowser1 is invalid.
+Line 110: The property name ViewID in WebBrowser1 is invalid.
+Line 111: The property name Location in WebBrowser1 is invalid.

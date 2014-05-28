@@ -5,7 +5,7 @@ Begin VB.Form JOURNAL5
    ClientHeight    =   5460
    ClientLeft      =   45
    ClientTop       =   1335
-   ClientWidth     =   7710
+   ClientWidth     =   7650
    Icon            =   "frm_Serial_7.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
@@ -13,7 +13,7 @@ Begin VB.Form JOURNAL5
    Moveable        =   0   'False
    NegotiateMenus  =   0   'False
    ScaleHeight     =   5460
-   ScaleWidth      =   7710
+   ScaleWidth      =   7650
    ShowInTaskbar   =   0   'False
    Begin VB.CommandButton CmdNext 
       Caption         =   "Next"
@@ -97,38 +97,92 @@ Begin VB.Form JOURNAL5
       TabIndex        =   6
       Top             =   120
       Width           =   7455
-      Begin VB.ComboBox ComboLicVersion 
+      Begin VB.CommandButton CommandTestLicImgLink 
+         Caption         =   "test"
+         Height          =   375
+         Left            =   6480
+         TabIndex        =   19
+         Top             =   1680
+         Width           =   735
+      End
+      Begin VB.CommandButton CommandTestLicLink 
+         Caption         =   "Test"
+         Height          =   375
+         Left            =   6480
+         TabIndex        =   18
+         Top             =   1200
+         Width           =   735
+      End
+      Begin VB.TextBox Text_LicImgLink 
+         Height          =   375
+         Left            =   1800
+         TabIndex        =   17
+         Text            =   "Text2"
+         Top             =   1680
+         Width           =   4575
+      End
+      Begin VB.TextBox Text_LicLink 
+         Height          =   375
+         Left            =   1800
+         TabIndex        =   16
+         Text            =   "Text1"
+         Top             =   1200
+         Width           =   4575
+      End
+      Begin VB.ComboBox ComboLicCompl 
          Height          =   315
-         Left            =   2400
-         TabIndex        =   12
-         Text            =   "Combo1"
-         Top             =   840
-         Width           =   1095
+         Left            =   3120
+         TabIndex        =   15
+         Text            =   "ComboLicCompl"
+         Top             =   720
+         Width           =   1335
       End
       Begin VB.ComboBox ComboLicText 
          Height          =   315
-         ItemData        =   "frm_Serial_7.frx":030A
-         Left            =   2400
-         List            =   "frm_Serial_7.frx":030C
-         TabIndex        =   11
+         Left            =   120
+         TabIndex        =   12
          Text            =   "ComboLicText"
-         Top             =   360
-         Width           =   3135
+         Top             =   720
+         Width           =   1215
       End
-      Begin VB.Label LabelLicVersion 
-         Caption         =   "LabelLicVersion"
-         Height          =   375
-         Left            =   360
-         TabIndex        =   14
-         Top             =   840
+      Begin VB.ComboBox ComboLicVersion 
+         Height          =   315
+         Left            =   1440
+         TabIndex        =   11
+         Text            =   "Combo1"
+         Top             =   720
          Width           =   1575
+      End
+      Begin VB.Label LabelLicImgLink 
+         Caption         =   "Label10"
+         Height          =   375
+         Left            =   120
+         TabIndex        =   21
+         Top             =   1560
+         Width           =   1575
+      End
+      Begin VB.Label LabelLicLink 
+         Caption         =   "Label10"
+         Height          =   375
+         Left            =   120
+         TabIndex        =   20
+         Top             =   1200
+         Width           =   1455
       End
       Begin VB.Label LabelLicense 
          Caption         =   "LabelLicense"
          Height          =   375
-         Left            =   360
+         Left            =   120
+         TabIndex        =   14
+         Top             =   480
+         Width           =   1215
+      End
+      Begin VB.Label LabelLicVersion 
+         Caption         =   "version de la licencia"
+         Height          =   375
+         Left            =   1440
          TabIndex        =   13
-         Top             =   360
+         Top             =   480
          Width           =   1575
       End
    End
@@ -152,8 +206,7 @@ Private MyMfnTitle As Long
 Private savedlicense As New clsCreativeCommons
 'Private currentLicText As ColIdiom
 Private Const MAX_LINES_INDEX = 10
-
-
+Public interface_cc As New clsCreativeCommons
 
 Private Sub CmdBack_Click()
         Hide
@@ -172,13 +225,22 @@ Sub MySetLabels()
     
     Call FillCombo(ComboLicText, CodeLicText, True, True)
     Call FillCombo(ComboLicVersion, CodeLicVersion, True, True)
+    ComboLicCompl.Clear
+    ComboLicCompl.AddItem ("igo")
+    ComboLicCompl.AddItem ("")
+    
     End With
     
     With ConfigLabels
+        CommandTestLicLink.Caption = .getLabel("ButtonTest")
+        CommandTestLicImgLink.Caption = .getLabel("ButtonTest")
         CmdBack.Caption = .getLabel("ButtonBack")
         CmdClose.Caption = .getLabel("ButtonClose")
         CmdSave.Caption = .getLabel("ButtonSave")
         LabIndicationMandatoryField.Caption = .getLabel("MandatoryFieldIndication")
+        LabelLicLink.Caption = .getLabel("LicLink")
+        LabelLicImgLink.Caption = .getLabel("LicImgLink")
+        
     End With
     
 End Sub
@@ -198,6 +260,11 @@ Sub MyGetContentFromBase(MfnTitle As Long)
     Else
         ComboLicVersion.text = ""
     End If
+    If Len(savedlicense.COMPLEMENT) > 0 Then
+        ComboLicCompl.text = savedlicense.COMPLEMENT
+    Else
+        ComboLicCompl.text = ""
+    End If
     
     TxtCprightDate.text = Serial_TxtContent(MfnTitle, 621)
     TxtCprighter.text = Serial_TxtContent(MfnTitle, 62)
@@ -209,20 +276,13 @@ Sub MyClearContent()
         TxtCprightDate.text = ""
         TxtCprighter.text = ""
 End Sub
-Function validate() As Boolean
-
-    If ComboLicText.text = "" Then
-        MsgBox (ConfigLabels.getLabel("msg_missing_license"))
+Function is_valid_cc() As Boolean
+    Dim Msg As String
+    If Not interface_cc.is_valid(Msg) Then
+        MsgBox (Msg)
         ComboLicText.SetFocus
-    ElseIf ComboLicText.text = "nd" Then
-        ComboLicVersion.text = "nd"
-    Else
-        If ComboLicVersion.text = "" Then
-            MsgBox (ConfigLabels.getLabel("msg_missing_license_version"))
-            ComboLicVersion.SetFocus
-        End If
     End If
-    validate = True
+    is_valid_cc = True
 End Function
 Function changed(MfnTitle As Long) As Boolean
     'FIXME
@@ -272,13 +332,61 @@ End Sub
 
 Private Sub CmdSave_Click()
     MousePointer = vbHourglass
-    validate
+    is_valid_cc
     MyMfnTitle = Serial_Save(MyMfnTitle)
     MousePointer = vbArrow
 End Sub
+Private Sub update_links()
+    interface_cc.Code = ComboLicText.text
+    interface_cc.version = ComboLicVersion.text
+    interface_cc.COMPLEMENT = ComboLicCompl.text
+    
+    Text_LicLink.text = interface_cc.get_license_link(program_interface_language)
+    Text_LicImgLink.text = interface_cc.get_license_img_link(program_interface_language)
+End Sub
+
+Private Sub ComboLicCompl_Change()
+    update_links
+End Sub
+
+Private Sub ComboLicCompl_Click()
+update_links
+End Sub
+
+Private Sub ComboLicCompl_LostFocus()
+update_links
+End Sub
 
 Private Sub ComboLicText_Change()
+    update_links
+End Sub
 
+Private Sub ComboLicText_Click()
+update_links
+End Sub
+
+Private Sub ComboLicText_LostFocus()
+update_links
+End Sub
+
+Private Sub ComboLicVersion_Change()
+    update_links
+End Sub
+
+Private Sub ComboLicVersion_Click()
+update_links
+End Sub
+
+Private Sub ComboLicVersion_LostFocus()
+update_links
+End Sub
+
+Private Sub CommandTestLicImgLink_Click()
+    Call cmd_exe(Text_LicImgLink.text)
+End Sub
+
+Private Sub CommandTestLicLink_Click()
+    Call cmd_exe(Text_LicLink.text)
 End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)

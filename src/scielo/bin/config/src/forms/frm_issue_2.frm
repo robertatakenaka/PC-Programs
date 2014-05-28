@@ -57,19 +57,16 @@ Begin VB.Form Issue2
       TabPicture(0)   =   "frm_issue_2.frx":030A
       Tab(0).ControlEnabled=   0   'False
       Tab(0).Control(0)=   "FramFasc2(0)"
-      Tab(0).Control(0).Enabled=   0   'False
       Tab(0).ControlCount=   1
       TabCaption(1)   =   "Bibliographic Strip"
       TabPicture(1)   =   "frm_issue_2.frx":0326
       Tab(1).ControlEnabled=   0   'False
       Tab(1).Control(0)=   "FramLeg"
-      Tab(1).Control(0).Enabled=   0   'False
       Tab(1).ControlCount=   1
       TabCaption(2)   =   "Table of Contents"
       TabPicture(2)   =   "frm_issue_2.frx":0342
       Tab(2).ControlEnabled=   0   'False
       Tab(2).Control(0)=   "Frame1"
-      Tab(2).Control(0).Enabled=   0   'False
       Tab(2).ControlCount=   1
       TabCaption(3)   =   "Settings"
       TabPicture(3)   =   "frm_issue_2.frx":035E
@@ -84,37 +81,97 @@ Begin VB.Form Issue2
          TabIndex        =   100
          Top             =   480
          Width           =   8535
+         Begin VB.CommandButton CommandTestLicImgLink 
+            Caption         =   "test"
+            Height          =   375
+            Left            =   7560
+            TabIndex        =   113
+            Top             =   2280
+            Width           =   735
+         End
+         Begin VB.CommandButton CommandTestLicLink 
+            Caption         =   "Test"
+            Height          =   375
+            Left            =   7560
+            TabIndex        =   112
+            Top             =   1800
+            Width           =   735
+         End
+         Begin VB.TextBox Text_LicImgLink 
+            Height          =   375
+            Left            =   1920
+            TabIndex        =   111
+            Top             =   2280
+            Width           =   5535
+         End
+         Begin VB.TextBox Text_LicLink 
+            Height          =   375
+            Left            =   1920
+            TabIndex        =   110
+            Top             =   1800
+            Width           =   5535
+         End
+         Begin VB.ComboBox ComboLicCompl 
+            Height          =   315
+            Left            =   3120
+            TabIndex        =   109
+            Text            =   "Combo1"
+            Top             =   1320
+            Width           =   1335
+         End
          Begin VB.ComboBox ComboLicVersion 
             Height          =   315
-            Left            =   2040
+            Left            =   1560
             TabIndex        =   106
             Text            =   "Combo1"
-            Top             =   840
-            Width           =   1095
+            Top             =   1320
+            Width           =   1575
          End
          Begin VB.ComboBox ComboIssueLicText 
             Height          =   315
-            Left            =   2040
-            Style           =   1  'Simple Combo
+            Left            =   240
             TabIndex        =   102
             Text            =   "ComboIssueLicText"
+            Top             =   1320
+            Width           =   1215
+         End
+         Begin VB.Label LabelLicImgLink 
+            Caption         =   "Label10"
+            Height          =   375
+            Left            =   240
+            TabIndex        =   116
+            Top             =   2160
+            Width           =   1575
+         End
+         Begin VB.Label LabelLicLink 
+            Caption         =   "Label10"
+            Height          =   375
+            Left            =   240
+            TabIndex        =   115
+            Top             =   1800
+            Width           =   1455
+         End
+         Begin VB.Label LabelJournalLicenseInfo 
+            Height          =   495
+            Left            =   360
+            TabIndex        =   114
             Top             =   360
-            Width           =   3135
+            Width           =   6375
          End
          Begin VB.Label LabelLicVersion 
             Caption         =   "version de la licencia"
             Height          =   375
-            Left            =   120
+            Left            =   1560
             TabIndex        =   108
-            Top             =   840
+            Top             =   1080
             Width           =   1575
          End
          Begin VB.Label LabelLicense 
             Caption         =   "LabelLicense"
             Height          =   375
-            Left            =   120
+            Left            =   240
             TabIndex        =   107
-            Top             =   360
+            Top             =   1080
             Width           =   1575
          End
       End
@@ -1162,6 +1219,7 @@ Private myIssue As ClsIssue
 Private journalSections As ClsTOC
 Private journal_license As clsCreativeCommons
 
+Private interface_cc As New clsCreativeCommons
 
 Private CUSTOMIZED_FOR_JOURNAL As String
 Private CUSTOMIZED_FOR_issue As String
@@ -1221,7 +1279,7 @@ Private Sub loadFormLayout()
     'Caption = TxtTitAbr(idiomidx).text + " " + TxtVol(idiomidx).text + " " + TxtSupplVol(idiomidx).text + " " + TxtNro(idiomidx).text + " " + TxtSupplNro(idiomidx).text
     
     For i = 1 To idiomsinfo.count
-        Label10(i - 1).Caption = idiomsinfo(i).label
+        'Label10(i - 1).Caption = idiomsinfo(i).label
         Label1(i).Caption = .getLabel("ser1_ShortTitle")
         Label2(i).Caption = .getLabel("Volume")
         Label3(i).Caption = .getLabel("Issueno")
@@ -1278,6 +1336,17 @@ Private Sub loadFormLayout()
     LVSections.ColumnHeaders(1).Width = LVSections.Width / 5
     
     
+    ComboLicCompl.Clear
+    ComboLicCompl.AddItem ("igo")
+    ComboLicCompl.AddItem ("")
+    
+    
+    With ConfigLabels
+        CommandTestLicLink.Caption = .getLabel("ButtonTest")
+        CommandTestLicImgLink.Caption = .getLabel("ButtonTest")
+        LabelLicLink.Caption = .getLabel("LicLink")
+        LabelLicImgLink.Caption = .getLabel("LicImgLink")
+    End With
     
     OldHeight = Height
     OldWidth = Width
@@ -1312,13 +1381,25 @@ Private Sub LoadIssueData()
     Call FillCombo(ComboIssueLicText, CodeLicText, True, True)
     Call FillCombo(ComboLicVersion, CodeLicVersion, True, True)
     
-    chosen = journal_license.Code
+    LabelJournalLicenseInfo.Caption = journal_license.Code & " " & journal_license.version & " " & journal_license.COMPLEMENT
     
     If Len(myIssue.licenses.Code) > 0 Then
-        chosen = myIssue.licenses.Code
+        ComboIssueLicText.text = myIssue.licenses.Code
+    Else
+        ComboIssueLicText.text = ""
     End If
     
-    ComboIssueLicText.text = chosen
+    If Len(myIssue.licenses.version) > 0 Then
+        ComboLicVersion.text = myIssue.licenses.version
+    Else
+        ComboLicVersion.text = ""
+    End If
+    
+    If Len(myIssue.licenses.COMPLEMENT) > 0 Then
+        ComboLicCompl.text = myIssue.licenses.COMPLEMENT
+    Else
+        ComboLicCompl.text = ""
+    End If
     
     TxtDoccount.text = myIssue.doccount
     currDate = myIssue.DateISO
@@ -1573,7 +1654,7 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 
 Private Sub FormCmdAju_Click()
-    Call openHelp(Paths("Help of Issue2").Path, Paths("Help of Issue2").FileName)
+    Call cmd_exe(Paths("Help of Issue2").Path, Paths("Help of Issue2").FileName)
 End Sub
 
 Private Sub Form_Resize()
@@ -1730,8 +1811,8 @@ Private Function Issue_ChangedContents() As Boolean
     UpdateData
     
     Set dbissue = Issue0.issueDAO.returnIssue(mfnIssue)
-    Debug.Print Issue0.issueDAO.tag(myIssue)
-    Debug.Print Issue0.issueDAO.tag(dbissue)
+    MsgBox Issue0.issueDAO.tag(myIssue)
+    MsgBox Issue0.issueDAO.tag(dbissue)
     Issue_ChangedContents = (Issue0.issueDAO.tag(myIssue) <> Issue0.issueDAO.tag(dbissue))
 End Function
 
@@ -1752,11 +1833,9 @@ Private Function WarnMandatoryFields() As Boolean
     If ListScheme.SelCount = 0 Then
         warning = warning + .isA_mandatoryField("", "Issue_Scheme")
     End If
-    
-   
+     
     warning = warning + .isA_mandatoryField(TxtDateIso.text, "Issue_DateISO")
     warning = warning + .isA_mandatoryField(TxtDoccount.text, "Issue_NumberofDocuments")
-    
     
     If Not IsNumber(TxtDoccount.text) Then MsgBox ConfigLabels.getLabel("Issue_InvalidNumDoc")
     
@@ -1770,6 +1849,14 @@ Private Function WarnMandatoryFields() As Boolean
         warning = warning + .isA_mandatoryField(TxtHeader(i).text, "Issue_Header")
     Next
     
+    Dim cc As New clsCreativeCommons
+    Dim Msg As String
+    
+    cc.Code = ComboIssueLicText.text
+    cc.version = ComboLicVersion.text
+    If Not cc.is_valid(Msg) Then
+        warning = warning + .isA_mandatoryField("", "Issue_License")
+    End If
     
     End With
     
@@ -1839,14 +1926,16 @@ Private Sub UpdateData()
         Set .bibstrips = New ColObjByLang
         Set .bibstrips.nullObject = New ClsBibStrip
         
-        
+        .licenses.Code = Issue2.ComboIssueLicText.text
+        .licenses.version = Issue2.ComboLicVersion.text
+        .licenses.COMPLEMENT = Issue2.ComboLicCompl.text
+            
         For i = 1 To idiomsinfo.count
             Set t = New ClsTextByLang
             t.lang = idiomsinfo.item(i).Code
             t.text = Issue2.TxtIssTitle(i).text
             
             .issueTitle.add t
-            .licenses.Code = Issue2.ComboIssueLicText.text
             
             Set obj = New ClsBibStrip
             With obj
@@ -1866,20 +1955,21 @@ Private Sub UpdateData()
         Next
         Set .toc = New ClsTOC
         Set .toc = getNewTOC
-        .pissn = Issue2.Text_IssuePISSN.text
-        .eissn = Issue2.Text_IssueEISSN.text
-        
+        .doccount = Issue2.TxtDoccount.text
         
         .DateISO = Issue2.TxtDateIso.text
-        .doccount = Issue2.TxtDoccount.text
-        .issueCover = Issue2.TxtCover.text
         .issuepart = Issue2.TxtIssuept.text
-        .issuePublisher = Issue2.TxtIssPublisher.text
         .issueSponsor = Issue2.TxtIssSponsor.text
+        .issuePublisher = Issue2.TxtIssPublisher.text
+        .issueCover = Issue2.TxtCover.text
         .markupDone = Int2Str(Issue2.MkpCheck.value)
-        .journal.JournalStandard = CodeStandard(Issue2.ComboStandard.text).Code
+        
+        .pissn = Issue2.Text_IssuePISSN.text
+        .eissn = Issue2.Text_IssueEISSN.text
         If Issue2.ComboStatus.text <> "" Then .status = CodeIssStatus(Issue2.ComboStatus.text).Code
-    End With
+    
+        .journal.JournalStandard = CodeStandard(Issue2.ComboStandard.text).Code
+        End With
 End Sub
 
 Private Function getNewTOC() As ClsTOC
@@ -1898,11 +1988,8 @@ Private Function getNewTOC() As ClsTOC
         Set titleAndLang = New ClsTextByLang
         titleAndLang.lang = idiomsinfo(i).Code
         titleAndLang.text = TxtHeader(i).text
-                
         Call toc.names.add(titleAndLang)
-            
     Next
-    
     
     For k = 1 To LVSections.ListItems.count
         Set section = New ClsSection
@@ -1920,4 +2007,64 @@ Private Function getNewTOC() As ClsTOC
     Set getNewTOC = toc
 End Function
 
+Private Sub update_links()
+    interface_cc.Code = ComboIssueLicText.text
+    interface_cc.version = ComboLicVersion.text
+    interface_cc.COMPLEMENT = ComboLicCompl.text
+    
+    Text_LicLink.text = interface_cc.get_license_link(program_interface_language)
+    Text_LicImgLink.text = interface_cc.get_license_img_link(program_interface_language)
+End Sub
 
+Private Sub ComboLicCompl_Change()
+    update_links
+End Sub
+
+Private Sub ComboLicCompl_Click()
+update_links
+End Sub
+
+Private Sub ComboLicCompl_LostFocus()
+update_links
+End Sub
+
+Private Sub ComboLicText_Change()
+    update_links
+End Sub
+
+Private Sub ComboLicText_Click()
+update_links
+End Sub
+
+Private Sub ComboLicText_LostFocus()
+update_links
+End Sub
+
+Private Sub ComboLicVersion_Change()
+    update_links
+End Sub
+
+Private Sub ComboLicVersion_Click()
+update_links
+End Sub
+
+Private Sub ComboLicVersion_LostFocus()
+update_links
+End Sub
+
+Private Sub CommandTestLicImgLink_Click()
+    Call cmd_exe(Text_LicImgLink.text)
+End Sub
+
+Private Sub CommandTestLicLink_Click()
+    Call cmd_exe(Text_LicLink.text)
+End Sub
+
+Function is_valid_cc() As Boolean
+    Dim Msg As String
+    If Not interface_cc.is_valid(Msg) Then
+        MsgBox (Msg)
+        ComboIssueLicText.SetFocus
+    End If
+    is_valid_cc = True
+End Function
