@@ -458,7 +458,14 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 					<xsl:apply-templates select="." mode="article-meta"/>					
 				</front>
 			</xsl:when>
-			<xsl:when test="name()='subdoc' or name()='docresp'">
+			<xsl:when test="name()='subdoc'">
+				<xsl:if test="front">
+				<front-stub>
+					<xsl:apply-templates select="front" mode="article-meta"/>					
+				</front-stub>
+				</xsl:if>
+			</xsl:when>
+			<xsl:when test="name()='docresp'">
 				<front-stub>
 					<xsl:apply-templates select="." mode="article-meta"/>					
 				</front-stub>
