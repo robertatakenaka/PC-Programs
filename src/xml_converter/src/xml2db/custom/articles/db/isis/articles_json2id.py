@@ -59,6 +59,19 @@ class JSON2IDFile_Article:
                 data = self.add_file_data(xml_filename, db_name, data)
                 self.json2idfile.save_document_data(data)
             else:
+                try:
+                    if record_name in 'fhl':
+                        abstracts = data.get('83', [])
+                        print('$'*80)
+                        #print(abstracts)
+                        abst = ''.join([a.get('a', '') for a in abstracts])
+                        print(len(abst))
+                        if len(abst) > 30000:
+                            data['83'] = [a for a in abstracts if a.get('l') in ['en', 'pt', 'es', 'fr', 'de', 'it']]
+                            print(data['83'])
+                except Exception as e:
+                    print(';'*80)
+                    print(e)
                 if type([]) == type(data):
                     # is a list of record of same type
                     for rec_occ in data:
