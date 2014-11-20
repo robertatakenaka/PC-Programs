@@ -687,6 +687,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:choose>
 				<xsl:when test="not(front/doi) and not(doi)">
 					<article-id pub-id-type="pii"><xsl:value-of select="substring-after(string(100000 + number(@order)),'1')"/></article-id>	
+					
 				</xsl:when>
 				<xsl:when test="number($fpage)&lt;number(@order) or contains(@fpage,'-')">
 					<article-id pub-id-type="other"><xsl:value-of select="substring-after(string(100000 + number(@order)),'1')"/></article-id>	
@@ -1010,7 +1011,14 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:otherwise>aff<xsl:value-of select="string(number(substring(.,2)))"/></xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
-	
+	<xsl:template match="xref[@ref-type='bibr']/text()">
+		<xsl:choose>
+			<xsl:when test="substring(.,1,1)='(' and substring(.,string-length(.)-1)=')'">
+				<xsl:value-of select="substring(.,2,string-length(.)-2)"/>
+			</xsl:when>
+			<xsl:otherwise><xsl:value-of select="."/></xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
 	<xsl:template match="aff/@id | normaff/@id">
 		<!-- FIXMEID -->
 		<!-- quando nao ha aff/label = author/xref enquanto author/@rid = aff/@id -->
