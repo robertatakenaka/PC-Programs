@@ -268,9 +268,9 @@ def four_digits_year(year):
                 year = year.replace('/', '-')
                 if '-' in year:
                     year = year.split('-')
-                    year = [y for y in year if len(y) == 4]
-                    if len(year) == 1:
-                        year = year[0]
+                    year = [y for y in year if len(y) == 4 and y.isdigit()]
+                    if len(year) > 0:
+                        year = year[-1]
                     else:
                         year = ''
                 if len(year) > 4:
