@@ -226,36 +226,23 @@ def display_status_after_xc(previous_registered_articles, registered_articles, p
     return html_reports.sheet(labels, items, 'dbstatus', 'package or database')
 
 
-def complete_issue_items_report(previous_registered_articles, pkg_articles, complete_issue_items, unmatched_orders):
-    unmatched_orders_errors = ''
+def unmatched_orders_report(unmatched_orders):
+    report = ''
 
     if len(unmatched_orders) > 0:
-        unmatched_orders_errors = ''.join([html_reports.p_message('WARNING: ' + _('orders') + ' ' + _('of') + ' ' + name + ': ' + ' -> '.join(list(order))) for name, order in unmatched_orders.items()])
-    f, e, w = html_reports.statistics_numbers(unmatched_orders_errors)
+        report = ''.join([html_reports.p_message('WARNING: ' + _('orders') + ' ' + _('of') + ' ' + name + ': ' + ' -> '.join(list(order))) for name, order in unmatched_orders.items()])
+    return report
 
-    issue_items = pkg_reports.ArticlePackage(complete_issue_items)
+
+def complete_issue_items_report(complete_issue_items):
+    issue_items = pkg_reports.ArticlesPackage(complete_issue_items)
     issue_items_reports = pkg_reports.ArticlesPkgReport(issue_items)
 
-    issue_items_f, issue_items_e, issue_items_w, issue_items_report = issue_items_reports.validate_consistency(validate_order=True)
-    pkg_report = ''
-    pkg_f = 0
-    if issue_items_f > 0:
-        if len(complete_issue_items) - len(pkg_articles) > 0:
-            # there are previous registered
-            #issue_items_report = issue_items_report.replace('FATAL ', '')
-            package = pkg_reports.ArticlePackage(pkg_articles)
-            package_reports = pkg_reports.ArticlesPkgReport(package)
-            pkg_f, pkg_e, pkg_w, pkg_report = package_reports.validate_consistency(validate_order=True)
+    issue_items_reports.evaluate(validate_order=True)
 
-    report = unmatched_orders_errors
-    if issue_items_report is not None:
-        report += issue_items_report
-    if pkg_report is not None:
-        report += pkg_report
+    unique_f, unique_e, unique_w = issue_items_reports.unique_values_report_stats
 
-    if len(report) == 0:
-        report = None
-    return (f, issue_items_f, pkg_f, report)
+    return (unique_f, issue_items_reports.toc_report)
 
 
 def normalized_package(src_path, report_path, wrk_path, pkg_path, version):
@@ -332,8 +319,8 @@ def convert_package(src_path):
     if issue_error_msg is not None:
         report_components['issue-report'] = issue_error_msg
 
-    #utils.debugging('pkg_reports.ArticlePackage')
-    articles_pkg = pkg_reports.ArticlePackage(pkg_articles)
+    #utils.debugging('pkg_reports.ArticlesPackage')
+    articles_pkg = pkg_reports.ArticlesPackage(pkg_articles)
 
     #utils.debugging('pkg_reports.ArticlesPkgReport')
     articles_pkg_reports = pkg_reports.ArticlesPkgReport(articles_pkg)
@@ -354,25 +341,27 @@ def convert_package(src_path):
     else:
         issue_files = get_issue_files(issue_models, pkg_path)
         acron_issue_label = issue_models.issue.acron + ' ' + issue_models.issue.issue_label
-        #utils.debugging('acron_issue_label')
-        #utils.debugging(acron_issue_label)
-        #utils.debugging('get_registered_articles')
+
+        common, individual, section_codes = journal_and_issue_validations(articles_pkg, issue_models)
+
         previous_registered_articles = get_registered_articles(issue_files)
 
-        #utils.debugging('get_complete_issue_items')
         complete_issue_items, xml_doc_actions, unmatched_orders = get_complete_issue_items(issue_files, pkg_path, previous_registered_articles, pkg_articles)
 
-        #utils.debugging('display_status_before_xc')
         before_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - before conversion'))
         before_conversion_report += display_status_before_xc(previous_registered_articles, pkg_articles, xml_doc_actions)
 
-        unmatched_orders_f, complete_issue_f, pkg_f, xc_toc_report = complete_issue_items_report(previous_registered_articles, pkg_articles, complete_issue_items, unmatched_orders)
+        _unmatched_orders_report = unmatched_orders_report(unmatched_orders)
+        unmatched_orders_f, unmatched_orders_e, unmatched_orders_w = html_reports.statistics_numbers(_unmatched_orders_report)
 
-        #utils.debugging('xc_toc_report is not None?')
+        fatal_errors, xc_toc_report = complete_issue_items_report(complete_issue_items)
+
+        xc_toc_report = ''.join([item for item in [_unmatched_orders_report, xc_toc_report] if item is not None])
+
         if xc_toc_report is not None:
             #utils.debugging('xc_toc_report is not None.')
             report_components['issue-report'] = xc_toc_report
-        if pkg_f == 0 or complete_issue_f == 0:
+        if fatal_errors == 0:
             #utils.debugging('toc_f == 0')
             selected_articles = {}
             for xml_name, article in pkg_articles.items():
@@ -389,8 +378,8 @@ def convert_package(src_path):
         elif len(selected_articles) > 0:
             #utils.debugging('len(selected_articles) > 0')
 
-            #utils.debugging('pkg_reports.ArticlePackage')
-            selected_articles_pkg = pkg_reports.ArticlePackage(selected_articles)
+            #utils.debugging('pkg_reports.ArticlesPackage')
+            selected_articles_pkg = pkg_reports.ArticlesPackage(selected_articles)
 
             #utils.debugging('pkg_reports.ArticlesPkgReport')
             selected_articles_pkg_reports = pkg_reports.ArticlesPkgReport(selected_articles_pkg)
@@ -786,7 +775,7 @@ def transfer_report_files(acron, issue_id, local_web_app_path, user, server, rem
         xc.run_rsync(source_path, user, server, dest_path)
 
 
-def validate_xml_issue_data(issue_models, article):
+def validate_xml_issue_data_common(issue_models, article):
     msg = []
     if article.tree is not None:
         validations = []
@@ -850,35 +839,8 @@ def validate_xml_issue_data(issue_models, article):
                 msg.append(html_reports.tag('h5', 'license'))
                 msg.append('INFO: ' + _('In article: "') + article.license_url + _('" and in issue: "') + issue_models.issue.license + '"')
 
-        # section
-        section_msg = []
-        section_code, matched_rate, fixed_sectitle = issue_models.most_similar_section_code(article.toc_section)
-        if matched_rate != 1:
-            if not article.is_ahead:
-                section_msg.append(_('Registered sections') + ':\n' + '; '.join(issue_models.section_titles))
-                if section_code is None:
-                    section_msg.append('ERROR: ' + article.toc_section + _(' is not a registered section.'))
-                else:
-                    section_msg.append('WARNING: ' + _('section replaced: "') + fixed_sectitle + '" (' + _('instead of') + ' "' + article.toc_section + '")')
-
-        # @article-type
-        if fixed_sectitle is not None:
-            _sectitle = fixed_sectitle
-        else:
-            _sectitle = article.toc_section
-        article_type_msg = validate_article_type_and_section(article.article_type, _sectitle)
-        if len(article_type_msg) > 0 or len(section_msg) > 0:
-            msg.append(html_reports.tag('h5', 'section'))
-            msg.append(article.toc_section)
-            for m in section_msg:
-                msg.append(m)
-            msg.append(html_reports.tag('h5', 'article-type'))
-            msg.append(article.article_type)
-            if len(article_type_msg) > 0:
-                msg.append(article_type_msg)
-
     msg = ''.join([html_reports.p_message(item) for item in msg])
-    return (section_code, msg)
+    return msg
 
 
 def validate_article_type_and_section(article_type, article_section):

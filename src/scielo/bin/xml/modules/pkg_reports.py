@@ -16,13 +16,16 @@ import utils
 log_items = []
 
 
-class ArticlePackage(object):
+class ArticlesPackage(object):
 
     def __init__(self, articles):
         self.articles = articles
-        self.compile_references()
+        #self.compile_references()
         self._xml_name_sorted_by_order = None
         self._indexed_by_order = None
+        self.issue_data = None
+        self.individual_data = None
+        self.sections_code = None
 
     @property
     def xml_name_sorted_by_order(self):
@@ -314,93 +317,242 @@ class ArticlePackage(object):
                 self.pkg_reports[xml_name] = (doc_files_info.err_filename, doc_files_info.style_report_filename, doc_files_info.data_report_filename)
 
         #utils.debugging('Validating package: fim')
+    def validate_issue_data(self, issue_models):
+        index = 0
+        n = '/' + str(len(self.articles))
+
+        self.issue_data = {}
+        self.individual_data = {}
+        self.section_codes = {}
+
+        utils.display_message('journal/issue validations ...')
+        for xml_name in self.xml_name_sorted_by_order:
+            article = self.articles[xml_name]
+            index += 1
+            item_label = str(index) + n + ' - ' + xml_name
+            utils.display_message(item_label)
+            self.issue_data[xml_name] = self.validate_issue_data(issue_models.issue, article)
+            self.section_codes[xml_name], self.individual_data[xml_name] = self.validate_article_section(issue_models, article)
+
+    def validate_article_section(self, issue_models, article):
+        msg = []
+        if article.tree is not None:
+            # section
+            section_msg = []
+            section_code, matched_rate, fixed_sectitle = issue_models.most_similar_section_code(article.toc_section)
+            if matched_rate != 1:
+                if not article.is_ahead:
+                    section_msg.append(_('Registered sections') + ':\n' + '; '.join(issue_models.section_titles))
+                    if section_code is None:
+                        section_msg.append('ERROR: ' + article.toc_section + _(' is not a registered section.'))
+                    else:
+                        section_msg.append('WARNING: ' + _('section replaced: "') + fixed_sectitle + '" (' + _('instead of') + ' "' + article.toc_section + '")')
+
+            # @article-type
+            if fixed_sectitle is not None:
+                _sectitle = fixed_sectitle
+            else:
+                _sectitle = article.toc_section
+            article_type_msg = validate_article_type_and_section(article.article_type, _sectitle)
+            if len(article_type_msg) > 0 or len(section_msg) > 0:
+                msg.append(html_reports.tag('h5', 'section'))
+                msg.append(article.toc_section)
+                for m in section_msg:
+                    msg.append(m)
+                msg.append(html_reports.tag('h5', 'article-type'))
+                msg.append(article.article_type)
+                if len(article_type_msg) > 0:
+                    msg.append(article_type_msg)
+
+        msg = ''.join([html_reports.p_message(item) for item in msg])
+        return (section_code, msg)
+
+    def validate_issue_data(self, issue_models, article):
+        msg = []
+        if article.tree is not None:
+            validations = []
+            validations.append((_('journal title'), article.journal_title, self.issue.journal_title))
+            validations.append((_('journal id NLM'), article.journal_id_nlm_ta, self.issue.journal_id_nlm_ta))
+
+            a_issn = article.journal_issns.get('epub') if article.journal_issns is not None else None
+            if a_issn is not None:
+                i_issn = self.issue.journal_issns.get('epub') if self.issue.journal_issns is not None else None
+                validations.append((_('journal e-ISSN'), a_issn, i_issn))
+
+            a_issn = article.journal_issns.get('ppub') if article.journal_issns is not None else None
+            if a_issn is not None:
+                i_issn = self.issue.journal_issns.get('ppub') if self.issue.journal_issns is not None else None
+                validations.append((_('journal print ISSN'), a_issn, i_issn))
+
+            validations.append((_('issue label'), article.issue_label, self.issue.issue_label))
+            validations.append((_('issue pub-date'), article.pub_date_year, self.issue.dateiso[0:4]))
+
+            # check issue data
+            for label, article_data, issue_data in validations:
+                if article_data is None:
+                    article_data = 'None'
+                elif isinstance(article_data, list):
+                    article_data = ' | '.join(article_data)
+                if issue_data is None:
+                    issue_data = 'None'
+                elif isinstance(issue_data, list):
+                    issue_data = ' | '.join(issue_data)
+                if not article_data == issue_data:
+                    msg.append(html_reports.tag('h5', label))
+                    if issue_data == 'None':
+                        msg.append('ERROR: ' + _('data mismatched. In article: "') + article_data + _('" and in issue: "') + issue_data + '"')
+                    else:
+                        msg.append('FATAL ERROR: ' + _('data mismatched. In article: "') + article_data + _('" and in issue: "') + issue_data + '"')
+
+            validations = []
+            validations.append(('publisher', article.publisher_name, self.issue.publisher_name))
+            for label, article_data, issue_data in validations:
+                if article_data is None:
+                    article_data = 'None'
+                elif isinstance(article_data, list):
+                    article_data = ' | '.join(article_data)
+                if issue_data is None:
+                    issue_data = 'None'
+                elif isinstance(issue_data, list):
+                    issue_data = ' | '.join(issue_data)
+                if utils.how_similar(article_data, issue_data) < 0.8:
+                    msg.append(html_reports.tag('h5', label))
+                    msg.append('ERROR: ' + _('data mismatched. In article: "') + article_data + _('" and in issue: "') + issue_data + '"')
+
+            # license
+            if self.issue.license is None:
+                msg.append(html_reports.tag('h5', 'license'))
+                msg.append('ERROR: ' + _('Unable to identify issue license'))
+            elif article.license_url is not None:
+                if not '/' + self.issue.license.lower() in article.license_url.lower():
+                    msg.append(html_reports.tag('h5', 'license'))
+                    msg.append('ERROR: ' + _('data mismatched. In article: "') + article.license_url + _('" and in issue: "') + self.issue.license + '"')
+                else:
+                    msg.append(html_reports.tag('h5', 'license'))
+                    msg.append('INFO: ' + _('In article: "') + article.license_url + _('" and in issue: "') + self.issue.license + '"')
+
+            # section
+            section_msg = []
+            section_code, matched_rate, fixed_sectitle = self.most_similar_section_code(article.toc_section)
+            if matched_rate != 1:
+                if not article.is_ahead:
+                    section_msg.append(_('Registered sections') + ':\n' + '; '.join(self.section_titles))
+                    if section_code is None:
+                        section_msg.append('ERROR: ' + article.toc_section + _(' is not a registered section.'))
+                    else:
+                        section_msg.append('WARNING: ' + _('section replaced: "') + fixed_sectitle + '" (' + _('instead of') + ' "' + article.toc_section + '")')
+
+            # @article-type
+            if fixed_sectitle is not None:
+                _sectitle = fixed_sectitle
+            else:
+                _sectitle = article.toc_section
+            article_type_msg = validate_article_type_and_section(article.article_type, _sectitle)
+            if len(article_type_msg) > 0 or len(section_msg) > 0:
+                msg.append(html_reports.tag('h5', 'section'))
+                msg.append(article.toc_section)
+                for m in section_msg:
+                    msg.append(m)
+                msg.append(html_reports.tag('h5', 'article-type'))
+                msg.append(article.article_type)
+                if len(article_type_msg) > 0:
+                    msg.append(article_type_msg)
+
+        msg = ''.join([html_reports.p_message(item) for item in msg])
+        return (section_code, msg)
 
 
 class ArticlesPkgReport(object):
 
     def __init__(self, package):
         self.package = package
+        self.invalid_xml_name_items_report = None
+        self.journal_and_issue_data_report = None
+        self.required_unique_values_report = None
+        self.header = None
+        self._toc_report = None
+        self._toc_report_stats = None
+        self._unique_values_stats = None
 
-    def validate_consistency(self, validate_order):
-        toc_report = self.consistency_report(validate_order)
-        toc_f, toc_e, toc_w = html_reports.statistics_numbers(toc_report)
-        if toc_f + toc_e + toc_w == 0:
-            toc_report = None
+    @property
+    def toc_report(self):
+        if self._toc_report is None:
+            self._toc_report = self.invalid_xml_name_items_report
+            self._toc_report += self.journal_and_issue_data_report
+            self._toc_report += self.required_unique_values_report
 
-        return (toc_f, toc_e, toc_w, toc_report)
+            self._toc_report = self.header + html_reports.tag('div', self._toc_report, 'issue-messages')
+        return self._toc_report
 
-    def consistency_report(self, validate_order):
+    @property
+    def toc_report_stats(self):
+        return html_reports.statistics_numbers(self.toc_report)
+        if self._toc_report_stats is None:
+            self._toc_report_stats = html_reports.statistics_numbers(self.toc_report)
+        return self._toc_report_stats
+
+    @property
+    def unique_values_report_stats(self):
+        if self._unique_values_stats is None:
+            self._unique_values_stats = html_reports.statistics_numbers(self.required_unique_values_report)
+        return self._unique_values_stats
+
+    def evaluate(self, validate_order):
         equal_data = ['journal-title', 'journal id NLM', 'e-ISSN', 'print ISSN', 'publisher name', 'issue label', 'issue pub date', ]
         unique_data = ['order', 'doi', 'elocation id']
-        error_level_for_unique = {'order': 'FATAL ERROR', 'doi': 'FATAL ERROR', 'elocation id': 'FATAL ERROR', 'fpage-and-seq': 'ERROR'}
         required_data = ['journal-title', 'journal ISSN', 'publisher name', 'issue label', 'issue pub date', ]
-
+        error_level_for_unique = {'order': 'FATAL ERROR', 'doi': 'FATAL ERROR', 'elocation id': 'FATAL ERROR', 'fpage-and-seq': 'ERROR'}
         if not validate_order:
             error_level_for_unique['order'] = 'WARNING'
 
         invalid_xml_name_items, pkg_metadata, missing_data = self.package.journal_and_issue_metadata(equal_data + unique_data, required_data)
+        self._header(equal_data)
+        self._invalid_xml_name_items_report(invalid_xml_name_items)
+        self._journal_and_issue_data_report(equal_data, pkg_metadata)
+        self._required_unique_values_report(unique_data, pkg_metadata, error_level_for_unique)
 
-        r = ''
-
+    def _invalid_xml_name_items_report(self, invalid_xml_name_items):
+        self.invalid_xml_name_items_report = ''
         if len(invalid_xml_name_items) > 0:
-            r += html_reports.tag('div', html_reports.p_message('FATAL ERROR: ' + _('Invalid XML files.')))
-            r += html_reports.tag('div', html_reports.format_list('', 'ol', invalid_xml_name_items, 'issue-problem'))
+            self.invalid_xml_name_items_report += html_reports.tag('div', html_reports.p_message('FATAL ERROR: ' + _('Invalid XML files.')))
+            self.invalid_xml_name_items_report += html_reports.tag('div', html_reports.format_list('', 'ol', invalid_xml_name_items, 'issue-problem'))
         for label, items in missing_data.items():
-            r += html_reports.tag('div', html_reports.p_message('FATAL ERROR: ' + _('Missing') + ' ' + label + ' ' + _('in') + ':'))
-            r += html_reports.tag('div', html_reports.format_list('', 'ol', items, 'issue-problem'))
+            self.invalid_xml_name_items_report += html_reports.tag('div', html_reports.p_message('FATAL ERROR: ' + _('Missing') + ' ' + label + ' ' + _('in') + ':'))
+            self.invalid_xml_name_items_report += html_reports.tag('div', html_reports.format_list('', 'ol', items, 'issue-problem'))
 
-        for label in equal_data:
+    def _journal_and_issue_data_report(self, labels, pkg_metadata):
+        self.journal_and_issue_data_report = ''
+        for label in labels:
             if len(pkg_metadata[label]) > 1:
                 _m = _('same value for %s is required for all the documents in the package') % (label)
                 part = html_reports.p_message('FATAL ERROR: ' + _m + '.')
                 for found_value, xml_files in pkg_metadata[label].items():
                     part += html_reports.format_list(_('found') + ' ' + label + '="' + html_reports.display_xml(found_value, html_reports.XML_WIDTH*0.6) + '" ' + _('in') + ':', 'ul', xml_files, 'issue-problem')
-                r += part
+                self.journal_and_issue_data_report += part
 
-        for label in unique_data:
+    def _required_unique_values_report(self, labels, pkg_metadata, error_level_for_unique):
+        self.required_unique_values_report = ''
+        for label in labels:
             if len(pkg_metadata[label]) > 0 and len(pkg_metadata[label]) != len(self.package.articles):
-                none = []
                 duplicated = {}
-                pages = {}
                 for found_value, xml_files in pkg_metadata[label].items():
-                    if found_value == 'None':
-                        none = xml_files
-                    else:
-                        if len(xml_files) > 1:
-                            duplicated[found_value] = xml_files
-                        if label == 'fpage-and-seq':
-                            v = found_value
-                            if v.isdigit():
-                                v = str(int(found_value))
-                            if not v in pages.keys():
-                                pages[v] = []
-                            pages[v] += xml_files
-
-                if len(pages) == 1 and '0' in pages.keys():
-                    duplicated = []
-
+                    if len(xml_files) > 1:
+                        duplicated[found_value] = xml_files
                 if len(duplicated) > 0:
                     _m = _(': unique value of %s is required for all the documents in the package') % (label)
                     part = html_reports.p_message(error_level_for_unique[label] + _m)
                     for found_value, xml_files in duplicated.items():
                         part += html_reports.format_list(_('found') + ' ' + label + '="' + found_value + '" ' + _('in') + ':', 'ul', xml_files, 'issue-problem')
-                    r += part
-                if len(none) > 0:
-                    part = html_reports.p_message('INFO: ' + _('there is no value for ') + label + '.')
-                    part += html_reports.format_list(_('no value for ') + label + ' ' + _('in') + ':', 'ul', none, 'issue-problem')
-                    r += part
+                    self.required_unique_values_report += part
 
+    def _header(self, labels):
         issue_common_data = ''
-
-        for label in equal_data:
-            message = ''
+        for label in labels:
             if len(pkg_metadata[label].items()) == 1:
                 issue_common_data += html_reports.display_labeled_value(label, pkg_metadata[label].keys()[0])
             else:
                 issue_common_data += html_reports.format_list(label, 'ol', pkg_metadata[label].keys())
-                #issue_common_data += html_reports.p_message('FATAL ERROR: ' + _('Unique value expected for ') + label)
-
-        return html_reports.tag('div', issue_common_data, 'issue-data') + html_reports.tag('div', r, 'issue-messages')
+        self.header = html_reports.tag('div', issue_common_data, 'issue-data')
 
     def overview_report(self):
         r = ''

@@ -898,7 +898,7 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
     else:
         articles, doc_files_info_items = make_package(xml_files, report_path, wrk_path, scielo_pkg_path, version, acron)
 
-        articles_pkg = pkg_reports.ArticlePackage(articles)
+        articles_pkg = pkg_reports.ArticlesPackage(articles)
         articles_pkg_reports = pkg_reports.ArticlesPkgReport(articles_pkg)
 
         report_components['xml-files'] = pkg_reports.xml_list(scielo_pkg_path)
@@ -909,6 +909,8 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
         report_components['references'] = articles_pkg_reports.sources_overview_report()
 
         if not from_markup:
+            articles_pkg_reports.evaluate(from_converter)
+
             toc_f, toc_e, toc_w, toc_report = articles_pkg_reports.validate_consistency(from_converter)
             report_components['detail-report'] = toc_report
 
