@@ -911,8 +911,8 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
         if not from_markup:
             articles_pkg_reports.evaluate(from_converter)
 
-            toc_f, toc_e, toc_w, toc_report = articles_pkg_reports.validate_consistency(from_converter)
-            report_components['detail-report'] = toc_report
+            toc_f, toc_e, toc_w = articles_pkg_reports.toc_report_stats
+            report_components['detail-report'] = articles_pkg_reports.toc_report
 
         if toc_f == 0:
             org_manager = institutions_service.OrgManager()

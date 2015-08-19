@@ -226,25 +226,6 @@ def display_status_after_xc(previous_registered_articles, registered_articles, p
     return html_reports.sheet(labels, items, 'dbstatus', 'package or database')
 
 
-def unmatched_orders_report(unmatched_orders):
-    report = ''
-
-    if len(unmatched_orders) > 0:
-        report = ''.join([html_reports.p_message('WARNING: ' + _('orders') + ' ' + _('of') + ' ' + name + ': ' + ' -> '.join(list(order))) for name, order in unmatched_orders.items()])
-    return report
-
-
-def complete_issue_items_report(complete_issue_items):
-    issue_items = pkg_reports.ArticlesPackage(complete_issue_items)
-    issue_items_reports = pkg_reports.ArticlesPkgReport(issue_items)
-
-    issue_items_reports.evaluate(validate_order=True)
-
-    unique_f, unique_e, unique_w = issue_items_reports.unique_values_report_stats
-
-    return (unique_f, issue_items_reports.toc_report)
-
-
 def normalized_package(src_path, report_path, wrk_path, pkg_path, version):
     xml_filenames = sorted([src_path + '/' + f for f in os.listdir(src_path) if f.endswith('.xml') and not 'incorrect' in f])
     articles, doc_file_info_items = xpmaker.make_package(xml_filenames, report_path, wrk_path, pkg_path, version, 'acron')
@@ -253,23 +234,29 @@ def normalized_package(src_path, report_path, wrk_path, pkg_path, version):
 
 def get_issue_models(journal_title, issue_label, p_issn, e_issn):
     issue_models = None
-    msg = None
+    msg = []
 
     if issue_label is None:
-        msg = html_reports.p_message('FATAL ERROR: ' + _('Unable to identify the article\'s issue'))
-    else:
+        msg.append(html_reports.p_message('FATAL ERROR: ' + _('Unable to identify the article\'s issue')))
+    if journal_title is None:
+        msg.append(html_reports.p_message('FATAL ERROR: ' + _('Unable to identify the journal title')))
+    if p_issn is None and e_issn is None:
+        msg.append(html_reports.p_message('FATAL ERROR: ' + _('Unable to find any ISSN')))
+
+    if len(msg) == 0:
         i_record = find_i_record(issue_label, p_issn, e_issn)
         if i_record is None:
-            msg = html_reports.p_message('FATAL ERROR: ' + _('Issue ') + issue_label + _(' is not registered in ') + converter_env.db_issue.db_filename + _(' using ISSN: ') + _(' or ').join([i for i in [p_issn, e_issn] if i is not None]) + '.')
+            msg.append(html_reports.p_message('FATAL ERROR: ' + _('Issue ') + issue_label + _(' is not registered in ') + converter_env.db_issue.db_filename + _(' using ISSN: ') + _(' or ').join([i for i in [p_issn, e_issn] if i is not None]) + '.'))
         else:
             issue_models = xc_models.IssueModels(i_record)
             if issue_models.issue.license is None:
                 j_record = find_journal_record(journal_title, p_issn, e_issn)
                 if j_record is None:
-                    msg = html_reports.p_message('ERROR: ' + _('Unable to get the license of') + ' ' + journal_title)
+                    msg.append(html_reports.p_message('ERROR: ' + _('Unable to get the license of') + ' ' + journal_title))
                 else:
                     t = xc_models.RegisteredTitle(j_record)
                     issue_models.issue.license = t.license()
+    msg = ''.join(msg)
     return (issue_models, msg)
 
 
@@ -283,7 +270,6 @@ def convert_package(src_path):
     validate_order = True
 
     validations_report = None
-    xc_toc_report = None
     xc_conclusion_msg = ''
     conversion_status = {}
     pkg_quality_fatal_errors = 0
@@ -312,15 +298,14 @@ def convert_package(src_path):
 
     xml_filenames, pkg_articles, doc_file_info_items = normalized_package(src_path, report_path, wrk_path, pkg_path, converter_env.version)
 
-    journal_title, issue_label, p_issn, e_issn = xpmaker.package_journal_and_issue_data(pkg_articles)
+    articles_pkg = pkg_reports.ArticlesPackage(pkg_articles)
+
+    journal_title, issue_label, p_issn, e_issn = articles_pkg.issue_identification()
 
     issue_models, issue_error_msg = get_issue_models(journal_title, issue_label, p_issn, e_issn)
-
+    report_components['issue-report'] = ''
     if issue_error_msg is not None:
         report_components['issue-report'] = issue_error_msg
-
-    #utils.debugging('pkg_reports.ArticlesPackage')
-    articles_pkg = pkg_reports.ArticlesPackage(pkg_articles)
 
     #utils.debugging('pkg_reports.ArticlesPkgReport')
     articles_pkg_reports = pkg_reports.ArticlesPkgReport(articles_pkg)
@@ -342,78 +327,50 @@ def convert_package(src_path):
         issue_files = get_issue_files(issue_models, pkg_path)
         acron_issue_label = issue_models.issue.acron + ' ' + issue_models.issue.issue_label
 
-        common, individual, section_codes = journal_and_issue_validations(articles_pkg, issue_models)
+        articles_pkg_reports.issue_models = issue_models
+        articles_pkg.compile_pkg_metadata(True)
 
         previous_registered_articles = get_registered_articles(issue_files)
 
-        complete_issue_items, xml_doc_actions, unmatched_orders = get_complete_issue_items(issue_files, pkg_path, previous_registered_articles, pkg_articles)
+        base_source_path = issue_files.base_source_path if converter_env.skip_identical_xml else None
+        articles_pkg.join_registered_articles(base_source_path, pkg_path, previous_registered_articles)
 
         before_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - before conversion'))
-        before_conversion_report += display_status_before_xc(previous_registered_articles, pkg_articles, xml_doc_actions)
+        before_conversion_report += display_status_before_xc(previous_registered_articles, pkg_articles, articles_pkg.xml_doc_actions)
 
-        _unmatched_orders_report = unmatched_orders_report(unmatched_orders)
-        unmatched_orders_f, unmatched_orders_e, unmatched_orders_w = html_reports.statistics_numbers(_unmatched_orders_report)
+        articles_pkg_reports.evaluate(validate_order=True)
 
-        fatal_errors, xc_toc_report = complete_issue_items_report(complete_issue_items)
-
-        xc_toc_report = ''.join([item for item in [_unmatched_orders_report, xc_toc_report] if item is not None])
-
-        if xc_toc_report is not None:
-            #utils.debugging('xc_toc_report is not None.')
+        xc_toc_report = articles_pkg_reports.toc_report
+        if len(xc_toc_report) > 0:
             report_components['issue-report'] = xc_toc_report
-        if fatal_errors == 0:
-            #utils.debugging('toc_f == 0')
-            selected_articles = {}
-            for xml_name, article in pkg_articles.items():
-                utils.display_message(xml_name)
-                #utils.debugging(xml_doc_actions[xml_name])
-                if xml_doc_actions[xml_name] in ['add', 'update']:
-                    selected_articles[xml_name] = article
 
-        if selected_articles is None:
-            #utils.debugging('selected_articles is None')
-            #utils.debugging('xc_conclusion_message')
-            xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, selected_articles, conversion_status, pkg_quality_fatal_errors)
+        if articles_pkg_reports.blocking_stats[0] > 0:
+            xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, None, conversion_status, pkg_quality_fatal_errors)
+        elif len(pkg_articles.articles_to_process) == 0:
+            xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, {}, conversion_status, pkg_quality_fatal_errors)
+        else:
+            articles_pkg.validate_articles_pkg_xml_and_data(converter_env.db_article.org_manager, doc_file_info_items, dtd_files, validate_order, display_title)
 
-        elif len(selected_articles) > 0:
-            #utils.debugging('len(selected_articles) > 0')
+            pkg_quality_fatal_errors = articles_pkg.pkg_fatal_errors
 
-            #utils.debugging('pkg_reports.ArticlesPackage')
-            selected_articles_pkg = pkg_reports.ArticlesPackage(selected_articles)
-
-            #utils.debugging('pkg_reports.ArticlesPkgReport')
-            selected_articles_pkg_reports = pkg_reports.ArticlesPkgReport(selected_articles_pkg)
-            #utils.debugging('validate_articles_pkg_xml_and_data')
-            selected_articles_pkg.validate_articles_pkg_xml_and_data(converter_env.db_article.org_manager, doc_file_info_items, dtd_files, validate_order, display_title, xml_doc_actions)
-            pkg_quality_fatal_errors = selected_articles_pkg.pkg_fatal_errors
-
-            #utils.debugging('convert_articles')
             scilista_item, conversion_stats_and_reports, conversion_status, aop_status = convert_articles(issue_files, issue_models, pkg_articles, selected_articles_pkg.pkg_stats, xml_doc_actions, previous_registered_articles, unmatched_orders)
 
-            #utils.debugging('detail_report')
             validations_report = selected_articles_pkg_reports.detail_report(conversion_stats_and_reports)
             selected_articles_pkg_reports.delete_pkg_xml_and_data_reports()
 
-            #utils.debugging('xc_conclusion_message')
             xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, selected_articles, conversion_status, pkg_quality_fatal_errors)
 
-            #utils.debugging('after_conversion_report')
             after_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - after conversion'))
-            #utils.debugging('after_conversion_report')
+
             after_conversion_report += display_status_after_xc(previous_registered_articles, get_registered_articles(issue_files), pkg_articles, xml_doc_actions, unmatched_orders)
 
-            #utils.debugging('xc_results_report')
             xc_results_report = html_reports.tag('h3', _('Conversion results')) + report_status(conversion_status, 'conversion')
 
-            #utils.debugging('aop_results_report')
             aop_results_report = _('this journal has no aop.')
             if not aop_status is None:
                 aop_results_report = report_status(aop_status, 'aop-block')
             aop_results_report = html_reports.tag('h3', _('AOP status')) + aop_results_report
 
-            #sheets = pkg_reports.get_lists_report_text(articles_sheets)
-
-            #utils.debugging('save_reports')
             issue_files.save_reports(report_path)
             issue_files.save_source_files(pkg_path)
             report_path = issue_files.base_reports_path
@@ -421,12 +378,7 @@ def convert_package(src_path):
 
             if scilista_item is not None:
                 issue_files.copy_files_to_local_web_app()
-        else:
-            #utils.debugging('else:')
-            #utils.debugging('xc_conclusion_msg')
-            xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, selected_articles, conversion_status, pkg_quality_fatal_errors)
 
-    #utils.debugging('-report_location-')
     report_location = report_path + '/xml_converter.html'
 
     report_components['xml-files'] = pkg_reports.xml_list(pkg_path, xml_filenames)
@@ -439,28 +391,21 @@ def convert_package(src_path):
     if validations_report is not None:
         report_components['detail-report'] = validations_report
 
-    #utils.debugging('-format_complete_report-')
     f, e, w, content = pkg_reports.format_complete_report(report_components)
     if old_report_path in content:
         content = content.replace(old_report_path, report_path)
 
-    #utils.debugging('-format_email_subject-')
     email_subject = format_email_subject(scilista_item, selected_articles, pkg_quality_fatal_errors, f, e, w)
 
-    #utils.debugging(type(content))
-    #utils.debugging('-save_report-')
     content = pkg_reports.label_errors(content)
     pkg_reports.save_report(report_location, [_('XML Conversion (XML to Database)'), acron_issue_label], content)
 
-    #utils.debugging('-saved report-')
     if not converter_env.is_windows:
-        #utils.debugging('-format_reports_for_web-')
         format_reports_for_web(report_path, pkg_path, acron_issue_label.replace(' ', '/'))
         fs_utils.delete_file_or_folder(src_path)
 
     if old_result_path != result_path:
         fs_utils.delete_file_or_folder(old_result_path)
-    #utils.debugging('-fim-')
     return (report_location, scilista_item, acron_issue_label, email_subject)
 
 
