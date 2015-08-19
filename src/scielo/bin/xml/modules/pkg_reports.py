@@ -301,48 +301,42 @@ class ArticlesPackage(object):
                     else:
                         self.compiled_pkg_metadata[label] = article_utils.add_new_value_to_index(self.compiled_pkg_metadata[label], art_data[label], xml_name)
 
-    def validate_articles_pkg_xml_and_data(self, org_manager, doc_files_info_items, dtd_files, validate_order, display_all):
+    def validate_pkg_xml(self, org_manager, doc_files_info_items, dtd_files, validate_order, display_all):
         #FIXME
-        self.pkg_stats = {}
-        self.pkg_reports = {}
-        self.pkg_fatal_errors = 0
+        self.xml_validations_stats = {}
+        self.xml_validations_reports = {}
+        self.xml_fatal_errors = 0
 
         for xml_name, doc_files_info in doc_files_info_items.items():
             for f in [doc_files_info.dtd_report_filename, doc_files_info.style_report_filename, doc_files_info.data_report_filename, doc_files_info.pmc_style_report_filename]:
                 if os.path.isfile(f):
                     os.unlink(f)
 
-        n = '/' + str(len(self.articles))
-        index = 0
-
         utils.display_message('\n')
         utils.display_message(_('Validating XML files'))
-        #utils.debugging('Validating package: inicio')
-        for xml_name in self.xml_name_sorted_by_order:
-            doc = self.articles[xml_name]
-            doc_files_info = doc_files_info_items[xml_name]
 
-            new_name = doc_files_info.new_name
+        if self.articles_to_process is not None:
+            n = '/' + str(len(self.articles_to_process))
+            index = 0
 
-            index += 1
-            item_label = str(index) + n + ': ' + new_name
-            utils.display_message(item_label)
+            for xml_name in self.articles_to_process:
+                doc = self.articles[xml_name]
+                doc_files_info = doc_files_info_items[xml_name]
 
-            skip = False
-            if len(self.xml_doc_actions) > 0:
-                skip = (self.xml_doc_actions.get(xml_name) == 'skip-update')
+                new_name = doc_files_info.new_name
 
-            if skip:
-                utils.display_message(' -- skipped')
-            else:
+                index += 1
+                item_label = str(index) + n + ': ' + new_name
+                utils.display_message(item_label)
+
                 xml_filename = doc_files_info.new_xml_filename
 
                 xml_f, xml_e, xml_w = validate_article_xml(xml_filename, dtd_files, doc_files_info.dtd_report_filename, doc_files_info.style_report_filename, doc_files_info.ctrl_filename, doc_files_info.err_filename, display_all is False)
                 data_f, data_e, data_w = article_reports.validate_article_data(org_manager, doc, new_name, os.path.dirname(xml_filename), validate_order, display_all, doc_files_info.data_report_filename)
 
-                self.pkg_fatal_errors += xml_f + data_f
-                self.pkg_stats[xml_name] = ((xml_f, xml_e, xml_w), (data_f, data_e, data_w))
-                self.pkg_reports[xml_name] = (doc_files_info.err_filename, doc_files_info.style_report_filename, doc_files_info.data_report_filename)
+                self.xml_fatal_errors += xml_f + data_f
+                self.xml_validations_stats[xml_name] = ((xml_f, xml_e, xml_w), (data_f, data_e, data_w))
+                self.xml_validations_reports[xml_name] = (doc_files_info.err_filename, doc_files_info.style_report_filename, doc_files_info.data_report_filename)
 
     def join_registered_articles(base_source_path, pkg_path, registered_articles):
         #actions = {'add': [], 'skip-update': [], 'update': [], '-': [], 'changed order': []}
@@ -368,6 +362,7 @@ class ArticlesPackage(object):
                 self.xml_doc_actions[name] = '-'
                 self.articles[name] = registered_articles[name]
 
+    @property
     def articles_to_process(self):
         if self._articles_to_process is None:
             self._articles_to_process = []
@@ -575,7 +570,7 @@ class ArticlesPkgReport(object):
 
         validations_text = ''
 
-        #utils.debugging(self.package.pkg_stats)
+        #utils.debugging(self.package.xml_validations_stats)
         #utils.debugging(self.package.xml_name_sorted_by_order)
         utils.display_message('\n')
         utils.display_message(_('Generating Detail report'))
@@ -584,9 +579,9 @@ class ArticlesPkgReport(object):
             item_label = str(index) + n + ': ' + new_name
             utils.display_message(item_label)
 
-            xml_f, xml_e, xml_w = self.package.pkg_stats[new_name][0]
-            data_f, data_e, data_w = self.package.pkg_stats[new_name][1]
-            rep1, rep2, rep3 = self.package.pkg_reports[new_name]
+            xml_f, xml_e, xml_w = self.package.xml_validations_stats[new_name][0]
+            data_f, data_e, data_w = self.package.xml_validations_stats[new_name][1]
+            rep1, rep2, rep3 = self.package.xml_validations_reports[new_name]
 
             a_name = 'view-reports-' + new_name
             links = '<a name="' + a_name + '"/>'
@@ -640,7 +635,7 @@ class ArticlesPkgReport(object):
 
     def delete_pkg_xml_and_data_reports(self):
         for new_name in self.package.xml_name_sorted_by_order:
-            for f in list(self.package.pkg_reports[new_name]):
+            for f in list(self.package.xml_validations_reports[new_name]):
                 if os.path.isfile(f):
                     #utils.debugging('delete ' + f)
                     try:

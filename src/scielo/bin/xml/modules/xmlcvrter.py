@@ -299,25 +299,16 @@ def convert_package(src_path):
     xml_filenames, pkg_articles, doc_file_info_items = normalized_package(src_path, report_path, wrk_path, pkg_path, converter_env.version)
 
     articles_pkg = pkg_reports.ArticlesPackage(pkg_articles)
+    articles_pkg_reports = pkg_reports.ArticlesPkgReport(articles_pkg)
+    report_components['pkg_overview'] = articles_pkg_reports.overview_report()
+    report_components['pkg_overview'] += articles_pkg_reports.references_overview_report()
+    report_components['references'] = articles_pkg_reports.sources_overview_report()
 
     journal_title, issue_label, p_issn, e_issn = articles_pkg.issue_identification()
-
     issue_models, issue_error_msg = get_issue_models(journal_title, issue_label, p_issn, e_issn)
     report_components['issue-report'] = ''
     if issue_error_msg is not None:
         report_components['issue-report'] = issue_error_msg
-
-    #utils.debugging('pkg_reports.ArticlesPkgReport')
-    articles_pkg_reports = pkg_reports.ArticlesPkgReport(articles_pkg)
-
-    #utils.debugging('articles_pkg_reports.overview_report')
-    report_components['pkg_overview'] = articles_pkg_reports.overview_report()
-
-    #utils.debugging('articles_pkg_reports.references_overview_report')
-    report_components['pkg_overview'] += articles_pkg_reports.references_overview_report()
-
-    #utils.debugging('articles_pkg_reports.sources_overview_report')
-    report_components['references'] = articles_pkg_reports.sources_overview_report()
 
     selected_articles = None
 
@@ -327,42 +318,39 @@ def convert_package(src_path):
         issue_files = get_issue_files(issue_models, pkg_path)
         acron_issue_label = issue_models.issue.acron + ' ' + issue_models.issue.issue_label
 
-        articles_pkg_reports.issue_models = issue_models
-        articles_pkg.compile_pkg_metadata(True)
-
         previous_registered_articles = get_registered_articles(issue_files)
 
+        articles_pkg_reports.issue_models = issue_models
         base_source_path = issue_files.base_source_path if converter_env.skip_identical_xml else None
         articles_pkg.join_registered_articles(base_source_path, pkg_path, previous_registered_articles)
+        articles_pkg.compile_pkg_metadata(True)
 
         before_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - before conversion'))
         before_conversion_report += display_status_before_xc(previous_registered_articles, pkg_articles, articles_pkg.xml_doc_actions)
 
-        articles_pkg_reports.evaluate(validate_order=True)
+        if len(articles_pkg_reports.toc_report) > 0:
+            report_components['issue-report'] = articles_pkg_reports.toc_report
 
-        xc_toc_report = articles_pkg_reports.toc_report
-        if len(xc_toc_report) > 0:
-            report_components['issue-report'] = xc_toc_report
-
-        if articles_pkg_reports.blocking_stats[0] > 0:
+        if articles_pkg.blocking_stats[0] > 0:
             xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, None, conversion_status, pkg_quality_fatal_errors)
         elif len(pkg_articles.articles_to_process) == 0:
             xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, {}, conversion_status, pkg_quality_fatal_errors)
         else:
-            articles_pkg.validate_articles_pkg_xml_and_data(converter_env.db_article.org_manager, doc_file_info_items, dtd_files, validate_order, display_title)
+            articles_pkg.validate_pkg_xml(converter_env.db_article.org_manager, doc_file_info_items, dtd_files, validate_order, display_title)
 
-            pkg_quality_fatal_errors = articles_pkg.pkg_fatal_errors
+            pkg_quality_fatal_errors = articles_pkg.xml_fatal_errors
 
-            scilista_item, conversion_stats_and_reports, conversion_status, aop_status = convert_articles(issue_files, issue_models, pkg_articles, selected_articles_pkg.pkg_stats, xml_doc_actions, previous_registered_articles, unmatched_orders)
+            selected_articles = {xml_name: pkg_articles.get(xml_name) for xml_name in articles_pkg.articles_to_process}
 
-            validations_report = selected_articles_pkg_reports.detail_report(conversion_stats_and_reports)
-            selected_articles_pkg_reports.delete_pkg_xml_and_data_reports()
+            scilista_item, conversion_stats_and_reports, conversion_status, aop_status = convert_articles(issue_files, issue_models, pkg_articles, articles_pkg.xml_validations_stats, articles_pkg.articles_to_process, previous_registered_articles, articles_pkg.changed_orders)
 
+            validations_report = articles_pkg_reports.detail_report(conversion_stats_and_reports)
+            articles_pkg_reports.delete_pkg_xml_and_data_reports()
             xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, selected_articles, conversion_status, pkg_quality_fatal_errors)
 
             after_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - after conversion'))
 
-            after_conversion_report += display_status_after_xc(previous_registered_articles, get_registered_articles(issue_files), pkg_articles, xml_doc_actions, unmatched_orders)
+            after_conversion_report += display_status_after_xc(previous_registered_articles, get_registered_articles(issue_files), pkg_articles, articles_pkg.xml_doc_actions, articles_pkg.changed_orders)
 
             xc_results_report = html_reports.tag('h3', _('Conversion results')) + report_status(conversion_status, 'conversion')
 
@@ -477,7 +465,7 @@ def is_conversion_allowed(pub_year, ref_count, xml_f, xml_e, xml_w, data_f, data
     return doit
 
 
-def convert_articles(issue_files, issue_models, pkg_articles, articles_stats, xml_doc_actions, registered_articles, unmatched_orders):
+def convert_articles(issue_files, issue_models, pkg_articles, articles_stats, articles_to_process, registered_articles, unmatched_orders):
     index = 0
     conversion_stats_and_reports = {}
     conversion_status = {}
@@ -506,8 +494,8 @@ def convert_articles(issue_files, issue_models, pkg_articles, articles_stats, xm
 
         msg = ''
 
-        if not xml_doc_actions[xml_name] in ['add', 'update']:
-            msg += html_reports.tag('p', 'skipped')
+        if not xml_name in articles_to_process:
+            msg += html_reports.tag('p', _('skipped'))
             conversion_status['skipped'].append(xml_name)
         else:
             xml_stats, data_stats = articles_stats[xml_name]
