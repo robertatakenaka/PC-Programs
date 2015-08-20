@@ -20,12 +20,11 @@ class ArticlesPackage(object):
 
     def __init__(self, articles):
         self.articles = articles
-        #self.compile_references()
+        self._reftype_and_sources = None
         self._xml_name_sorted_by_order = None
         self._indexed_by_order = None
-        self.issue_models = issue_models
-        self.xml_doc_actions = {}
-        self.changed_orders = {}
+        self.xml_doc_actions = None
+        self.changed_orders = None
         self._articles_to_process = None
         self.compiled_pkg_metadata = None
         self.missing_required_data = None
@@ -130,10 +129,16 @@ class ArticlesPackage(object):
                     evaluation[_('incomplete affiliations')] += 1
         return evaluation
 
+    @property
+    def reftype_and_sources(self):
+        if self._reftype_and_sources is None:
+            self.compile_references()
+        return self._reftype_and_sources
+
     def compile_references(self):
         self.sources_and_reftypes = {}
         self.sources_at = {}
-        self.reftype_and_sources = {}
+        self._reftype_and_sources = {}
         self.missing_source = []
         self.missing_year = []
         self.unusual_sources = []
@@ -149,11 +154,11 @@ class ArticlesPackage(object):
                     self.sources_at[ref.source] = []
                 if not xml_name in self.sources_at[ref.source]:
                     self.sources_at[ref.source].append(ref.id + ' - ' + xml_name)
-                if not ref.publication_type in self.reftype_and_sources.keys():
-                    self.reftype_and_sources[ref.publication_type] = {}
-                if not ref.source in self.reftype_and_sources[ref.publication_type].keys():
-                    self.reftype_and_sources[ref.publication_type][ref.source] = 0
-                self.reftype_and_sources[ref.publication_type][ref.source] += 1
+                if not ref.publication_type in self._reftype_and_sources.keys():
+                    self._reftype_and_sources[ref.publication_type] = {}
+                if not ref.source in self._reftype_and_sources[ref.publication_type].keys():
+                    self._reftype_and_sources[ref.publication_type][ref.source] = 0
+                self._reftype_and_sources[ref.publication_type][ref.source] += 1
 
                 # year
                 if ref.publication_type in attributes.BIBLIOMETRICS_USE:
@@ -315,11 +320,13 @@ class ArticlesPackage(object):
         utils.display_message('\n')
         utils.display_message(_('Validating XML files'))
 
-        if self.articles_to_process is not None:
-            n = '/' + str(len(self.articles_to_process))
-            index = 0
+        n = '/' + str(len(self.articles))
+        index = 0
 
-            for xml_name in self.articles_to_process:
+        for xml_name in self.xml_name_sorted_by_order:
+
+            doit = True if self.articles_to_process is None else xml_name in self.articles_to_process
+            if doit:
                 doc = self.articles[xml_name]
                 doc_files_info = doc_files_info_items[xml_name]
 
@@ -338,7 +345,7 @@ class ArticlesPackage(object):
                 self.xml_validations_stats[xml_name] = ((xml_f, xml_e, xml_w), (data_f, data_e, data_w))
                 self.xml_validations_reports[xml_name] = (doc_files_info.err_filename, doc_files_info.style_report_filename, doc_files_info.data_report_filename)
 
-    def join_registered_articles(base_source_path, pkg_path, registered_articles):
+    def join_registered_articles(self, base_source_path, pkg_path, registered_articles):
         #actions = {'add': [], 'skip-update': [], 'update': [], '-': [], 'changed order': []}
         self.xml_doc_actions = {}
         self.changed_orders = {}
@@ -365,16 +372,19 @@ class ArticlesPackage(object):
     @property
     def articles_to_process(self):
         if self._articles_to_process is None:
-            self._articles_to_process = []
-            for xml_name, action in self.xml_doc_actions.items():
-                if action in ['add', 'update']:
-                    self._articles_to_process.append(xml_name)
+            if self.xml_doc_actions is None:
+                self._articles_to_process = self.articles.keys()
+            else:
+                self._articles_to_process = []
+                for xml_name, action in self.xml_doc_actions.items():
+                    if action in ['add', 'update']:
+                        self._articles_to_process.append(xml_name)
         return self._articles_to_process
 
 
 class ArticlesPkgReport(object):
 
-    def __init__(self, package, issue_models):
+    def __init__(self, package):
         self.package = package
         self._invalid_xml_name_items_report = None
         self._package_journal_meta_report = None
@@ -388,16 +398,19 @@ class ArticlesPkgReport(object):
         self._blocking_stats = None
         self._unique_values_stats = None
 
-        self._registered_issue_data_report = None
-        self._registered_issue_data_stats = None
-        self._article_issue_data_report = None
-        self._article_issue_data_stats = None
+        self._issue_consistency_report = None
+        self._issue_consistency_stats = None
 
+        self._article_consistency = None
+        self._article_consistency_report = None
+        self._article_consistency_stats = None
+
+        self._article_section_stats = None
         self._article_section_report = None
-        self._article_section_codes = None
+        self._article_section = None
 
         self._changed_orders_report = None
-        self.issue_models = issue_models
+        self.issue_models = None
 
     @property
     def toc_report(self):
@@ -418,7 +431,7 @@ class ArticlesPkgReport(object):
             reports.append(self.invalid_xml_name_items_report)
             reports.append(self.missing_required_data_report)
             reports.append(self.required_unique_values_report)
-            reports.append(self.registered_issue_data_report)
+            reports.append(self.issue_consistency_report)
             self._blocking_report = ''.join([item for item in reports if item is not None])
         return self._blocking_report
 
@@ -444,8 +457,9 @@ class ArticlesPkgReport(object):
     def changed_orders_report(self):
         if self._changed_orders_report is None:
             self._changed_orders_report = ''
-
-            if len(self.package.changed_orders) > 0:
+            if self.package.changed_orders is None:
+                self._changed_orders_report = ''
+            elif len(self.package.changed_orders) > 0:
                 self._changed_orders_report = ''.join([html_reports.p_message('WARNING: ' + _('orders') + ' ' + _('of') + ' ' + name + ': ' + ' -> '.join(list(order))) for name, order in self.package.changed_orders.items()])
         return self._changed_orders_report
 
@@ -472,7 +486,7 @@ class ArticlesPkgReport(object):
     def package_journal_meta_report(self):
         if self._package_journal_meta_report is None:
             self._package_journal_meta_report = ''
-            for label in self.package.UNIQUE_VALUE_LABELS:
+            for label in self.package.SAME_VALUE_LABELS:
                 if len(self.package.compiled_pkg_metadata[label]) > 1:
                     _m = _('same value for %s is required for all the documents in the package') % (label)
                     part = html_reports.p_message('FATAL ERROR: ' + _m + '.')
@@ -486,11 +500,15 @@ class ArticlesPkgReport(object):
         if self._required_unique_values_report is None:
             self._required_unique_values_report = ''
             for label in self.package.UNIQUE_VALUE_LABELS:
-                if len(self.package.compiled_pkg_metadata[label].keys()) > 1:
+                multiples = {}
+                for value, xml_names in self.package.compiled_pkg_metadata[label].items():
+                    if len(xml_names) > 1:
+                        multiples[value] = xml_names
+                if len(multiples) > 0:
                     _m = _(': unique value of %s is required for all the documents in the package') % (label)
                     part = html_reports.p_message(self.package.error_level_for_unique[label] + _m)
-                    for value, xml_names in self.package.compiled_pkg_metadata[label].items():
-                        part += html_reports.format_list(_('found') + ' ' + label + '="' + value + '" ' + _('in') + ':', 'ul', xml_files, 'issue-problem')
+                    for value, xml_names in multiples.items():
+                        part += html_reports.format_list(_('found') + ' ' + label + '="' + value + '" ' + _('in') + ':', 'ul', xml_names, 'issue-problem')
                     self._required_unique_values_report += part
         return self._required_unique_values_report
 
@@ -498,7 +516,7 @@ class ArticlesPkgReport(object):
     def header(self):
         if self._header is None:
             issue_common_data = ''
-            for label in self.UNIQUE_VALUE_LABELS:
+            for label in self.SAME_VALUE_LABELS:
                 items = self.package.compiled_pkg_metadata[label].keys()
                 if len(items) == 1:
                     issue_common_data += html_reports.display_labeled_value(label, items[0])
@@ -572,6 +590,7 @@ class ArticlesPkgReport(object):
 
         #utils.debugging(self.package.xml_validations_stats)
         #utils.debugging(self.package.xml_name_sorted_by_order)
+
         utils.display_message('\n')
         utils.display_message(_('Generating Detail report'))
         for new_name in self.package.xml_name_sorted_by_order:
@@ -657,7 +676,7 @@ class ArticlesPkgReport(object):
                 h += html_reports.sheet(labels, items, 'dbstatus')
         return h
 
-    def article_issue_data(self, article):
+    def check_consistency(self, article):
         r = []
         if self.issue_models is not None:
             if article.tree is not None:
@@ -716,70 +735,81 @@ class ArticlesPkgReport(object):
         msg = ''.join([html_reports.p_message(item) for item in msg])
         return (section_code, msg)
 
-    def generate_article_issue_data_report(self):
-        index = 0
-        n = '/' + str(len(self.package.articles))
-        self._article_issue_data_report = {}
-        utils.display_message('journal/issue validations ...')
+    def article_consistency(self, name):
+        if self._article_consistency is None:
+            self._article_consistency = {}
+        r = self._article_consistency.get(name)
+        if r is None:
+            self._article_consistency[name] = self.check_consistency(self.package.articles.get(name))
+            r = self._article_consistency.get(name)
+            #lembrete: html_reports.validations_sheet(validations)
+        return r
 
-        for xml_name in self.xml_name_sorted_by_order:
-            article = self.packages.articles[xml_name]
-            index += 1
-            item_label = str(index) + n + ' - ' + xml_name
-            utils.display_message(item_label)
-            validations = self.article_issue_data(article)
-            if len(validations) > 0:
-                self._article_issue_data_report[xml_name] = html_reports.validations_sheet(validations)
+    def article_consistency_report(self, name):
+        if self._article_consistency_report is None:
+            self._article_consistency_report = {}
+        r = self._article_consistency_report.get(name)
+        if r is None:
+            report = ''
+            for label, status, msg in self.article_consistency(name):
+                report += html_reports.p_message(status + ': ' + label + ': ' + msg)
+            self._article_consistency_report[name] = report
+            r = self._article_consistency_report.get(name)
+        return r
 
-    def article_issue_data_report(self, name):
-        if self._article_issue_data_report is None:
-            self.generate_article_issue_data_report()
-        return self._article_issue_data_report.get(name)
+    def article_consistency_stats(self, name):
+        if self._article_consistency_stats is None:
+            self._article_consistency_stats = {}
+        r = self._article_consistency_stats.get(name)
+        if r is None:
+            self._article_consistency_stats[name] = html_reports.statistics_numbers(self.article_consistency_report(name))
+            r = self._article_consistency_stats.get(name)
+        return r
 
-    def article_issue_data_stats(self, name):
-        if self._article_issue_data_stats is None:
-            self._article_issue_data_stats[name] = html_reports.statistics_numbers(self.article_issue_data_report(name))
-        if self._article_issue_data_stats.get(name) is None:
-            self._article_issue_data_stats[name] = html_reports.statistics_numbers(self.article_issue_data_report(name))
-        return self._article_issue_data_stats.get(name)
+    def article_section(self, name):
+        if self._article_section is None:
+            self._article_section = {}
+            self._article_section_report = {}
 
-    @property
-    def registered_issue_data_report(self):
-        if self._registered_issue_data_report is None:
-            self._registered_issue_data_report = ''
-            for xml_name, report in self._article_issue_data_report.items():
-                self._registered_issue_data_report += html_reports.tag('h3', xml_name) + report + self._article_section_report(xml_name)
-        return self._registered_issue_data_report
-
-    @property
-    def registered_issue_data_stats(self):
-        if self._registered_issue_data_stats is None:
-            self._registered_issue_data_stats = html_reports.statistics_numbers(self.registered_issue_data_report)
-        return self._registered_issue_data_stats
-
-    def article_section_codes(self, name):
-        if self._article_section_codes is None:
-            self.article_section_report(name)
-        return self._article_section_codes.get(name)
-
-    def generate_article_section_report(self):
-        self._article_section_report = {}
-        self._article_section_codes = {}
-        for xml_name in self.xml_name_sorted_by_order:
-            article = self.packages.articles[xml_name]
-            self._article_section_codes[xml_name], self._article_section_report[xml_name] = self.validate_article_section(article)
+        r = self._article_section.get(name)
+        if r is None:
+            code, report = self.validate_article_section(self.package.articles.get(name))
+            self._article_section[name] = code
+            self._article_section_report[name] = report
+            r = self._article_section.get(name)
+        return r
 
     def article_section_report(self, name):
         if self._article_section_report is None:
-            self.generate_article_section_report()
-        return self._article_section_report.get(name)
+            self._article_section_report = {}
+            self._article_section = {}
+        r = self._article_section_report.get(name)
+        if r is None:
+            code, report = self.validate_article_section(self.package.articles.get(name))
+            self._article_section[name] = code
+            self._article_section_report[name] = report
+            r = self._article_section_report.get(name)
+        return r
 
     def article_section_stats(self, name):
         if self._article_section_stats is None:
+            self._article_section_stats = {}
+        r = self._article_section_stats.get(name)
+        if r is None:
             self._article_section_stats[name] = html_reports.statistics_numbers(self.article_section_report(name))
-        if self._article_section_stats.get(name) is None:
-            self._article_section_stats[name] = html_reports.statistics_numbers(self.article_section_report(name))
-        return self._article_section_stats.get(name)
+            r = self._article_section_stats.get(name)
+        return r
+
+    @property
+    def issue_consistency_report(self):
+        if self._issue_consistency_report is None:
+            self._issue_consistency_report = ''
+            for xml_name in self.package.xml_name_sorted_by_order:
+                r = self.article_consistency_report(xml_name) + self.article_section_report(xml_name)
+                f, e, w = html_reports.statistics_numbers(r)
+                if f + e + w > 0:
+                    self._issue_consistency_report += html_reports.tag('h3', xml_name) + r
+        return self._issue_consistency_report
 
 
 def register_log(text):
@@ -1006,3 +1036,23 @@ def compare_values(label1, value1, label2, value2):
         else:
             result = 'FATAL ERROR'
     return (result, msg)
+
+
+def validate_article_type_and_section(article_type, article_section):
+    #DOCTOPIC_IN_USE
+    msg = ''
+    _sectitle = attributes.normalize_section_title(article_section)
+    _article_type = attributes.normalize_section_title(article_type)
+    if not _article_type in _sectitle:
+        # article_type vs sectitle
+        rate = utils.how_similar(_sectitle, _article_type.replace('-', ' '))
+        # attributes.DOCTOPIC_IN_USE vs sectitle
+        rate2, similars = utils.most_similar(utils.similarity(attributes.DOCTOPIC_IN_USE, _sectitle))
+
+        if rate < 0.6 and rate2 < 0.6:
+            msg = 'WARNING: ' + _('Check if ') + article_type + _(' is a valid value for') + ' @article-type. <!-- ' + _article_type + ' ' + _sectitle + ' ' + str(rate) + ' ' + str(rate2) + ' -->'
+        else:
+            if rate2 > rate:
+                if not article_type in similars:
+                    msg = 'ERROR: ' + _('Check @article-type. Maybe it should be ') + _(' or ').join(similars) + ' ' + _('instead of') + ' ' + article_type + '.'
+    return msg

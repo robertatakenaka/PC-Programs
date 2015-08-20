@@ -898,8 +898,7 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
     else:
         articles, doc_files_info_items = make_package(xml_files, report_path, wrk_path, scielo_pkg_path, version, acron)
 
-        articles_pkg = pkg_reports.ArticlesPackage(articles)
-        articles_pkg_reports = pkg_reports.ArticlesPkgReport(articles_pkg)
+        articles_pkg_reports = pkg_reports.ArticlesPkgReport(pkg_reports.ArticlesPackage(articles))
 
         report_components['xml-files'] = pkg_reports.xml_list(scielo_pkg_path)
 
@@ -909,7 +908,7 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
         report_components['references'] = articles_pkg_reports.sources_overview_report()
 
         if not from_markup:
-            articles_pkg_reports.evaluate(from_converter)
+            articles_pkg_reports.package.compile_pkg_metadata(from_converter)
 
             toc_f, toc_e, toc_w = articles_pkg_reports.toc_report_stats
             report_components['detail-report'] = articles_pkg_reports.toc_report
@@ -919,7 +918,7 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
             org_manager.load()
 
             #fatal_errors, articles_stats, articles_reports = pkg_reports.validate_pkg_items(org_manager, articles, doc_files_info_items, scielo_dtd_files, from_converter, from_markup)
-            articles_pkg.validate_articles_pkg_xml_and_data(org_manager, doc_files_info_items, scielo_dtd_files, from_converter, from_markup)
+            articles_pkg_reports.package.validate_pkg_xml(org_manager, doc_files_info_items, scielo_dtd_files, from_converter, from_markup)
 
             if not from_markup:
                 report_components['detail-report'] = articles_pkg_reports.detail_report()
@@ -1039,30 +1038,6 @@ def get_pkg_items(xml_filenames, report_path):
         doc_files_info.new_xml_path = os.path.dirname(xml_filename)
         r.append((get_article(doc_files_info.new_xml_filename), doc_files_info))
     return r
-
-
-def package_journal_and_issue_data(articles):
-    issue_label = []
-    e_issn = []
-    print_issn = []
-    journal_title = None
-    for doc in articles.values():
-        if doc.tree is not None:
-            if journal_title is None:
-                journal_title = doc.journal_title
-            issue_label.append(doc.issue_label)
-            if doc.e_issn is not None:
-                e_issn.append(doc.e_issn)
-            if doc.print_issn is not None:
-                print_issn.append(doc.print_issn)
-    issue_label = list(set(issue_label))
-    e_issn = list(set(e_issn))
-    print_issn = list(set(print_issn))
-
-    issue_label = issue_label[0] if len(issue_label) == 1 else None
-    e_issn = e_issn[0] if len(e_issn) > 0 else None
-    print_issn = print_issn[0] if len(print_issn) > 0 else None
-    return (journal_title, issue_label, e_issn, print_issn)
 
 
 def make_packages(path, acron, version='1.0'):

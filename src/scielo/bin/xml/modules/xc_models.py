@@ -765,10 +765,6 @@ class ArticleDAO(object):
             content = content.replace('<bold>', '<strong>')
             content = content.replace('</bold>', '</strong>')
         elif '!v706!c' in content or '!v706!h' in content:
-            content = content.replace('<italic>', '')
-            content = content.replace('</italic>', '')
-            content = content.replace('<bold>', '')
-            content = content.replace('</bold>', '')
             content = xml_utils.remove_tags(content)
         return content
 

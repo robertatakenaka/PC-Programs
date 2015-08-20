@@ -347,38 +347,6 @@ class ArticleValidationReport(object):
                 rows += self.validations_sheet(ref_result)
         return rows
 
-    def validate_article_section(self, issue_models, article):
-        msg = []
-        if article.tree is not None:
-            # section
-            section_msg = []
-            section_code, matched_rate, fixed_sectitle = issue_models.most_similar_section_code(article.toc_section)
-            if matched_rate != 1:
-                if not article.is_ahead:
-                    section_msg.append(_('Registered sections') + ':\n' + '; '.join(issue_models.section_titles))
-                    if section_code is None:
-                        section_msg.append('ERROR: ' + article.toc_section + _(' is not a registered section.'))
-                    else:
-                        section_msg.append('WARNING: ' + _('section replaced: "') + fixed_sectitle + '" (' + _('instead of') + ' "' + article.toc_section + '")')
-
-            # @article-type
-            if fixed_sectitle is not None:
-                _sectitle = fixed_sectitle
-            else:
-                _sectitle = article.toc_section
-            article_type_msg = validate_article_type_and_section(article.article_type, _sectitle)
-            if len(article_type_msg) > 0 or len(section_msg) > 0:
-                msg.append(html_reports.tag('h5', 'section'))
-                msg.append(article.toc_section)
-                for m in section_msg:
-                    msg.append(m)
-                msg.append(html_reports.tag('h5', 'article-type'))
-                msg.append(article.article_type)
-                if len(article_type_msg) > 0:
-                    msg.append(article_type_msg)
-
-        msg = ''.join([html_reports.p_message(item) for item in msg])
-        return (section_code, msg)
 
 class ArticleSheetData(object):
 
