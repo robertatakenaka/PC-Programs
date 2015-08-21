@@ -11,22 +11,23 @@ class XMLConverterConfiguration(object):
 
     def __init__(self, filename):
         self._data = {}
-        for item in open(filename, 'r').readlines():
-            s = item.strip()
-            if not isinstance(s, unicode):
-                if filename.endswith('scielo_paths.ini'):
-                    s = s.decode('iso-8859-1')
-                else:
-                    s = s.decode('utf-8')
-            if '=' in s:
-                if ',' in s and not '@' in s:
-                    s = s[0:s.rfind(',')]
-                key, value = s.split('=')
-                value = value.replace('\\', '/').strip()
-                if value == '':
-                    self._data[key] = None
-                else:
-                    self._data[key] = value
+        if os.path.isfile(filename):
+            for item in open(filename, 'r').readlines():
+                s = item.strip()
+                if not isinstance(s, unicode):
+                    if filename.endswith('scielo_paths.ini'):
+                        s = s.decode('iso-8859-1')
+                    else:
+                        s = s.decode('utf-8')
+                if '=' in s:
+                    if ',' in s and not '@' in s:
+                        s = s[0:s.rfind(',')]
+                    key, value = s.split('=')
+                    value = value.replace('\\', '/').strip()
+                    if value == '':
+                        self._data[key] = None
+                    else:
+                        self._data[key] = value
         self.is_windows = self._data.get('Serial Directory') is not None
 
     @property

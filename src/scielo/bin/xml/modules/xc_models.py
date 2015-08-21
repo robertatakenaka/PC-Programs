@@ -12,7 +12,7 @@ from article_utils import how_similar
 from article import Issue, PersonAuthor, Article
 from attributes import ROLE, DOCTOPIC, doctopic_label
 
-from dbm_isis import IDFile
+from dbm_isis import IDFile, ISISDB
 
 import institutions_service
 
@@ -689,54 +689,11 @@ class RegisteredAhead(object):
         return a
 
 
-class TitleDAO(object):
+class ArticleDBManager(object):
 
-    def __init__(self, dao, db_filename):
-        self.dao = dao
-        self.db_filename = db_filename
-
-    def expr(self, pissn, eissn, journal_title):
-        _expr = []
-        if pissn is not None:
-            _expr.append(pissn)
-        if eissn is not None:
-            _expr.append(eissn)
-        if journal_title is not None:
-            _expr.append("'" + journal_title + "'")
-            utils.display_message(journal_title)
-        return ' OR '.join(_expr) if len(_expr) > 0 else None
-
-    def search(self, pissn, eissn, journal_title):
-        expr = self.expr(pissn, eissn, journal_title)
-        return self.dao.get_records(self.db_filename, expr) if expr is not None else None
-
-
-class IssueDAO(object):
-
-    def __init__(self, dao, db_filename):
-        self.dao = dao
-        self.db_filename = db_filename
-
-    def expr(self, issue_id, pissn, eissn, acron=None):
-        _expr = []
-        if pissn is not None:
-            _expr.append(pissn + issue_id)
-        if eissn is not None:
-            _expr.append(eissn + issue_id)
-        if acron is not None:
-            _expr.append(acron)
-        return ' OR '.join(_expr) if len(_expr) > 0 else None
-
-    def search(self, issue_label, pissn, eissn):
-        expr = self.expr(issue_label, pissn, eissn)
-        return self.dao.get_records(self.db_filename, expr) if expr is not None else None
-
-
-class ArticleDAO(object):
-
-    def __init__(self, dao, org_manager):
+    def __init__(self, cisis, org_manager):
         self.org_manager = org_manager
-        self.dao = dao
+        self.cisis = cisis
 
     def create_id_file(self, i_record, article, article_files, creation_date=None):
         saved = False
@@ -754,7 +711,8 @@ class ArticleDAO(object):
                     print('Unable to delete ' + article_files.id_filename)
             found = os.path.isfile(article_files.id_filename)
 
-            self.dao.save_id(article_files.id_filename, article_records.records, self.content_formatter)
+            IDFile(article_files.id_filename, self.content_formatter).save(article_records.records)
+
             saved = os.path.isfile(article_files.id_filename)
         return (not found and saved)
 
@@ -770,19 +728,20 @@ class ArticleDAO(object):
 
     def finish_conversion(self, issue_record, issue_files):
         loaded = []
-        self.dao.save_records([issue_record], issue_files.base)
+        article_db = ISISDB(self.cisis, issue_files.base)
+        article_db.save_records([issue_record])
         for f in os.listdir(issue_files.id_path):
             if f == '00000.id':
                 os.unlink(issue_files.id_path + '/' + f)
             if f.endswith('.id') and f != '00000.id' and f != 'i.id':
-                self.dao.append_id_records(issue_files.id_path + '/' + f, issue_files.base)
+                article_db.append_id_records(issue_files.id_path + '/' + f)
                 loaded.append(f)
         return loaded
 
     def registered_items(self, issue_files):
         articles = {}
-
-        records = self.dao.get_records(issue_files.base)
+        article_db = ISISDB(self.cisis, issue_files.base)
+        records = article_db.search()
         i, registered_articles = IssueArticlesRecords(records).articles()
         print('REGISTERED')
         print(str(len(registered_articles)))
@@ -806,15 +765,15 @@ class ArticleDAO(object):
     def generate_windows_version(self, issue_files):
         if not os.path.isdir(issue_files.windows_base_path):
             os.makedirs(issue_files.windows_base_path)
-        self.dao.cisis.mst2iso(issue_files.base, issue_files.windows_base + '.iso')
-        self.dao.cisis.crunchmf(issue_files.base, issue_files.windows_base)
+        self.cisis.mst2iso(issue_files.base, issue_files.windows_base + '.iso')
+        self.cisis.crunchmf(issue_files.base, issue_files.windows_base)
 
 
 class AheadManager(object):
 
-    def __init__(self, dao, journal_files, i_ahead_records):
+    def __init__(self, cisis, journal_files, i_ahead_records):
         self.journal_files = journal_files
-        self.dao = dao
+        self.cisis = cisis
 
         self.still_ahead = {}
         self.ahead_to_delete = {}
@@ -840,8 +799,9 @@ class AheadManager(object):
                 os.makedirs(id_path)
             if not os.path.isfile(i_id_filename):
                 if year in i_ahead_records.keys():
-                    self.dao.save_id(i_id_filename, [i_ahead_records[year]])
-            records = self.dao.get_records(db_filename, expr=None)
+                    IDFile(i_id_filename).save([i_ahead_records[year]])
+            aop_db = ISISDB(self.cisis, db_filename)
+            records = aop_db.search()
             if len(records) > 0:
                 previous = ''
                 order = None
@@ -849,7 +809,7 @@ class AheadManager(object):
                 for rec in records:
                     if rec.get('706') == 'i':
                         if not os.path.isfile(id_path + '/i.id'):
-                            self.dao.save_id(id_path + '/i.id', [rec])
+                            IDFile(id_path + '/i.id').save([rec])
                     else:
                         current = rec.get('2')
                         if rec.get('706') == 'h':
@@ -858,14 +818,14 @@ class AheadManager(object):
                         if previous != current:
                             if order is not None and len(r) > 0:
                                 if not os.path.isfile(id_path + '/' + order + '.id'):
-                                    self.dao.save_id(id_path + '/' + order + '.id', r)
+                                    IDFile(id_path + '/' + order + '.id').save(r)
 
                                 r = []
                             previous = current
                         r.append(rec)
                 if order is not None and len(r) > 0:
                     if not os.path.isfile(id_path + '/' + order + '.id'):
-                        self.dao.save_id(id_path + '/' + order + '.id', r)
+                        IDFile(id_path + '/' + order + '.id').save(r)
 
     def load(self):
         for db_filename in self.journal_files.ahead_bases:
@@ -889,7 +849,7 @@ class AheadManager(object):
         return items
 
     def h_records(self, db_filename):
-        return self._select_h(self.dao.get_records(db_filename))
+        return self._select_h(ISISDB(self.cisis, db_filename).search())
 
     def _select_h(self, records):
         return [rec for rec in records if rec.get('706') == 'h']
@@ -998,7 +958,7 @@ class AheadManager(object):
         return (not os.path.isfile(ahead_id_filename), msg)
 
     def save_ex_ahead_record(self, ahead):
-        self.dao.append_records([ahead.record], self.journal_files.ahead_base('ex-' + ahead.ahead_db_name[0:4]))
+        ISISDB(self.cisis, self.journal_files.ahead_base('ex-' + ahead.ahead_db_name[0:4])).append_records([ahead.record])
 
     def manage_ex_ahead(self, ahead):
         done = False
@@ -1023,10 +983,11 @@ class AheadManager(object):
             id_path = self.journal_files.ahead_id_path(year)
             base = self.journal_files.ahead_base(year)
             if os.path.isfile(id_path + '/i.id'):
-                self.dao.save_id_records(id_path + '/i.id', base)
+                aop_db = ISISDB(self.cisis, base)
+                aop_db.save_id_records(id_path + '/i.id')
                 for f in os.listdir(id_path):
                     if f.endswith('.id') and f != '00000.id' and f != 'i.id':
-                        self.dao.append_id_records(id_path + '/' + f, base)
+                        aop_db.append_id_records(id_path + '/' + f)
                 updated.append(ahead_db_name)
         return updated
 

@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+from __init__ import _
 
 import email_service
 import xc_config
@@ -16,46 +17,33 @@ def get_mailer(config):
 
 def get_configuration(collection_acron):
     config = None
-    f = xc_config_filename(collection_acron)
-    errors = is_config_file(f)
+    f = configuration_filename(collection_acron)
+    errors = invalid_configuration_file_message(f)
     if len(errors) > 0:
         print('\n'.join(errors))
     else:
-        config = xc_read_configuration(f)
-
+        config = xc_config.XMLConverterConfiguration(f)
+        if not config.valid:
+            config = None
     return config
 
 
-def xc_read_configuration(filename):
-    r = None
-    if os.path.isfile(filename):
-        r = xc_config.XMLConverterConfiguration(filename)
-        if not r.valid:
-            r = None
-    return r
-
-
-def xc_config_filename(collection_acron):
+def configuration_filename(collection_acron):
     if collection_acron is None:
-        f = CURRENT_PATH + '/../../scielo_paths.ini'
-        if os.path.isfile(f):
-            filename = f
-        else:
-            filename = CURRENT_PATH + '/../config/default.xc.ini'
+        filename = CURRENT_PATH + '/../../scielo_paths.ini'
     else:
         filename = CURRENT_PATH + '/../config/' + collection_acron + '.xc.ini'
-
     return filename
 
 
-def is_config_file(configuration_filename):
+def invalid_configuration_file_message(configuration_filename):
     messages = []
     if configuration_filename is None:
-        messages.append('\n===== ATTENTION =====\n')
-        messages.append('ERROR: No configuration file was informed')
+        messages.append('\n===== ' + _('ATTENTION') + ' =====\n')
+        messages.append('ERROR: ' + _('No configuration file was informed'))
     elif not os.path.isfile(configuration_filename):
-        messages.append('\n===== ATTENTION =====\n')
-        messages.append('ERROR: unable to read the configuration file: ' + configuration_filename)
+        messages.append('\n===== ' + _('ATTENTION') + ' =====\n')
+        messages.append('ERROR: ' + _('unable to read XML Converter configuration file: ') + configuration_filename)
     return messages
 
 

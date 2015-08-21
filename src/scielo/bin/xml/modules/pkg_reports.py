@@ -33,6 +33,7 @@ class ArticlesPackage(object):
         self.UNIQUE_VALUE_LABELS = ['order', 'doi', 'elocation id']
         self.REQUIRED_LABELS = ['journal-title', 'journal ISSN', 'publisher name', 'issue label', 'issue pub date', ]
         self.error_level_for_unique = {'order': 'FATAL ERROR', 'doi': 'FATAL ERROR', 'elocation id': 'FATAL ERROR', 'fpage-and-seq': 'ERROR'}
+        self._issue_identification = None
         #if not validate_order:
         #    self.error_level_for_unique['order'] = 'WARNING'
 
@@ -71,30 +72,18 @@ class ArticlesPackage(object):
             indexed[_order].append(article)
         return indexed
 
+    @property
     def issue_identification(self):
-        issue_label = []
-        e_issn = []
-        print_issn = []
-        journal_title = []
-        for doc in self.articles.values():
-            if doc.tree is not None:
-                if doc.journal_title is not None:
-                    journal_title.append(doc.journal_title)
-                issue_label.append(doc.issue_label)
-                if doc.e_issn is not None:
-                    e_issn.append(doc.e_issn)
-                if doc.print_issn is not None:
-                    print_issn.append(doc.print_issn)
-        issue_label = list(set(issue_label))
-        e_issn = list(set(e_issn))
-        print_issn = list(set(print_issn))
-        journal_title = list(set(journal_title))
-
-        journal_title = journal_title[0] if len(journal_title) == 1 else None
-        issue_label = issue_label[0] if len(issue_label) == 1 else None
-        e_issn = e_issn[0] if len(e_issn) > 0 else None
-        print_issn = print_issn[0] if len(print_issn) > 0 else None
-        return (journal_title, issue_label, e_issn, print_issn)
+        if self._issue_identification is None:
+            if self.compiled_pkg_metadata is None:
+                self.compile_pkg_metadata()
+            if len(self.compiled_pkg_metadata['journal-title']) == 1:
+                journal_title = self.compiled_pkg_metadata['journal-title'].keys()[0]
+            if len(self.compiled_pkg_metadata['issue label']) == 1:
+                journal_title = self.compiled_pkg_metadata['issue label'].keys()[0]
+            issns = list(set(self.compiled_pkg_metadata['e-ISSN'].keys() + self.compiled_pkg_metadata['print ISSN'].keys()))
+            self._issue_identification = (journal_title, issns, issue_label)
+        return self._issue_identification
 
     @property
     def compiled_affiliations(self):
@@ -387,7 +376,7 @@ class ArticlesPkgReport(object):
     def __init__(self, package):
         self.package = package
         self._invalid_xml_name_items_report = None
-        self._package_journal_meta_report = None
+        self._pkg_journalmeta_report = None
         self._required_unique_values_report = None
         self._missing_required_data_report = None
 
@@ -398,8 +387,8 @@ class ArticlesPkgReport(object):
         self._blocking_stats = None
         self._unique_values_stats = None
 
-        self._issue_consistency_report = None
-        self._issue_consistency_stats = None
+        self._registered_issue_consistency_report = None
+        self._registered_issue_consistency_stats = None
 
         self._article_consistency = None
         self._article_consistency_report = None
@@ -416,10 +405,11 @@ class ArticlesPkgReport(object):
     def toc_report(self):
         if self._toc_report is None:
             reports = []
+            reports.append(self.registered_issue_consistency_report)
             reports.append(self.changed_orders_report)
             reports.append(self.invalid_xml_name_items_report)
             reports.append(self.missing_required_data_report)
-            reports.append(self.package_journal_meta_report)
+            reports.append(self.pkg_journalmeta_report)
             reports.append(self.required_unique_values_report)
             self._toc_report = ''.join([item for item in reports if item is not None])
         return self._toc_report
@@ -428,10 +418,10 @@ class ArticlesPkgReport(object):
     def blocking_report(self):
         if self._blocking_report is None:
             reports = []
+            reports.append(self.registered_issue_consistency_report)
             reports.append(self.invalid_xml_name_items_report)
             reports.append(self.missing_required_data_report)
             reports.append(self.required_unique_values_report)
-            reports.append(self.issue_consistency_report)
             self._blocking_report = ''.join([item for item in reports if item is not None])
         return self._blocking_report
 
@@ -483,17 +473,17 @@ class ArticlesPkgReport(object):
         return self._missing_required_data_report
 
     @property
-    def package_journal_meta_report(self):
-        if self._package_journal_meta_report is None:
-            self._package_journal_meta_report = ''
+    def pkg_journalmeta_report(self):
+        if self._pkg_journalmeta_report is None:
+            self._pkg_journalmeta_report = ''
             for label in self.package.SAME_VALUE_LABELS:
                 if len(self.package.compiled_pkg_metadata[label]) > 1:
                     _m = _('same value for %s is required for all the documents in the package') % (label)
                     part = html_reports.p_message('FATAL ERROR: ' + _m + '.')
                     for found_value, xml_files in self.package.compiled_pkg_metadata[label].items():
                         part += html_reports.format_list(_('found') + ' ' + label + '="' + html_reports.display_xml(found_value, html_reports.XML_WIDTH*0.6) + '" ' + _('in') + ':', 'ul', xml_files, 'issue-problem')
-                    self._package_journal_meta_report += part
-        return self._package_journal_meta_report
+                    self._pkg_journalmeta_report += part
+        return self._pkg_journalmeta_report
 
     @property
     def required_unique_values_report(self):
@@ -801,15 +791,15 @@ class ArticlesPkgReport(object):
         return r
 
     @property
-    def issue_consistency_report(self):
-        if self._issue_consistency_report is None:
-            self._issue_consistency_report = ''
+    def registered_issue_consistency_report(self):
+        if self._registered_issue_consistency_report is None:
+            self._registered_issue_consistency_report = ''
             for xml_name in self.package.xml_name_sorted_by_order:
                 r = self.article_consistency_report(xml_name) + self.article_section_report(xml_name)
                 f, e, w = html_reports.statistics_numbers(r)
                 if f + e + w > 0:
-                    self._issue_consistency_report += html_reports.tag('h3', xml_name) + r
-        return self._issue_consistency_report
+                    self._registered_issue_consistency_report += html_reports.tag('h3', xml_name) + r
+        return self._registered_issue_consistency_report
 
 
 def register_log(text):

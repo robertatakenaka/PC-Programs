@@ -48,6 +48,78 @@ categories_messages = {
 }
 
 
+class IssueManager(object):
+
+    def __init__(self, env, journal_title, issns, issue_id, package_path):
+        self.env = env
+        self.journal_title = journal_title
+        self.issns = issns
+        self.issue_id = issue_id
+        self.package_path = package_path
+        self._issue_models = None
+        self.issue_error_msg = None
+
+    def journal_search_expression(self):
+        _expr = self.issns
+        if self.journal_title is not None:
+            _expr.append("'" + self.journal_title + "'")
+        return ' OR '.join(_expr) if len(_expr) > 0 else None
+
+    def issue_search_expression(self, acron=None):
+        _expr = []
+        for issn in self.issns:
+            _expr.append(issn + self.issue_id)
+        if acron is not None:
+            _expr.append(acron)
+        return ' OR '.join(_expr) if len(_expr) > 0 else None
+
+    def find_journal_record(self):
+        record = None
+        records = self.env.db_title.search(self.journal_search_expression())
+        if len(records) > 0:
+            record = records[0]
+        return record
+
+    def find_i_record(self):
+        i_record = None
+        issues_records = self.env.db_issue.search(self.issue_search_expression())
+        if len(issues_records) > 0:
+            i_record = issues_records[0]
+        return i_record
+
+    @property
+    def issue_models(self):
+        if self._issue_models is None:
+            self.issue_error_msg = []
+
+            if self.issue_id is None:
+                self.issue_error_msg.append(html_reports.p_message('FATAL ERROR: ' + _('Unable to identify the article\'s issue')))
+            if self.journal_title is None:
+                self.issue_error_msg.append(html_reports.p_message('FATAL ERROR: ' + _('Unable to identify the journal title')))
+            if len(self.issns) == 0:
+                self.issue_error_msg.append(html_reports.p_message('FATAL ERROR: ' + _('Unable to find any ISSN')))
+
+            if len(self.issue_error_msg) == 0:
+                i_record = self.find_i_record()
+                if i_record is None:
+                    self.issue_error_msg.append(html_reports.p_message('FATAL ERROR: ' + _('Issue ') + self.issue_id + _(' is not registered in ') + self.env.db_issue.db_filename + _(' using ISSN: ') + _(' or ').join([i for i in self.issns if i is not None]) + '.'))
+                else:
+                    self._issue_models = xc_models.IssueModels(i_record)
+                    if self._issue_models.issue.license is None:
+                        j_record = self.find_journal_record()
+                        if j_record is None:
+                            self.issue_error_msg.append(html_reports.p_message('ERROR: ' + _('Unable to get the license of') + ' ' + self.journal_title))
+                        else:
+                            t = xc_models.RegisteredTitle(j_record)
+                            self._issue_models.issue.license = t.license()
+            self.issue_error_msg = ''.join(self.issue_error_msg)
+        return self._issue_models
+
+    def get_issue_files(self):
+        journal_files = serial_files.JournalFiles(self.env.serial_path, self.issue_models.issue.acron)
+        return serial_files.IssueFiles(journal_files, self.issue_models.issue.issue_label, self.package_path, self.env.local_web_app_path)
+
+
 class ConverterEnv(object):
 
     def __init__(self):
@@ -55,11 +127,155 @@ class ConverterEnv(object):
         self.db_issue = None
         self.db_article = None
         self.db_title = None
-        self.db_isis = None
+        self.isis_commands = None
         self.local_web_app_path = None
         self.serial_path = None
         self.is_windows = None
         self.org_manager = None
+
+
+class Converter(object):
+
+    def __init__(self):
+        self.display_title = False
+        self.validate_order = True
+        self.dtd_files = xml_versions.DTDFiles('scielo', converter_env.version)
+
+    def convert_package(self, pkg_src_path):
+        conversion = Conversion(pkg_src_path)
+        conversion.setup()
+        conversion.normalize_package(converter_env.version)
+        conversion.articles_pkg_reports = pkg_reports.ArticlesPkgReport(pkg_reports.ArticlesPackage(conversion.pkg_articles))
+        conversion.package_overview_reports()
+
+        journal_title, issns, issue_label = articles_pkg_reports.package.issue_identification
+        conversion.issue_manager = IssueManager(converter_env, journal_title, issns, issue_label, pkg_src_path)
+
+        selected_articles = None
+
+        if conversion.issue_manager.issue_models is None:
+            conversion.issue_manager.acron_issue_label = 'not_registered' + ' ' + os.path.basename(pkg_src_path)[:-4]
+        else:
+            acron_issue_label = conversion.issue_manager.issue_models.issue.acron + ' ' + conversion.issue_manager.issue_models.issue.issue_label
+
+            previous_registered_articles = get_registered_articles(issue_files)
+
+            articles_pkg_reports.issue_models = conversion.issue_manager.issue_models
+            base_source_path = conversion.issue_manager.issue_files.base_source_path if converter_env.skip_identical_xml else None
+            articles_pkg_reports.package.join_registered_articles(base_source_path, pkg_path, previous_registered_articles)
+            articles_pkg_reports.package.compile_pkg_metadata(True)
+
+            before_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - before conversion'))
+            before_conversion_report += display_status_before_xc(previous_registered_articles, pkg_articles, articles_pkg_reports.package.xml_doc_actions)
+
+            if len(articles_pkg_reports.toc_report) > 0:
+                report_components['issue-report'] = articles_pkg_reports.toc_report
+
+            if articles_pkg_reports.blocking_stats[0] > 0:
+                xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, None, conversion_status, pkg_quality_fatal_errors)
+            elif len(articles_pkg_reports.package.articles_to_process) == 0:
+                xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, {}, conversion_status, pkg_quality_fatal_errors)
+            else:
+                articles_pkg_reports.package.validate_pkg_xml(converter_env.db_article_manager.org_manager, doc_file_info_items, dtd_files, validate_order, display_title)
+
+                pkg_quality_fatal_errors = articles_pkg_reports.package.xml_fatal_errors
+
+                selected_articles = {xml_name: pkg_articles.get(xml_name) for xml_name in articles_pkg_reports.package.articles_to_process}
+
+                scilista_item, conversion_stats_and_reports, conversion_status, aop_status = convert_articles(conversion.issue_manager, pkg_articles, articles_pkg_reports.package.xml_validations_stats, articles_pkg_reports.package.articles_to_process, previous_registered_articles, articles_pkg_reports.package.changed_orders, articles_pkg_reports.article_section, articles_pkg_reports.article_section_report)
+
+                validations_report = articles_pkg_reports.detail_report(conversion_stats_and_reports)
+                articles_pkg_reports.delete_pkg_xml_and_data_reports()
+                xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, selected_articles, conversion_status, pkg_quality_fatal_errors)
+
+                after_conversion_report = html_reports.tag('h4', _('Documents status in the package/database - after conversion'))
+
+                after_conversion_report += display_status_after_xc(previous_registered_articles, get_registered_articles(issue_files), pkg_articles, articles_pkg_reports.package.xml_doc_actions, articles_pkg_reports.package.changed_orders)
+
+                xc_results_report = html_reports.tag('h3', _('Conversion results')) + report_status(conversion_status, 'conversion')
+
+                aop_results_report = _('this journal has no aop.')
+                if not aop_status is None:
+                    aop_results_report = report_status(aop_status, 'aop-block')
+                aop_results_report = html_reports.tag('h3', _('AOP status')) + aop_results_report
+
+                issue_files.save_reports(report_path)
+                issue_files.save_source_files(pkg_path)
+                report_path = issue_files.base_reports_path
+                result_path = issue_files.issue_path
+
+                if scilista_item is not None:
+                    issue_files.copy_files_to_local_web_app()
+
+        report_location = report_path + '/xml_converter.html'
+
+        report_components['xml-files'] = pkg_reports.xml_list(pkg_path, xml_filenames)
+        if converter_env.is_windows:
+            report_components['xml-files'] += pkg_reports.processing_result_location(result_path)
+
+        report_components['db-overview'] = before_conversion_report + after_conversion_report
+        report_components['summary-report'] = xc_conclusion_msg + xc_results_report + aop_results_report
+
+        if validations_report is not None:
+            report_components['detail-report'] = validations_report
+
+        f, e, w, content = pkg_reports.format_complete_report(report_components)
+        if old_report_path in content:
+            content = content.replace(old_report_path, report_path)
+
+        email_subject = format_email_subject(scilista_item, selected_articles, pkg_quality_fatal_errors, f, e, w)
+
+        content = pkg_reports.label_errors(content)
+        pkg_reports.save_report(report_location, [_('XML Conversion (XML to Database)'), acron_issue_label], content)
+
+        if not converter_env.is_windows:
+            format_reports_for_web(report_path, pkg_path, acron_issue_label.replace(' ', '/'))
+            fs_utils.delete_file_or_folder(src_path)
+
+        if old_result_path != result_path:
+            fs_utils.delete_file_or_folder(old_result_path)
+        return (report_location, scilista_item, acron_issue_label, email_subject)
+
+
+class Conversion(object):
+
+    def __init__(self, src_path):
+        self.src_path = src_path
+        self.validations_report = None
+        self.xc_conclusion_msg = ''
+        self.conversion_status = {}
+        self.pkg_quality_fatal_errors = 0
+        self.xc_results_report = ''
+        self.aop_results_report = ''
+        self.before_conversion_report = ''
+        self.after_conversion_report = ''
+        self.acron_issue_label = _('unidentified ') + os.path.basename(src_path)[:-4]
+        self.scilista_item = None
+        self.issue_files = None
+        self.report_components = {}
+        self.result_path = self.src_path + '_xml_converter_result'
+        self.wrk_path = self.result_path + '/work'
+        self.pkg_path = self.result_path + '/scielo_package'
+        self.report_path = self.result_path + '/errors'
+        self.old_report_path = self.report_path
+        self.old_result_path = self.result_path
+
+    def setup(self):
+        for path in [self.result_path, self.wrk_path, self.pkg_path, self.report_path]:
+            if not os.path.isdir(path):
+                os.makedirs(path)
+
+    def normalize_package(self, version):
+        self.xml_filenames = sorted([self.src_path + '/' + f for f in os.listdir(self.src_path) if f.endswith('.xml') and not 'incorrect' in f])
+        self.pkg_articles, self.doc_file_info_items = xpmaker.make_package(self.xml_filenames, self.report_path, self.wrk_path, self.pkg_path, version, 'acron')
+
+    def package_overview_reports(self):
+        self.report_components['pkg_overview'] = self.articles_pkg_reports.overview_report()
+        self.report_components['pkg_overview'] += self.articles_pkg_reports.references_overview_report()
+        self.report_components['references'] = self.articles_pkg_reports.sources_overview_report()
+
+    def finish_reports(self):
+        self.report_components['issue-report'] = self.issue_error_msg
 
 
 def register_log(message):
@@ -67,21 +283,21 @@ def register_log(message):
         message = html_reports.p_message(message)
     converter_report_lines.append(message)
 
-
-def find_journal_record(journal_title, print_issn, e_issn):
+###
+def find_journal_record(journal_title, issns):
     record = None
     print('find_journal_record: journal_title')
     print(journal_title)
-    records = converter_env.db_title.search(print_issn, e_issn, journal_title)
+    records = converter_env.db_title.search(issns, journal_title)
 
     if len(records) > 0:
         record = records[0]
     return record
 
-
-def find_i_record(issue_label, print_issn, e_issn):
+###
+def find_i_record(issue_label, issns):
     i_record = None
-    issues_records = converter_env.db_issue.search(issue_label, print_issn, e_issn)
+    issues_records = converter_env.db_issue.search(issue_label, issns)
     if len(issues_records) > 0:
         i_record = issues_records[0]
     return i_record
@@ -223,7 +439,7 @@ def get_issue_models(journal_title, issue_label, p_issn, e_issn):
         else:
             issue_models = xc_models.IssueModels(i_record)
             if issue_models.issue.license is None:
-                j_record = find_journal_record(journal_title, p_issn, e_issn)
+                j_record = find_journal_record(journal_title, issns)
                 if j_record is None:
                     msg.append(html_reports.p_message('ERROR: ' + _('Unable to get the license of') + ' ' + journal_title))
                 else:
@@ -232,7 +448,7 @@ def get_issue_models(journal_title, issue_label, p_issn, e_issn):
     msg = ''.join(msg)
     return (issue_models, msg)
 
-
+###
 def get_issue_files(issue_models, pkg_path):
     journal_files = serial_files.JournalFiles(converter_env.serial_path, issue_models.issue.acron)
     return serial_files.IssueFiles(journal_files, issue_models.issue.issue_label, pkg_path, converter_env.local_web_app_path)
@@ -308,7 +524,7 @@ def convert_package(src_path):
         elif len(articles_pkg_reports.package.articles_to_process) == 0:
             xc_conclusion_msg = xc_conclusion_message(scilista_item, acron_issue_label, pkg_articles, {}, conversion_status, pkg_quality_fatal_errors)
         else:
-            articles_pkg_reports.package.validate_pkg_xml(converter_env.db_article.org_manager, doc_file_info_items, dtd_files, validate_order, display_title)
+            articles_pkg_reports.package.validate_pkg_xml(converter_env.db_article_manager.org_manager, doc_file_info_items, dtd_files, validate_order, display_title)
 
             pkg_quality_fatal_errors = articles_pkg_reports.package.xml_fatal_errors
 
@@ -452,7 +668,7 @@ def convert_articles(issue_files, issue_models, pkg_articles, articles_stats, ar
         year = os.path.basename(db_filename)[0:4]
         i_ahead_records[year] = find_i_record(year + 'nahead', issue_models.issue.issn_id, None)
 
-    ahead_manager = xc_models.AheadManager(converter_env.db_isis, issue_files.journal_files, i_ahead_records)
+    ahead_manager = xc_models.AheadManager(converter_env.ucisis, issue_files.journal_files, i_ahead_records)
     aop_status = None
     if ahead_manager.journal_has_aop():
         aop_status = {'deleted ex-aop': [], 'not deleted ex-aop': []}
@@ -509,7 +725,7 @@ def convert_articles(issue_files, issue_models, pkg_articles, articles_stats, ar
                 creation_date = None if not xml_name in registered_articles.keys() else registered_articles[xml_name].creation_date
 
                 #utils.debugging('convert_articles: create_id_file')
-                saved = converter_env.db_article.create_id_file(issue_models.record, article, article_files, creation_date)
+                saved = converter_env.db_article_manager.create_id_file(issue_models.record, article, article_files, creation_date)
                 if saved:
                     #utils.debugging('convert_articles: unmatched_orders')
                     if xml_name in unmatched_orders.keys():
@@ -556,11 +772,11 @@ def convert_articles(issue_files, issue_models, pkg_articles, articles_stats, ar
 
     #utils.debugging('convert_articles: conclusion')
     if len(conversion_status['not converted']) + len(conversion_status['rejected']) == 0:
-        saved = converter_env.db_article.finish_conversion(issue_models.record, issue_files)
+        saved = converter_env.db_article_manager.finish_conversion(issue_models.record, issue_files)
         if saved > 0:
             scilista_item = issue_models.issue.acron + ' ' + issue_models.issue.issue_label
             if not converter_env.is_windows:
-                converter_env.db_article.generate_windows_version(issue_files)
+                converter_env.db_article_manager.generate_windows_version(issue_files)
     #utils.debugging('convert_articles: fim')
     return (scilista_item, conversion_stats_and_reports, conversion_status, aop_status)
 
@@ -599,7 +815,7 @@ def aop_message(article, ahead, status):
 
 
 def get_registered_articles(issue_files):
-    registered_issue_models, registered_articles = converter_env.db_article.registered_items(issue_files)
+    registered_issue_models, registered_articles = converter_env.db_article_manager.registered_items(issue_files)
     return registered_articles
 
 
@@ -726,15 +942,6 @@ def queue_packages(download_path, temp_path, queue_path, archive_path):
     return (pkg_paths, invalid_pkg_files)
 
 
-def xml_converter_read_configuration(filename):
-    r = None
-    if os.path.isfile(filename):
-        r = xc_config.XMLConverterConfiguration(filename)
-        if not r.valid:
-            r = None
-    return r
-
-
 def xml_converter_get_inputs(args):
     # python xml_converter.py <xml_src>
     # python xml_converter.py <collection_acron>
@@ -749,38 +956,6 @@ def xml_converter_get_inputs(args):
             collection_acron = param
 
     return (script, package_path, collection_acron)
-
-
-def xml_converter_validate_inputs(package_path, collection_acron):
-    # python xml_converter.py <xml_src>
-    # python xml_converter.py <collection_acron>
-    errors = []
-    if package_path is None:
-        if collection_acron is None:
-            errors.append(_('Missing collection acronym'))
-    else:
-        errors = xml_utils.is_valid_xml_path(package_path)
-    return errors
-
-
-def xml_config_filename(collection_acron):
-    filename = CURRENT_PATH + '/../../scielo_paths.ini'
-
-    if not os.path.isfile(filename):
-        if not collection_acron is None:
-            filename = CURRENT_PATH + '/../config/' + collection_acron + '.xc.ini'
-    return filename
-
-
-def is_valid_configuration_file(configuration_filename):
-    messages = []
-    if configuration_filename is None:
-        messages.append('\n===== ' + _('ATTENTION') + ' =====\n')
-        messages.append('ERROR: ' + _('No configuration file was informed'))
-    elif not os.path.isfile(configuration_filename):
-        messages.append('\n===== ' + _('ATTENTION') + ' =====\n')
-        messages.append('ERROR: ' + _('unable to read XML Converter configuration file: ') + configuration_filename)
-    return messages
 
 
 def is_valid_pkg_file(filename):
@@ -801,30 +976,28 @@ def update_db_copy(isis_db, isis_db_copy, fst_file):
 
 def call_converter(args, version='1.0'):
     script, package_path, collection_acron = xml_converter_get_inputs(args)
-    if package_path is None and collection_acron is None:
-        # GUI
-        import xml_gui
-        xml_gui.open_main_window(True, None)
+    configuration_filename = xc.configuration_filename(collection_acron)
+    invalid_configuration_errors = xc.invalid_configuration_file_message(configuration_filename)
 
-    elif package_path is not None and collection_acron is not None:
-        errors = xml_converter_validate_inputs(package_path, collection_acron)
-        if len(errors) > 0:
-            messages = []
-            messages.append('\n===== ' + _('ATTENTION') + ' =====\n')
-            messages.append('ERROR: ' + _('Incorrect parameters'))
-            messages.append('\n' + _('Usage') + ':')
-            messages.append('python xml_converter.py <xml_folder> | <collection_acron>')
-            messages.append(_('where') + ':')
-            messages.append('  <xml_folder> = ' + _('path of folder which contains'))
-            messages.append('  <collection_acron> = ' + _('collection acron'))
-            messages.append('\n'.join(errors))
-            utils.display_message('\n'.join(messages))
-        else:
-            execute_converter(package_path, collection_acron)
-    elif collection_acron is not None:
-        execute_converter(package_path, collection_acron)
-    elif package_path is not None:
-        execute_converter(package_path)
+    if len(invalid_configuration_errors) > 0:
+        messages = []
+        messages.append('\n===== ' + _('ATTENTION') + ' =====\n')
+        messages.append('ERROR: ' + _('Incorrect parameters'))
+        messages.append('\n' + _('Usage') + ':')
+        messages.append('python xml_converter.py <xml_folder> | <collection_acron>')
+        messages.append(_('where') + ':')
+        messages.append('  <xml_folder> = ' + _('path of folder which contains'))
+        messages.append('  <collection_acron> = ' + _('collection acron'))
+        messages.append('\n'.join(invalid_configuration_errors))
+        utils.display_message('\n'.join(messages))
+    else:
+        config = xc.get_configuration(collection_acron)
+        if config is not None:
+            if package_path is None and config.queue_path is None:
+                import xml_gui
+                xml_gui.open_main_window(True, None)
+            else:
+                execute_converter(package_path, config)
 
 
 def send_message(mailer, to, subject, text, attaches=None):
@@ -833,28 +1006,29 @@ def send_message(mailer, to, subject, text, attaches=None):
         mailer.send_message(to, subject, text, attaches)
 
 
-def execute_converter(package_paths, collection_name=None):
-    #collection_names = {'Brasil': 'scl', u'Salud Pública': 'spa'}
-    collection_names = {}
-    collection_acron = collection_names.get(collection_name)
-    if collection_acron is None:
-        collection_acron = collection_name
+def get_package_paths(package_paths, config):
+    invalid_pkg_files = []
+    if package_paths is None:
+        package_paths, invalid_pkg_files = queue_packages(config.download_path, config.temp_path, config.queue_path, config.archive_path)
+    if package_paths is None:
+        package_paths = []
+    if not isinstance(package_paths, list):
+        package_paths = [package_paths]
+    return [package_paths, invalid_pkg_files]
 
-    config = xc.get_configuration(collection_acron)
+
+def execute_converter(package_paths, config=None):
+    if config is None:
+        config = xc.get_configuration(None)
     if config is not None:
         prepare_env(config)
-        invalid_pkg_files = []
+
         bad_pkg_files = []
         scilista = []
 
         mailer = xc.get_mailer(config)
 
-        if package_paths is None:
-            package_paths, invalid_pkg_files = queue_packages(config.download_path, config.temp_path, config.queue_path, config.archive_path)
-        if package_paths is None:
-            package_paths = []
-        if not isinstance(package_paths, list):
-            package_paths = [package_paths]
+        package_paths, invalid_pkg_files = get_package_paths(package_paths, config)
 
         for package_path in package_paths:
             package_folder = os.path.basename(package_path)
@@ -868,7 +1042,8 @@ def execute_converter(package_paths, collection_name=None):
                 utils.display_message(package_path)
                 utils.display_message(e)
                 utils.display_message('-'*10)
-                raise
+                if len(package_paths) == 1:
+                    raise
                 bad_pkg_files.append(package_path)
                 bad_pkg_files.append(str(e))
                 report_location, report_path, scilista_item = [None, None, None]
@@ -906,22 +1081,20 @@ def prepare_env(config):
     if converter_env is None:
         converter_env = ConverterEnv()
 
-    converter_env.db_isis = dbm_isis.IsisDAO(dbm_isis.UCISIS(dbm_isis.CISIS(config.cisis1030), dbm_isis.CISIS(config.cisis1660)))
+    converter_env.ucisis = dbm_isis.UCISIS(dbm_isis.CISIS(config.cisis1030), dbm_isis.CISIS(config.cisis1660))
 
     update_db_copy(config.issue_db, config.issue_db_copy, CURRENT_PATH + '/issue.fst')
-    converter_env.db_isis.update_indexes(config.issue_db_copy, config.issue_db_copy + '.fst')
-    converter_env.db_issue = xc_models.IssueDAO(converter_env.db_isis, config.issue_db_copy)
-
     update_db_copy(config.title_db, config.title_db_copy, CURRENT_PATH + '/title.fst')
-    converter_env.db_isis.update_indexes(config.title_db_copy, config.title_db_copy + '.fst')
-    converter_env.db_title = xc_models.TitleDAO(converter_env.db_isis, config.title_db_copy)
+
+    converter_env.db_issue = dbm_isis.ISISDB(converter_env.ucisis, config.issue_db_copy, config.issue_db_copy + '.fst')
+    converter_env.db_title = dbm_isis.ISISDB(converter_env.ucisis, config.title_db_copy, config.title_db_copy + '.fst')
 
     import institutions_service
 
     org_manager = institutions_service.OrgManager()
     org_manager.load()
 
-    converter_env.db_article = xc_models.ArticleDAO(converter_env.db_isis, org_manager)
+    converter_env.db_article_manager = xc_models.ArticleDBManager(converter_env.ucisis, org_manager)
 
     converter_env.local_web_app_path = config.local_web_app_path
     converter_env.serial_path = config.serial_path
