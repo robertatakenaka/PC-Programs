@@ -675,7 +675,7 @@ class ArticlesPkgReport(object):
                 validations.append((_('journal id NLM'), article.journal_id_nlm_ta, self.issue_models.issue.journal_id_nlm_ta))
                 validations.append((_('e-ISSN'), article.e_issn, self.issue_models.issue.e_issn))
                 validations.append((_('print ISSN'), article.print_issn, self.issue_models.issue.print_issn))
-                validations.append((_('issue pub-date'), article.pub_date_year, self.issue_models.issue.dateiso[0:4]))
+                validations.append((_('issue pub-date'), article.issue_pub_dateiso[0:4], self.issue_models.issue.dateiso[0:4]))
                 validations.append(('publisher', article.publisher_name, self.issue_models.issue.publisher_name))
 
                 # check issue data
