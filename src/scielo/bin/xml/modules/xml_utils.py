@@ -12,6 +12,17 @@ from __init__ import _
 ENTITIES_TABLE = None
 
 
+def date_element(date_node):
+    d = None
+    if date_node is not None:
+        d = {}
+        d['season'] = date_node.findtext('season')
+        d['month'] = date_node.findtext('month')
+        d['year'] = date_node.findtext('year')
+        d['day'] = date_node.findtext('day')
+    return d
+
+
 def element_lang(node):
     if node is not None:
         return node.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
@@ -149,10 +160,11 @@ def replace_doctype(content, new_doctype):
 
 
 def apply_dtd(xml_filename, doctype):
+    import fs_utils
     temp_filename = tempfile.mkdtemp() + '/' + os.path.basename(xml_filename)
     shutil.copyfile(xml_filename, temp_filename)
-    content = replace_doctype(open(xml_filename, 'r').read(), doctype)
-    open(xml_filename, 'w').write(content)
+    content = replace_doctype(fs_utils.read_file(xml_filename), doctype)
+    fs_utils.write_file(xml_filename, content)
     return temp_filename
 
 
@@ -481,3 +493,16 @@ def is_valid_xml_path(xml_path):
         elif not is_valid_xml_dir(xml_path):
             errors.append(_('Invalid folder. Folder must have XML files.'))
     return errors
+
+
+def remove_tags(content):
+    content = content.replace('<', '~BREAK~<')
+    content = content.replace('>', '>~BREAK~')
+    parts = content.split('~BREAK~')
+    new = []
+    for item in parts:
+        if item.startswith('<') and item.endswith('>'):
+            pass
+        else:
+            new.append(item)
+    return ''.join(new)

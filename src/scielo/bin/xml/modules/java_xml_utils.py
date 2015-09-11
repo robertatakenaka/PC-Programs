@@ -42,15 +42,15 @@ def xml_content_transform(content, xsl_filename):
 
     f2 = tempfile.NamedTemporaryFile(delete=False)
     f2.close()
-    if xml_transform(False, f.name, xsl_filename, f2.name):
-        content = open(f2.name, 'r').read()
+    if xml_transform(f.name, xsl_filename, f2.name):
+        content = fs_utils.read_file(f2.name)
         os.unlink(f2.name)
     if os.path.exists(f.name):
         os.unlink(f.name)
     return content
 
 
-def xml_transform(run_background, xml_filename, xsl_filename, result_filename, parameters={}):
+def xml_transform(xml_filename, xsl_filename, result_filename, parameters={}):
     register_log('xml_transform: inicio')
     error = False
 
@@ -68,8 +68,7 @@ def xml_transform(run_background, xml_filename, xsl_filename, result_filename, p
     os.system(cmd)
 
     if not os.path.exists(temp_result_filename):
-        print('  ERROR: Unable to create ' + os.path.basename(result_filename))
-        open(temp_result_filename, 'w').write('ERROR: transformation error.\n' + cmd)
+        fs_utils.write_file(temp_result_filename, 'ERROR: transformation error.\n' + cmd)
         error = True
     shutil.move(temp_result_filename, result_filename)
 
@@ -82,7 +81,7 @@ def xml_transform(run_background, xml_filename, xsl_filename, result_filename, p
     return (not error)
 
 
-def xml_validate(run_background, xml_filename, result_filename, doctype=None):
+def xml_validate(xml_filename, result_filename, doctype=None):
     register_log('xml_validate: inicio')
     validation_type = ''
 
@@ -104,7 +103,7 @@ def xml_validate(run_background, xml_filename, result_filename, doctype=None):
     os.system(cmd)
 
     if os.path.exists(temp_result_filename):
-        result = open(temp_result_filename, 'r').read()
+        result = fs_utils.read_file(temp_result_filename)
 
         if 'ERROR' in result.upper():
             n = 0
@@ -113,11 +112,11 @@ def xml_validate(run_background, xml_filename, result_filename, doctype=None):
                 if n > 0:
                     s += str(n) + ':' + line
                 n += 1
-            result += '\n' + s
-            open(temp_result_filename, 'a+').write(result)
+            result += '\n' + s.decode('utf-8')
+            fs_utils.write_file(temp_result_filename, result)
     else:
         result = 'ERROR: Not valid. Unknown error.\n' + cmd
-        open(temp_result_filename, 'a+').write(result)
+        fs_utils.write_file(temp_result_filename, result)
 
     shutil.move(temp_result_filename, result_filename)
     shutil.move(bkp_xml_filename, xml_filename)

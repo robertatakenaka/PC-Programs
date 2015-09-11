@@ -8,7 +8,7 @@ import utils
 import xml_utils
 
 from article_utils import display_pages, format_dateiso, format_issue_label
-from article_utils import how_similar
+from utils import how_similar
 from article import Issue, PersonAuthor, Article
 from attributes import ROLE, DOCTOPIC, doctopic_label
 
@@ -17,7 +17,7 @@ from dbm_isis import IDFile
 import institutions_service
 
 
-ISSN_CONVERSION = { 
+ISSN_CONVERSION = {
     'ONLIN': 'epub',
     'PRINT': 'ppub',
     }
@@ -77,9 +77,9 @@ def normalize_doctopic(_doctopic):
 
 class RegisteredArticle(object):
     def __init__(self, article_records, i_record):
-        self.issue_models = IssueModels(i_record)
+        self._issue = None
+        self.i_record = i_record
         self.article_records = article_records
-        #self.journal_issns = read_issn_fields(self.article_records[1].get('435'))
 
     def summary(self):
         data = {}
@@ -96,20 +96,38 @@ class RegisteredArticle(object):
         return data
 
     @property
+    def issue(self):
+        if self._issue is None:
+            issue_models = IssueModels(self.i_record)
+            self._issue = issue_models.issue
+        return self._issue
+
+    @property
     def journal_title(self):
-        return self.issue_models.issue.journal_title if self.issue_models.issue.journal_title else self.article_records[1].get('130')
+        return self.issue.journal_title if self.issue.journal_title else self.article_records[1].get('130')
 
     @property
     def journal_id_nlm_ta(self):
-        return self.issue_models.issue.journal_id_nlm_ta if self.issue_models.issue.journal_id_nlm_ta else self.article_records[1].get('421')
+        return self.issue.journal_id_nlm_ta if self.issue.journal_id_nlm_ta else self.article_records[1].get('421')
 
     @property
     def journal_issns(self):
-        return self.issue_models.issue.journal_issns if self.issue_models.issue.journal_issns else read_issn_fields(self.article_records[1].get('435'))
+        if self.issue is not None:
+            return self.issue.journal_issns
+
+    @property
+    def print_issn(self):
+        if self.issue is not None:
+            return self.issue.print_issn
+
+    @property
+    def e_issn(self):
+        if self.issue is not None:
+            return self.issue.e_issn
 
     @property
     def publisher_name(self):
-        return self.issue_models.issue.publisher_name if self.issue_models.issue.publisher_name else self.article_records[1].get('62', self.article_records[1].get('480'))
+        return self.issue.publisher_name if self.issue.publisher_name else self.article_records[1].get('62', self.article_records[1].get('480'))
 
     @property
     def tree(self):
@@ -265,7 +283,7 @@ class ArticleRecords(object):
 
         for item in self.article.related_articles:
             new = {}
-            new['i'] = item['href'] if item['ext-link-type'] == 'doi' else item['id']
+            new['i'] = item.get('href') if item.get('href') is not None else item.get('id')
             _t = item.get('related-article-type')
             if _t == 'press-release':
                 _t = 'pr'
@@ -338,6 +356,7 @@ class ArticleRecords(object):
 
         self._metadata['14'] = {}
         self._metadata['14']['f'] = self.article.fpage
+        self._metadata['14']['s'] = self.article.fpage_seq
         self._metadata['14']['l'] = self.article.lpage
         self._metadata['14']['e'] = self.article.elocation_id
 
@@ -524,7 +543,7 @@ class IssueModels(object):
 
     def __init__(self, record):
         self.record = record
-        self.issue = self.__issue(record)
+        self._issue = None
 
     @property
     def sections(self):
@@ -551,6 +570,12 @@ class IssueModels(object):
                     break
         return (seccode, ratio, similar)
 
+    @property
+    def issue(self):
+        if self._issue is None:
+            self._issue = self.__issue(self.record)
+        return self._issue
+
     def __issue(self, record):
         acron = record.get('930').lower()
         dateiso = record.get('65', '')
@@ -558,13 +583,24 @@ class IssueModels(object):
         volume_suppl = record.get('131')
         number = record.get('32')
         number_suppl = record.get('132')
+        compl = record.get('41')
 
-        i = Issue(acron, volume, number, dateiso, volume_suppl, number_suppl)
+        i = Issue(acron, volume, number, dateiso, volume_suppl, number_suppl, compl)
 
         i.issn_id = record.get('35')
         i.journal_title = record.get('130')
         i.journal_id_nlm_ta = record.get('421')
+        issns = record.get('435')
+        # 0011-5258^tPRINT
+        # 1678-4588^tONLIN
+        # [{'_': 1234-567, 't': PRINT}, {'_': 1678-4588, 't': ONLIN}]
         i.journal_issns = read_issn_fields(record.get('435'))
+        if i.journal_issns is None:
+            i.e_issn = None
+            i.print_issn = None
+        else:
+            i.e_issn = i.journal_issns.get('epub')
+            i.print_issn = i.journal_issns.get('ppub')
         i.publisher_name = record.get('62', record.get('480'))
         i.license = record.get('541')
         return i
@@ -579,7 +615,6 @@ class IssueArticlesRecords(object):
         i_record = None
 
         record_types = list(set([record.get('706') for record in self.records]))
-        print(record_types)
         articles_records = {}
         for record in self.records:
             if record.get('706') == 'i':
@@ -708,6 +743,7 @@ class ArticleDAO(object):
 
     def create_id_file(self, i_record, article, article_files, creation_date=None):
         saved = False
+        found = False
         if not os.path.isdir(article_files.issue_files.id_path):
             os.makedirs(article_files.issue_files.id_path)
         if not os.path.isdir(os.path.dirname(article_files.issue_files.base)):
@@ -722,11 +758,25 @@ class ArticleDAO(object):
                     print('Unable to delete ' + article_files.id_filename)
             found = os.path.isfile(article_files.id_filename)
 
-            self.dao.save_id(article_files.id_filename, article_records.records)
+            self.dao.save_id(article_files.id_filename, article_records.records, self.content_formatter)
             saved = os.path.isfile(article_files.id_filename)
         return (not found and saved)
 
-    def finish_conversion(self, issue_record, issue_files):
+    def content_formatter(self, content):
+        if '!v706!f' in content:
+            content = content.replace('<italic>', '<em>')
+            content = content.replace('</italic>', '</em>')
+            content = content.replace('<bold>', '<strong>')
+            content = content.replace('</bold>', '</strong>')
+        elif '!v706!c' in content or '!v706!h' in content:
+            content = content.replace('<italic>', '')
+            content = content.replace('</italic>', '')
+            content = content.replace('<bold>', '')
+            content = content.replace('</bold>', '')
+            content = xml_utils.remove_tags(content)
+        return content
+
+    def finish_conversion(self, issue_record, issue_files, pkg_path):
         loaded = []
         self.dao.save_records([issue_record], issue_files.base)
         for f in os.listdir(issue_files.id_path):
@@ -735,15 +785,14 @@ class ArticleDAO(object):
             if f.endswith('.id') and f != '00000.id' and f != 'i.id':
                 self.dao.append_id_records(issue_files.id_path + '/' + f, issue_files.base)
                 loaded.append(f)
+        issue_files.save_source_files(pkg_path)
         return loaded
 
     def registered_items(self, issue_files):
         articles = {}
-
         records = self.dao.get_records(issue_files.base)
         i, registered_articles = IssueArticlesRecords(records).articles()
-        print('REGISTERED')
-        print(str(len(registered_articles)))
+
         for xml_name, registered_doc in registered_articles.items():
             f = issue_files.base_source_path + '/' + xml_name + '.xml'
             if os.path.isfile(f):
@@ -755,7 +804,6 @@ class ArticleDAO(object):
                 doc.creation_date_display = registered_doc.creation_date_display
                 doc.creation_date = registered_doc.creation_date
                 doc.last_update = registered_doc.last_update
-
                 articles[xml_name] = doc
 
         issue_models = IssueModels(i) if i is not None else None
@@ -787,6 +835,9 @@ class AheadManager(object):
         for dbname, items in self.still_ahead.items():
             total += len(items)
         return total > 0
+
+    def journal_publishes_aop(self):
+        return self.journal_files.publishes_aop()
 
     def extract_id_files_from_master(self, i_ahead_records):
         for db_filename in self.journal_files.ahead_bases:
@@ -986,6 +1037,19 @@ class AheadManager(object):
                     if f.endswith('.id') and f != '00000.id' and f != 'i.id':
                         self.dao.append_id_records(id_path + '/' + f, base)
                 updated.append(ahead_db_name)
+        return updated
+
+    def update_all_ahead_db(self):
+        updated = []
+        if self.journal_files.publishes_aop():
+            for issue_label, issue_files in self.journal_files.aop_issue_files.items():
+                id_path = issue_files.id_path
+                if os.path.isfile(issue_files.id_filename):
+                    self.dao.save_id_records(issue_files.id_filename, issue_files.base)
+                    for f in os.listdir(issue_files.id_path):
+                        if f.endswith('.id') and f != '00000.id' and f != 'i.id':
+                            self.dao.append_id_records(issue_files.id_path + '/' + f, issue_files.base)
+                    updated.append(issue_label)
         return updated
 
 

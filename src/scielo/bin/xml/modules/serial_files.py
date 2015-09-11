@@ -163,8 +163,8 @@ class IssueFiles(object):
         path['xml'] = self.web_path + '/bases/xml/' + self.relative_issue_path
         path['html'] = self.web_path + '/htdocs/img/revistas/' + self.relative_issue_path + '/html/'
         path['img'] = self.web_path + '/htdocs/img/revistas/' + self.relative_issue_path
-
-        xml_content = ''.join([open(self.xml_path + '/' + xml_filename).read().decode('utf-8') for xml_filename in os.listdir(self.xml_path) if xml_filename.endswith('.xml')])
+        xml_files = [f for f in os.listdir(self.xml_path) if f.endswith('.xml') and not f.endswith('.rep.xml')]
+        xml_content = ''.join([fs_utils.read_file(self.xml_path + '/' + xml_filename) for xml_filename in os.listdir(self.xml_path) if xml_filename.endswith('.xml')])
 
         for p in path.values():
             if not os.path.isdir(p):
@@ -180,11 +180,12 @@ class IssueFiles(object):
                         shutil.copy(self.xml_path + '/' + f, path['img'])
                         msg.append('  ' + f + ' => ' + path['img'])
                 elif ext == 'pdf':
-                    pdf_filename = self.fix_pdf_name(f, xml_content)
+                    pdf_filename = f
+                    if not pdf_filename.replace('.pdf', '.xml') in xml_files:
+                        pdf_filename = self.fix_pdf_name(f, xml_content)
                     if os.path.isfile(path[ext] + '/' + pdf_filename):
                         os.unlink(path[ext] + '/' + pdf_filename)
                     shutil.copyfile(self.xml_path + '/' + f, path[ext] + '/' + pdf_filename)
-                    print(pdf_filename)
                     msg.append('  ' + f + ' => ' + path[ext] + '/' + pdf_filename)
                 else:
                     shutil.copy(self.xml_path + '/' + f, path[ext])
@@ -194,14 +195,15 @@ class IssueFiles(object):
     def fix_pdf_name(self, filename, xml_content):
         new_name = filename
         if not filename in xml_content:
-            print(filename)
             prefix = filename[0:-len('-??.pdf')]
 
             n = filename[0:-(len('.pdf'))]
             n = n[-3:]
             if n.startswith('-'):
                 lang = n[1:]
-                new_name = lang + '_' + prefix + '.pdf'
+                if not lang.isdigit():
+                    new_name = lang + '_' + prefix + '.pdf'
+                    print(new_name)
         return new_name
 
     def save_reports(self, report_path):
@@ -239,9 +241,30 @@ class JournalFiles(object):
             serial_path = serial_path[0:-1]
         self.acron = acron
         self.journal_path = serial_path + '/' + acron
+        self._issues_files = None
+        self.setup()
+
+    def setup(self):
         self.years = [str(int(datetime.now().isoformat()[0:4])+1 - y) for y in range(0, 5)]
         for y in self.years:
             self.move_ahead_old_id_folder(y)
+
+    @property
+    def issues_files(self):
+        if self._issues_files is None:
+            self._issues_files = {}
+            for item in os.listdir(self.journal_path):
+                if os.path.isdir(self.journal_path + '/' + item):
+                    self._issues_files[item] = IssueFiles(self, item, None, None)
+        return self._issues_files
+
+    def publishes_aop(self):
+        return len(self.aop_issue_files) > 0
+
+    @property
+    def aop_issue_files(self):
+        if self.issues_files is not None:
+            return {k:v for k, v in self.issues_files.items() if 'ahead' in k and not 'ex-' in k}
 
     def ahead_base(self, year):
         path = self.journal_path + '/' + year + 'nahead/base/' + year + 'nahead'

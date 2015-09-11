@@ -15,15 +15,8 @@ from email.header import Header
 
 def strtolist(s):
     l = []
-
     if s is not None:
-        if isinstance(s, list):
-            l = s
-        else:
-            print(s)
-            print(type(s))
-            print(l)
-
+        if not isinstance(s, list):
             if ';' in s:
                 l = s.split(';')
             elif ',' in s:
@@ -40,6 +33,8 @@ class EmailMessageTemplate(object):
         self.message_template = ''
         if len(message_template_filename) > 0 and os.path.isfile(message_template_filename):
             self.message_template = open(message_template_filename, 'r').read()
+            if not isinstance(self.message_template, unicode):
+                self.message_template = self.message_template.decode('utf-8')
 
     def msg(self, parameters={}):
         message = self.message_template
@@ -50,9 +45,9 @@ class EmailMessageTemplate(object):
     def msg_from_files(self, param_files):
         msg = ''
         for f in param_files:
-            fn = open(f, 'r')
-            content = fn.read()
-            fn.close()
+            content = open(f, 'r').read()
+            if not isinstance(content, unicode):
+                content = content.decode('utf-8')
             msg += content + '\n' + '='*80 + '\n'
         return msg
 
@@ -86,7 +81,6 @@ class EmailService(object):
                 encoders.encode_base64(part)
                 part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(f))
                 msg.attach(part)
-                print('attaching ' + f)
 
             smtp = smtplib.SMTP(self.server)
             try:
@@ -99,7 +93,6 @@ class EmailService(object):
                 msg['BCC'] = ', '.join(bcc)
                 msg.attach(MIMEText(text, plain_or_html, 'utf-8'))
                 smtp.sendmail(self.label_from + '<' + self.mail_from + '>', to, msg.as_string())
-                print(e)
             #except Exception as inst:
             #    msg = MIMEMultipart()
             #    msg['From'] = self.mail_from
