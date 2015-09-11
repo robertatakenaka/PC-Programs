@@ -152,6 +152,11 @@ class ArticleXML(object):
         self._titles_by_lang = None
         self._abstracts_by_lang = None
         self._keywords_by_lang = None
+        self._collection_date = None
+        self._epub_date = None
+        self._epub_ppub_date = None
+        self._received_date = None
+        self._accepted_date = None
 
         if tree is not None:
             self.journal_meta = self.tree.find('./front/journal-meta')
@@ -242,8 +247,6 @@ class ArticleXML(object):
         if self._language is None:
             if self.tree is not None:
                 self._language = xml_utils.element_lang(self.tree.find('.'))
-        if self._language is None:
-            print('@xml:lang=None')
         return self._language
 
     @property
@@ -257,19 +260,28 @@ class ArticleXML(object):
         @id k
         . t pr
         """
+        #registro de artigo, link para pr
+        #<related-article related-article-type="press-release" id="01" specific-use="processing-only"/>
+        # ^i<PID>^tpr^rfrom-article-to-press-release
+        #
+        #registro de pr, link para artigo
+        #<related-article related-article-type="in-this-issue" id="pr01" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="10.1590/S0102-311X2013000500014 " ext-link-type="doi"/>
+        # ^i<doi>^tdoi^rfrom-press-release-to-article
+        #
+        #registro de errata, link para artigo
+        #<related-article related-article-type="corrected-article" vol="29" page="970" id="RA1" xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="10.1590/S0102-311X2013000500014" ext-link-type="doi"/>
+        # ^i<doi>^tdoi^rfrom-corrected-article-to-article
         r = []
         if self.article_meta is not None:
             related = self.article_meta.findall('related-article')
             for rel in related:
                 item = {}
                 item['href'] = rel.attrib.get('{http://www.w3.org/1999/xlink}href')
-                item['ext-link-type'] = rel.attrib.get('ext-link-type')
-                if not item['ext-link-type'] == 'doi':
-                    if item['href'] is None:
-                        item['id'] = None
-                    else:
-                        item['id'] = ''.join([c for c in item['href'] if c.isdigit()])
                 item['related-article-type'] = rel.attrib.get('related-article-type')
+                item['ext-link-type'] = rel.attrib.get('ext-link-type')
+                item['id'] = rel.attrib.get('id')
+                if not item['related-article-type'] in ['corrected-article', 'press-release']:
+                    item['id'] = ''.join([c for c in item['id'] if c.isdigit()])
                 r.append(item)
         return r
 
@@ -659,7 +671,7 @@ class ArticleXML(object):
         return affs
 
     @property
-    def clinical_trial_url(self):
+    def uri_clinical_trial_href(self):
         #FIXME nao existe clinical-trial 
         #<uri content-type="clinical-trial" xlink:href="http://www.ensaiosclinicos.gov.br/rg/RBR-7bqxm2/">The study was registered in the Brazilian Clinical Trials Registry (RBR-7bqxm2)</uri>
         if self.tree is not None:
@@ -668,11 +680,29 @@ class ArticleXML(object):
                 return node.attrib.get('{http://www.w3.org/1999/xlink}href')
 
     @property
-    def clinical_trial_text(self):
+    def uri_clinical_trial_text(self):
         #FIXME nao existe clinical-trial 
         #<uri content-type="clinical-trial" xlink:href="http://www.ensaiosclinicos.gov.br/rg/RBR-7bqxm2/">The study was registered in the Brazilian Clinical Trials Registry (RBR-7bqxm2)</uri>
         if self.tree is not None:
             node = self.tree.find('.//uri[@content-type="clinical-trial"]')
+            if node is not None:
+                return xml_utils.node_text(node)
+
+    @property
+    def ext_link_clinical_trial_href(self):
+        #FIXME nao existe clinical-trial 
+        #<ext-link ext-link-type="clinical-trial" xlink:href="http://www.ensaiosclinicos.gov.br/rg/RBR-7bqxm2/">The study was registered in the Brazilian Clinical Trials Registry (RBR-7bqxm2)</ext-link>
+        if self.tree is not None:
+            node = self.tree.find('.//ext-link[@ext-link-type="clinical-trial"]')
+            if node is not None:
+                return node.attrib.get('{http://www.w3.org/1999/xlink}href')
+
+    @property
+    def ext_link_clinical_trial_text(self):
+        #FIXME nao existe clinical-trial 
+        #<ext-link ext-link-type="clinical-trial" xlink:href="http://www.ensaiosclinicos.gov.br/rg/RBR-7bqxm2/">The study was registered in the Brazilian Clinical Trials Registry (RBR-7bqxm2)</ext-link>
+        if self.tree is not None:
+            node = self.tree.find('.//ext-link[@ext-link-type="clinical-trial"]')
             if node is not None:
                 return xml_utils.node_text(node)
 
@@ -800,28 +830,6 @@ class ArticleXML(object):
         return r
 
     @property
-    def received(self):
-        _hist = None
-        if self.article_meta is not None:
-            item = self.article_meta.find('.//date[@date-type="received"]')
-            if item is not None:
-                _hist = {}
-                for tag in ['year', 'month', 'day', 'season']:
-                    _hist[tag] = item.findtext(tag)
-        return _hist
-
-    @property
-    def accepted(self):
-        _hist = None
-        if self.article_meta is not None:
-            item = self.article_meta.find('.//date[@date-type="accepted"]')
-            if item is not None:
-                _hist = {}
-                for tag in ['year', 'month', 'day', 'season']:
-                    _hist[tag] = item.findtext(tag)
-        return _hist
-
-    @property
     def references(self):
         refs = []
         if self.back is not None:
@@ -856,58 +864,48 @@ class ArticleXML(object):
         return _id
 
     @property
+    def received(self):
+        if self._received_date is None:
+            if self.article_meta is not None:
+                self._received_date = xml_utils.date_element(self.article_meta.find('date[@pub-type="received"]'))
+        return self._received_date
+
+    @property
+    def accepted(self):
+        if self._accepted_date is None:
+            if self.article_meta is not None:
+                self._accepted_date = xml_utils.date_element(self.article_meta.find('date[@pub-type="accepted"]'))
+        return self._accepted_date
+
+    @property
     def collection_date(self):
-        d = None
-        if self.article_meta is not None:
-            date = self.article_meta.find('pub-date[@pub-type="collection"]')
-            if date is not None:
-                d = {}
-                d['season'] = date.findtext('season')
-                d['month'] = date.findtext('month')
-                d['year'] = date.findtext('year')
-                d['day'] = date.findtext('day')
-        return d
+        if self._collection_date is None:
+            if self.article_meta is not None:
+                self._collection_date = xml_utils.date_element(self.article_meta.find('pub-date[@pub-type="collection"]'))
+        return self._collection_date
 
     @property
     def epub_ppub_date(self):
-        d = None
-        if self.article_meta is not None:
-            date = self.article_meta.find('pub-date[@pub-type="epub-ppub"]')
-            if date is not None:
-                d = {}
-                d['season'] = date.findtext('season')
-                d['month'] = date.findtext('month')
-                d['year'] = date.findtext('year')
-                d['day'] = date.findtext('day')
-        return d
+        if self._epub_ppub_date is None:
+            if self.article_meta is not None:
+                self._epub_ppub_date = xml_utils.date_element(self.article_meta.find('pub-date[@pub-type="epub-ppub"]'))
+        return self._epub_ppub_date
 
     @property
     def epub_date(self):
-        d = None
-        date = None
-        if self.article_meta is not None:
-            date = self.article_meta.find('pub-date[@pub-type="epub"]')
-            if date is None:
-                date = self.article_meta.find('pub-date[@date-type="preprint"]')
-            if date is not None:
-                d = {}
-                d['season'] = date.findtext('season')
-                d['month'] = date.findtext('month')
-                d['year'] = date.findtext('year')
-                d['day'] = date.findtext('day')
-        return d
+        if self._epub_date is None:
+            if self.article_meta is not None:
+                date_node = self.article_meta.find('pub-date[@pub-type="epub"]')
+                if date_node is None:
+                    date_node = self.article_meta.find('pub-date[@date-type="preprint"]')
+                self._epub_date = xml_utils.date_element(date_node)
+        return self._epub_date
 
     @property
     def is_article_press_release(self):
         r = False
-        for related in self.related_articles:
-            if related['related-article-type'] == 'article-reference':
-                r = True
-                break
-            if related['related-article-type'] == 'article':
-                r = True
-                break
-        return r
+        types = [related.get('related-article-type') for related in self.related_articles if not related.get('related-article-type') in ['corrected-article', 'press-release']]
+        return (len(types) > 0)
 
     @property
     def illustrative_materials(self):
@@ -1015,6 +1013,10 @@ class Article(ArticleXML):
 
     def __init__(self, tree, xml_name):
         ArticleXML.__init__(self, tree, xml_name)
+        self.number = None
+        self.number_suppl = None
+        self.volume_suppl = None
+        self.compl = None
         if self.tree is not None:
             self._issue_parts()
         self.pid = None
@@ -1024,6 +1026,33 @@ class Article(ArticleXML):
         self._doi_query_result = None
         self._doi_pid = None
         self._doi_journal_and_article = None
+
+    @property
+    def clinical_trial_url(self):
+        return self.ext_link_clinical_trial_href if self.ext_link_clinical_trial_href is not None else self.uri_clinical_trial_href
+
+    @property
+    def clinical_trial_text(self):
+        return self.ext_link_clinical_trial_text if self.ext_link_clinical_trial_text is not None else self.uri_clinical_trial_text
+
+    @property
+    def page_range(self):
+        _page_range = []
+        if self.fpage is not None:
+            _page_range.append(self.fpage)
+        if self.lpage is not None:
+            _page_range.append(self.lpage)
+        _page_range = '-'.join(_page_range)
+        return None if len(_page_range) == 0 else _page_range
+
+    @property
+    def pages(self):
+        _pages = []
+        if self.page_range is not None:
+            _pages.append(self.page_range)
+        if self.elocation_id is not None:
+            _pages.append(self.elocation_id)
+        return '; '.join(_pages)
 
     @property
     def doi_query_result(self):
@@ -1048,6 +1077,8 @@ class Article(ArticleXML):
         data['journal-title'] = self.journal_title
         data['journal id NLM'] = self.journal_id_nlm_ta
         data['journal ISSN'] = ','.join([k + ':' + v for k, v in self.journal_issns.items() if v is not None]) if self.journal_issns is not None else None
+        data['print ISSN'] = self.print_issn
+        data['e-ISSN'] = self.e_issn
         data['publisher name'] = self.publisher_name
         data['issue label'] = self.issue_label
         data['issue pub date'] = self.issue_pub_dateiso[0:4] if self.issue_pub_dateiso is not None else None
@@ -1056,7 +1087,10 @@ class Article(ArticleXML):
         seq = '' if self.fpage_seq is None else self.fpage_seq
         fpage = '' if self.fpage is None else self.fpage
         data['fpage-and-seq'] = fpage + seq
+        data['lpage'] = self.lpage
+        data['fpage'] = self.fpage
         data['elocation id'] = self.elocation_id
+
         return data
 
     @property
@@ -1098,6 +1132,15 @@ class Article(ArticleXML):
         return (self.volume is None) and (self.number == 'ahead')
 
     @property
+    def is_rolling_pass(self):
+        r = False
+        if self.epub_date is not None:
+            if not self.is_ahead:
+                if self.epub_ppub_date is None and self.collection_date is None:
+                    r = True
+        return r
+
+    @property
     def ahpdate(self):
         return self.article_pub_date if self.is_ahead else None
 
@@ -1130,9 +1173,21 @@ class Article(ArticleXML):
         return d
 
     @property
+    def collection_dateiso(self):
+        return article_utils.format_dateiso(self.collection_date)
+
+    @property
+    def epub_dateiso(self):
+        return article_utils.format_dateiso(self.epub_date)
+
+    @property
+    def epub_ppub_dateiso(self):
+        return article_utils.format_dateiso(self.epub_ppub_date)
+
+    @property
     def issue_label(self):
         year = self.issue_pub_date.get('year', '') if self.issue_pub_date is not None else ''
-        return article_utils.format_issue_label(year, self.volume, self.number, self.volume_suppl, self.number_suppl)
+        return article_utils.format_issue_label(year, self.volume, self.number, self.volume_suppl, self.number_suppl, self.compl)
 
     @property
     def issue_pub_dateiso(self):
@@ -1473,7 +1528,7 @@ class ReferenceXML(object):
 
 class Issue(object):
 
-    def __init__(self, acron, volume, number, dateiso, volume_suppl, number_suppl):
+    def __init__(self, acron, volume, number, dateiso, volume_suppl, number_suppl, compl):
         self.volume = volume
         self.number = number
         self.dateiso = dateiso
@@ -1481,7 +1536,8 @@ class Issue(object):
         self.number_suppl = number_suppl
         self.acron = acron
         self.year = dateiso[0:4]
+        self.compl = compl
 
     @property
     def issue_label(self):
-        return article_utils.format_issue_label(self.year, self.volume, self.number, self.volume_suppl, self.number_suppl)
+        return article_utils.format_issue_label(self.year, self.volume, self.number, self.volume_suppl, self.number_suppl, self.compl)

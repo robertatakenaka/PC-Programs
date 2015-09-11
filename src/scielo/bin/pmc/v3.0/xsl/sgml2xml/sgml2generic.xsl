@@ -167,7 +167,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 	<xsl:template match="ign"/>
 	<xsl:template match="list">
 		<xsl:choose>
-			<xsl:when test="../li">
+			<xsl:when test="parent::li or parent::quote" >
 				<list>
 					<xsl:apply-templates select="@*|*"/>
 				</list>
@@ -193,6 +193,9 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:choose>
 				<xsl:when test="litext">
 					<xsl:apply-templates select="litext"></xsl:apply-templates>
+				</xsl:when>
+				<xsl:when test="p">
+					<xsl:apply-templates select="*[name()!='label']"/>
 				</xsl:when>
 				<xsl:otherwise>
 					<p>
@@ -698,7 +701,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			</xsl:when>
 		</xsl:choose>
 	</xsl:template>
-	<xsl:template match="cltrial" mode="front-clinical-trial">
+	<!--xsl:template match="cltrial" mode="front-clinical-trial">
 		<uri>
 			<xsl:attribute name="content-type">clinical-trial</xsl:attribute>
 			<xsl:attribute name="xlink:href"><xsl:value-of select="ctreg/@cturl"/></xsl:attribute>
@@ -710,6 +713,19 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:attribute name="xlink:href"><xsl:value-of select="ctreg/@cturl"/></xsl:attribute>
 			<xsl:apply-templates select=".//text()"></xsl:apply-templates>
 		</uri>
+	</xsl:template-->
+	<xsl:template match="cltrial" mode="front-clinical-trial">
+		<ext-link>
+			<xsl:attribute name="ext-link-type">clinical-trial</xsl:attribute>
+			<xsl:attribute name="xlink:href"><xsl:value-of select="ctreg/@cturl"/></xsl:attribute>
+			<xsl:apply-templates select=".//text()"></xsl:apply-templates>
+		</ext-link>
+	</xsl:template>
+	<xsl:template match="cltrial">
+		<ext-link>
+			<xsl:attribute name="xlink:href"><xsl:value-of select="ctreg/@cturl"/></xsl:attribute>
+			<xsl:apply-templates select=".//text()"></xsl:apply-templates>
+		</ext-link>
 	</xsl:template>
 	
 	<xsl:template match="article|text|doc" mode="article-meta">
@@ -1950,7 +1966,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 	<xsl:template match="*[contains(name(),'citat')]| ref" mode="mixed-citation">
 		<mixed-citation>
 			<xsl:choose>
-				<xsl:when test="text-ref and label and not(text-ref/*)">
+				<xsl:when test="text-ref and label and not(text-ref/*) and contains(text-ref, label)">
 					<xsl:value-of select="substring-after(text-ref,label)"/>
 				</xsl:when>
 				<xsl:when test="text-ref">
@@ -2737,7 +2753,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:apply-templates select="." mode="graphic"/>
 		</inline-formula>
 	</xsl:template>
-	<xsl:template match="p/graphic | caption/graphic | li/graphic">
+	<xsl:template match="p/graphic | caption/graphic | li/graphic | p/equation//graphic">
 		<inline-graphic>
 			<xsl:apply-templates select="@*"/>
 		</inline-graphic>
@@ -3335,9 +3351,16 @@ et al.</copyright-statement>
 	</xsl:template>
 	<xsl:template match="quote">
 		<disp-quote>
-			<p>
-				<xsl:apply-templates select="*|text()"></xsl:apply-templates>
-			</p>
+			<xsl:choose>
+				<xsl:when test="p">
+					<xsl:apply-templates select="*"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<p>
+						<xsl:apply-templates select="*|text()"/>
+					</p>
+				</xsl:otherwise>
+			</xsl:choose>
 		</disp-quote>
 	</xsl:template>
 

@@ -46,8 +46,8 @@ def format_value(content):
 
 class IDFile(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, content_formatter=None):
+        self.content_formatter = content_formatter
 
     def _format_file(self, records):
         r = ''
@@ -62,14 +62,19 @@ class IDFile(object):
         return '!ID ' + i[-6:] + '\n'
 
     def _format_record(self, record):
-        r = []
+        result = ''
         if record is not None:
             #utils.debbuging(record)
+            r = []
             for tag_i in sorted([int(s) for s in record.keys() if s.isdigit()]):
                 tag = str(tag_i)
                 data = record.get(tag)
                 r.append(self.tag_data(tag, data))
-        return ''.join(r)
+            result = ''.join(r)
+
+            if self.content_formatter is not None:
+                result = self.content_formatter(result)
+        return result
 
     def tag_data(self, tag, data):
         occs = []
@@ -262,7 +267,7 @@ class CISIS(object):
         r = mst_filename + expression
         cmd = self.cisis_path + '/mx ' + mst_filename + ' "bool=' + expression + '"  lw=999 "pft=mfn/" now > ' + r
         os.system(cmd)
-        return [l.replace('\n', '') for l in open(r, 'r').readlines()]
+        return [l.strip().decode('utf-8') for l in open(r, 'r').readlines()]
 
     def new(self, mst_filename):
         cmd = self.cisis_path + '/mx null count=0 create="' + mst_filename + '" now -all'
@@ -418,15 +423,10 @@ class IsisDAO(object):
                 os.unlink(id_filename)
             except:
                 pass
-        else:
-            print('get_records: verificar')
-            print(db_filename)
-            print(expr)
-            print(id_filename)
         return r
 
     def get_id_records(self, id_filename):
         return IDFile().read(id_filename)
 
-    def save_id(self, id_filename, records):
-        IDFile().save(id_filename, records)
+    def save_id(self, id_filename, records, content_formatter=None):
+        IDFile(content_formatter).save(id_filename, records)

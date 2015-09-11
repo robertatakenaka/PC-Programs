@@ -28,6 +28,21 @@ messages = []
 log_items = []
 
 
+CURRENT_PATH = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')
+
+
+def xpm_version():
+    f = None
+    if os.path.isfile(CURRENT_PATH + '/../../xpm_version.txt'):
+        f = CURRENT_PATH + '/../../xpm_version.txt'
+    elif os.path.isfile(CURRENT_PATH + '/../../cfg/xpm_version.txt'):
+        f = CURRENT_PATH + '/../../cfg/xpm_version.txt'
+    version = ''
+    if f is not None:
+        version = open(f).readlines()[0].decode('utf-8')
+    return version
+
+
 def register_log(text):
     log_items.append(datetime.now().isoformat() + ' ' + text)
 
@@ -95,11 +110,6 @@ def rename_embedded_img_href(content, xml_name, new_href_list):
                 i += 1
             else:
                 new += item
-    else:
-        print('\n'.join([item for item in sorted(new_href_list)]))
-        print(str(len(new_href_list)))
-        print(str(len(_items)))
-
     return new
 
 
@@ -293,31 +303,33 @@ def replace_tables_in_sgmlxml(content, embedded_tables):
 
 
 def read_html(html_filename):
-    html_content = open(html_filename, 'r').read()
-    if not isinstance(html_content, unicode):
-        html_content = html_content.decode(encoding=sys.getfilesystemencoding())
+    html_content = fs_utils.read_file(html_filename, sys.getfilesystemencoding())
     if not '<html' in html_content.lower():
         c = html_content
         for c in html_content:
             if ord(c) == 0:
                 break
         html_content = html_content.replace(c, '')
-    print(type(html_content))
     return html_content
 
 
 def normalize_sgmlxml(sgmxml_filename, xml_name, content, src_path, version, html_filename):
     #content = fix_uppercase_tag(content)
     register_log('normalize_sgmlxml')
+    content = xml_utils.remove_doctype(content)
+    if 'mml:' in content and not 'xmlns:mml="http://www.w3.org/1998/Math/MathML"' in content:
+        if '<doc' in content:
+            content = content.replace('<doc ', '<doc xmlns:mml="http://www.w3.org/1998/Math/MathML" ')
+        elif '<article' in content:
+            content = content.replace('<article ', '<article xmlns:mml="http://www.w3.org/1998/Math/MathML" ')
+        elif '<text' in content:
+            content = content.replace('<text ', '<text xmlns:mml="http://www.w3.org/1998/Math/MathML" ')
 
-    if not isinstance(content, unicode):
-        print('content type')
-        print(type(content))
-        content = content.decode('utf-8')
     html_content = read_html(html_filename)
     #embedded_tables = get_html_tables(html_content)
     #content = replace_tables_in_sgmlxml(content, embedded_tables)
     content = extract_embedded_images(xml_name, content, html_content, html_filename, src_path)
+
     content = replace_fontsymbols(content, html_content)
     for style in ['italic', 'bold', 'sup', 'sub']:
         s = '<' + style + '>'
@@ -327,19 +339,13 @@ def normalize_sgmlxml(sgmxml_filename, xml_name, content, src_path, version, htm
     xml = xml_utils.is_xml_well_formed(content)
     if xml is None:
         content = fix_sgml_xml(content)
-        _content = content
-        if isinstance(content, unicode):
-            _content = content.encode('utf-8')
         utils.debugging(sgmxml_filename)
-        open(sgmxml_filename, 'w').write(_content)
+        fs_utils.write_file(sgmxml_filename, content)
         xml = xml_utils.is_xml_well_formed(content)
 
     if not xml is None:
         content = java_xml_utils.xml_content_transform(content, xml_versions.xsl_sgml2xml(version))
         content = replace_mimetypes(content, src_path)
-    else:
-        print('Unable to convert SGML 2 XML')
-        content = u''
     return content
 
 
@@ -421,7 +427,6 @@ def generate_new_name(doc, param_acron='', original_xml_name=''):
 
     r = ''
     vol, issueno, fpage, seq, elocation_id, order, doi = doc.volume, doc.number, doc.fpage, doc.fpage_seq, doc.elocation_id, doc.order, doc.doi
-    print([vol, issueno, fpage, seq, elocation_id, order, doi])
     issns = [issn for issn in [doc.e_issn, doc.print_issn] if issn is not None]
     if original_xml_name[0:9] in issns:
         issn = original_xml_name[0:9]
@@ -630,13 +635,10 @@ def message_file_list(label, file_list):
 
 def normalize_xml_content(doc_files_info, content, version):
     register_log('normalize_xml_content')
-    
-    register_log('remove_doctype')
-    content = xml_utils.remove_doctype(content)
-    
+
     register_log('convert_entities_to_chars')
     content, replaced_named_ent = xml_utils.convert_entities_to_chars(content)
-    
+
     replaced_entities_report = ''
     if len(replaced_named_ent) > 0:
         replaced_entities_report = 'Converted entities:' + '\n'.join(replaced_named_ent) + '-'*30
@@ -644,31 +646,31 @@ def normalize_xml_content(doc_files_info, content, version):
     if doc_files_info.is_sgmxml:
         content = normalize_sgmlxml(doc_files_info.xml_filename, doc_files_info.xml_name, content, doc_files_info.xml_path, version, doc_files_info.html_filename)
 
-    content = content.replace('dtd-version="3.0"', 'dtd-version="1.0"')
-    content = content.replace('publication-type="conf-proc"', 'publication-type="confproc"')
-    content = content.replace('publication-type="legaldoc"', 'publication-type="legal-doc"')
-    content = content.replace('publication-type="web"', 'publication-type="webpage"')
-    content = content.replace(' rid=" ', ' rid="')
-    content = content.replace(' id=" ', ' id="')
+    xml = xml_utils.is_xml_well_formed(content)
+    if xml is not None:
+        content = content.replace('dtd-version="3.0"', 'dtd-version="1.0"')
+        content = content.replace('publication-type="conf-proc"', 'publication-type="confproc"')
+        content = content.replace('publication-type="legaldoc"', 'publication-type="legal-doc"')
+        content = content.replace('publication-type="web"', 'publication-type="webpage"')
+        content = content.replace(' rid=" ', ' rid="')
+        content = content.replace(' id=" ', ' id="')
 
-    for style in ['sup', 'sub', 'bold', 'italic']:
-        content = content.replace('<' + style + '/>', '')
-        content = content.replace('<' + style + '> </' + style + '>', '')
-        content = content.replace('<' + style + '></' + style + '>', '')
-        content = content.replace('</' + style + '> <' + style + '>', '')
-        content = content.replace('</' + style + '><' + style + '>', '')
+        for style in ['sup', 'sub', 'bold', 'italic']:
+            content = content.replace('<' + style + '/>', '')
+            content = content.replace('<' + style + '> </' + style + '>', '')
+            content = content.replace('<' + style + '></' + style + '>', '')
+            content = content.replace('</' + style + '> <' + style + '>', '')
+            content = content.replace('</' + style + '><' + style + '>', '')
 
-    content = xml_utils.pretty_print(content)
+        content = xml_utils.pretty_print(content)
 
     return (content, replaced_entities_report)
 
 
 def get_new_name(doc_files_info, doc, acron):
-    print('get_new_name')
     new_name = doc_files_info.xml_name
     if doc_files_info.is_sgmxml:
         new_name = generate_new_name(doc, acron, doc_files_info.xml_name)
-    print(new_name)
     return new_name
 
 
@@ -695,6 +697,7 @@ def pack_xml_file(content, version, new_xml_filename, do_incorrect_copy=False):
 
 def normalize_package_name(doc_files_info, acron, content):
     register_log('load_xml')
+
     xml, e = xml_utils.load_xml(content)
     doc = article.Article(xml, doc_files_info.xml_name)
     doc_files_info.new_name = doc_files_info.xml_name
@@ -718,12 +721,27 @@ def normalize_package_name(doc_files_info, acron, content):
     return (doc, doc_files_info, curr_and_new_href_list, content)
 
 
+def get_normalized_package_name(doc, doc_files_info, acron):
+    new_name = doc_files_info.xml_name
+
+    if not doc.tree is None:
+        new_name = get_new_name(doc_files_info, doc, acron)
+
+    return new_name
+
+
+def apply_normalized_package_name(doc, doc_files_info, content):
+    curr_and_new_href_list = None
+    if not doc.tree is None:
+        curr_and_new_href_list = get_curr_and_new_href_list(doc_files_info, doc)
+        if doc_files_info.is_sgmxml:
+            content = normalize_hrefs(content, curr_and_new_href_list)
+    return (curr_and_new_href_list, content)
+
+
 def make_article_package(doc_files_info, scielo_pkg_path, version, acron):
     packed_files_report = ''
-    content = open(doc_files_info.xml_filename, 'r').read()
-
-    if not isinstance(content, unicode):
-        content = content.decode('utf-8')
+    content = fs_utils.read_file(doc_files_info.xml_filename)
 
     content, replaced_entities_report = normalize_xml_content(doc_files_info, content, version)
 
@@ -740,12 +758,7 @@ def make_article_package(doc_files_info, scielo_pkg_path, version, acron):
 
     pack_xml_file(content, version, doc_files_info.new_xml_filename, (doc.tree is None))
 
-    if isinstance(replaced_entities_report, unicode):
-        replaced_entities_report = replaced_entities_report.encode('utf-8')
-    if isinstance(packed_files_report, unicode):
-        packed_files_report = packed_files_report.encode('utf-8')
-
-    open(doc_files_info.err_filename, 'w').write(replaced_entities_report + packed_files_report)
+    fs_utils.write_file(doc_files_info.err_filename, replaced_entities_report + packed_files_report)
 
     return (doc, doc_files_info)
 
@@ -776,7 +789,7 @@ def get_not_found_extended(path, href_list):
     return not_found
 
 
-def xml_output(run_background, xml_filename, doctype, xsl_filename, result_filename):
+def xml_output(xml_filename, doctype, xsl_filename, result_filename):
     if result_filename == xml_filename:
         shutil.copyfile(xml_filename, xml_filename + '.bkp')
         xml_filename = xml_filename + '.bkp'
@@ -785,7 +798,7 @@ def xml_output(run_background, xml_filename, doctype, xsl_filename, result_filen
         os.unlink(result_filename)
 
     bkp_xml_filename = xml_utils.apply_dtd(xml_filename, doctype)
-    r = java_xml_utils.xml_transform(run_background, xml_filename, xsl_filename, result_filename)
+    r = java_xml_utils.xml_transform(xml_filename, xsl_filename, result_filename)
 
     if not result_filename == xml_filename:
         xml_utils.restore_xml_file(xml_filename, bkp_xml_filename)
@@ -864,10 +877,10 @@ def make_pmc_package(articles, doc_files_info_items, scielo_pkg_path, pmc_pkg_pa
             utils.display_message(item_label)
 
             pmc_xml_filename = pmc_pkg_path + '/' + doc_files_info.new_name + '.xml'
-            xml_output(False, doc_files_info.new_xml_filename, scielo_dtd_files.doctype_with_local_path, scielo_dtd_files.xsl_output, pmc_xml_filename)
+            xml_output(doc_files_info.new_xml_filename, scielo_dtd_files.doctype_with_local_path, scielo_dtd_files.xsl_output, pmc_xml_filename)
 
-            xpchecker.style_validation(True, pmc_xml_filename, pmc_dtd_files.doctype_with_local_path, doc_files_info.pmc_style_report_filename, pmc_dtd_files.xsl_prep_report, pmc_dtd_files.xsl_report, pmc_dtd_files.database_name)
-            xml_output(True, pmc_xml_filename, pmc_dtd_files.doctype_with_local_path, pmc_dtd_files.xsl_output, pmc_xml_filename)
+            xpchecker.style_validation(pmc_xml_filename, pmc_dtd_files.doctype_with_local_path, doc_files_info.pmc_style_report_filename, pmc_dtd_files.xsl_prep_report, pmc_dtd_files.xsl_report, pmc_dtd_files.database_name)
+            xml_output(pmc_xml_filename, pmc_dtd_files.doctype_with_local_path, pmc_dtd_files.xsl_output, pmc_xml_filename)
 
     if do_it:
         for f in os.listdir(scielo_pkg_path):
@@ -877,7 +890,7 @@ def make_pmc_package(articles, doc_files_info_items, scielo_pkg_path, pmc_pkg_pa
 
 
 def pack_and_validate(xml_files, results_path, acron, version, from_converter=False):
-    from_markup = any([f.endswith('.sgm.xml') for f in xml_files])
+    xml_generation = any([f.endswith('.sgm.xml') for f in xml_files])
 
     scielo_pkg_path = results_path + '/scielo_package'
     pmc_pkg_path = results_path + '/pmc_package'
@@ -908,33 +921,33 @@ def pack_and_validate(xml_files, results_path, acron, version, from_converter=Fa
         report_components['pkg_overview'] += articles_pkg_reports.references_overview_report()
         report_components['references'] = articles_pkg_reports.sources_overview_report()
 
-        if not from_markup:
-            toc_f, toc_e, toc_w, toc_report = articles_pkg_reports.validate_consistency(from_converter)
-            report_components['detail-report'] = toc_report
+        if not xml_generation:
+            critical, toc_validations = articles_pkg_reports.validate_consistency(from_converter)
+            report_components['issue-report'] = toc_validations.message
+            toc_f = toc_validations.fatal_errors
 
         if toc_f == 0:
             org_manager = institutions_service.OrgManager()
             org_manager.load()
 
-            #fatal_errors, articles_stats, articles_reports = pkg_reports.validate_pkg_items(org_manager, articles, doc_files_info_items, scielo_dtd_files, from_converter, from_markup)
-            articles_pkg.validate_articles_pkg_xml_and_data(org_manager, doc_files_info_items, scielo_dtd_files, from_converter, from_markup)
+            #fatal_errors, articles_stats, articles_reports = pkg_reports.validate_pkg_items(org_manager, articles, doc_files_info_items, scielo_dtd_files, from_converter, xml_generation)
+            articles_pkg.validate_articles_pkg_xml_and_data(org_manager, doc_files_info_items, scielo_dtd_files, from_converter, xml_generation)
 
-            if not from_markup:
+            if not xml_generation:
                 report_components['detail-report'] = articles_pkg_reports.detail_report()
-                articles_pkg_reports.delete_pkg_xml_and_data_reports()
                 report_components['xml-files'] += pkg_reports.processing_result_location(os.path.dirname(scielo_pkg_path))
-            #if not from_markup:
+            #if not xml_generation:
             #    register_log('pack_and_validate: pkg_reports.get_lists_report_text')
             #    texts.append(pkg_reports.get_lists_report_text(articles_sheets))
 
-        if not from_markup:
-            f, e, w, content = pkg_reports.format_complete_report(report_components)
+        if not xml_generation:
+            xpm_validations = pkg_reports.format_complete_report(report_components)
             filename = report_path + '/xml_package_maker.html'
-            pkg_reports.save_report(filename, _('XML Package Maker Report'), content)
+            pkg_reports.save_report(filename, _('XML Package Maker Report'), xpm_validations.message, xpm_version())
             pkg_reports.display_report(filename)
 
         if not from_converter:
-            if from_markup:
+            if xml_generation:
                 make_pmc_report(articles, doc_files_info_items)
             if is_pmc_journal(articles):
                 make_pmc_package(articles, doc_files_info_items, scielo_pkg_path, pmc_pkg_path, scielo_dtd_files, pmc_dtd_files)
@@ -1071,6 +1084,7 @@ def make_packages(path, acron, version='1.0'):
 
 
 def get_inputs(args):
+    args = [arg.decode(encoding=sys.getfilesystemencoding()) for arg in args]
     script = args[0]
     path = None
     acron = None
@@ -1081,6 +1095,7 @@ def get_inputs(args):
 
 def call_make_packages(args, version):
     script, path, acron = get_inputs(args)
+
     if path is None and acron is None:
         # GUI
         import xml_gui
