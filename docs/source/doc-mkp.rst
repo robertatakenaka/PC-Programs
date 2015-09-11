@@ -7,7 +7,11 @@ Documentação de uso Markup
 Manual de marcação de arquivos para geração de XML de acordo com SciELO Publishing Schema (SciELO PS). 
 
 
+<<<<<<< HEAD
 .. _introdução:
+=======
+.. _introduction:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Introdução
 ==========
@@ -17,7 +21,11 @@ Para padrões de nomeação de arquivos consultar  Regra de Nomeação de Arquiv
 
 
 
+<<<<<<< HEAD
 .. _requisitos-markup:
+=======
+.. _requirements-markup:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
  Requisitos para iniciar a Marcação
  ===================================
@@ -36,7 +44,11 @@ Para padrões de nomeação de arquivos consultar  Regra de Nomeação de Arquiv
          Exemplo: ACB_2345.doc
 
 
+<<<<<<< HEAD
 .. _estrutura-de-pastas:
+=======
+.. _structure-folders:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Estrutura de pastas
 ===================
@@ -45,9 +57,13 @@ Antes de iniciar a marcação, é necessário garantir que a estrutura de pastas
 esteja como segue:
 
 
+<<<<<<< HEAD
 .. image:: img/doc-mkp-estrutura.jpg
    :height: 200px
    :align: center
+=======
+  .. image:: img/doc-mkp-estrutura.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
@@ -61,7 +77,11 @@ Veja que dentro da pasta "markup_xml" foi inserido 2 pastas, no mesmo nível:
            possível iniciar a marcação do documento e gerar o arquivo .xml.
 
 
+<<<<<<< HEAD
 .. _formato-scielo:
+=======
+.. _format-scielo:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Formatação SciELO
 ------------------
@@ -96,10 +116,15 @@ Para otimizar o processo de marcação dos elementos básicos do arquivo, é nec
 
 Exemplo:
 
+<<<<<<< HEAD
 .. image:: img/doc-mkp-2mostra.jpg
    :height: 400px
    :width: 200px
    :align: center
+=======
+
+   .. image:: img/doc-mkp-2mostra.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
@@ -107,13 +132,18 @@ Exemplo:
 
 
 
+<<<<<<< HEAD
 .. _atribuição-id:
+=======
+.. _attribution-id:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Sugestão de Atribuição de “ID”
 -----------------------------
 
 Para composição do “ID” combine o prefixo do tipo do elemento e um número inteiro, como segue::
 
+<<<<<<< HEAD
 +------------------------+---------------------------+---------+---------------------+
 | Elemento XML           | Descrição                 | Prefixo | Exemplo             |
 +========================+===========================+=========+=====================+
@@ -154,6 +184,42 @@ Para composição do “ID” combine o prefixo do tipo do elemento e um número
 
 
 .. _elementos-markup:
+=======
++------------------------+---------------------------+---------+--------------------+
+|Elemento XML            | Descrição                 | Prefixo | Exemplo            |
++========================+===========================+=========+====================+
+| aff                    | Afiliação                 | aff     | aff1, aff2...      |
++------------------------+---------------------------+---------+--------------------+
+| app                    | Apêndice                  | app     | app1, app2...      |
++------------------------+---------------------------+---------+--------------------+
+| author-notes/fn        | Notas de rodape do        | fn      | fn1, fn2 ...       |
+| fn-group/fn            | artigo                    |         |                    |
++------------------------+---------------------------+---------+--------------------+
+| corresp                | Correspondência           | c       | c1, c2 ...         |
++------------------------+---------------------------+---------+--------------------+
+| def-list               | lista de definição        | d       | d1, d2 ...         |
++------------------------+---------------------------+---------+--------------------+
+| disp-formula           | Equação                   | e       | e1, e2 ...         |
++------------------------+---------------------------+---------+--------------------+
+| fig                    | Figuras                   | f       | f1, f2 ...         |
++------------------------+---------------------------+---------+--------------------+
+| media                  | Media                     | m       | m1, m2 ...         |
++------------------------+---------------------------+---------+--------------------+
+| ref                    | Referência Bibliográfica  | B       | B1, B2 ...         |
++------------------------+---------------------------+---------+--------------------+
+| sec                    | Seções                    | sec     | sec1, sec2 ...     |
++------------------------+---------------------------+---------+--------------------+
+| supplementary-material | Suplemento                | suppl   | suppl1, suppl2 ... |
++------------------------+---------------------------+---------+--------------------+
+|table-wrap-foot/fn      | Notas de rodapé de tabela | TFN     | TFN1, TFN2 ...     |
++------------------------+---------------------------+---------+--------------------+
+| table-wrap             | Tabela                    | t       | t1, t2 ...         |
++------------------------+---------------------------+---------+--------------------+
+
+
+
+.. _markup-elements:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Marcação dos elementos básicos do documento
 ===========================================
@@ -162,9 +228,13 @@ Marcação dos elementos básicos do documento
 Após formatar os dados básicos do arquivo, o próximo passo é dar início a marcação XML. 
 Primeiramente, abra o arquivo .doc no Word e selecione a tag [doc]:
 
+<<<<<<< HEAD
 .. image:: img/doc-mkp-formulario.jpg
    :height: 400px
    :align: center
+=======
+.. image:: doc-mkp-formulario.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Perceba que ao clicar em [doc] o programa irá abrir uma caixa de diálogo onde deverá ser inserido os metadados do arquivo:
@@ -233,7 +303,11 @@ Feito isso, o próximo passo é completar as informações nos demais campos. Ve
 .. note:: Os campos que apresentam um asterisco ao lado, são campos obrigatórios.
 
 
+<<<<<<< HEAD
 .. _front:
+=======
+.. _markup-front:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Marcação automática do 'front'
 ==============================
@@ -241,15 +315,21 @@ Marcação automática do 'front'
 Tendo preenchido todos os campos, ao clicar em [Ok] o programa irá abrir uma janela perguntando se o documento está de acordo com o modelo para efetuar a marcação automática:
 
 .. image:: img/doc-mkp-mkp-automatic.jpg
+<<<<<<< HEAD
    :height: 450px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Ao clicar em [Sim] veja que o programa efetua a marcação automática dos elementos básicos do documento:
 
 .. image:: img/doc-mkp-mkp--auto.jpg
+<<<<<<< HEAD
    :height: 400px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 .. note:: Caso o arquivo esteja com a formatação recomendada, o programa Markup irá fazer a marcação automática de DOI, seção 
@@ -260,7 +340,11 @@ Ao clicar em [Sim] veja que o programa efetua a marcação automática dos eleme
 Após a marcação automática é necessário completar a marcação dos elementos básicos. 
 
 
+<<<<<<< HEAD
 .. _titulo:
+=======
+.. _title:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Doctitle
 --------
@@ -270,6 +354,7 @@ Para corrigir, selecione a tag "incorreta" e clique no botão "lápis" para edit
 
 
 .. image:: img/doc-mkp-language-doctitle.jpg
+<<<<<<< HEAD
    :height: 400px
    :align: center
 
@@ -277,6 +362,13 @@ Faça o mesmo para os demais títulos traduzidos.
 
 
 .. _autores:
+=======
+
+ Faça o mesmo para os demais títulos traduzidos.
+
+
+.. _authors:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Autores
 -------
@@ -285,8 +377,11 @@ Alguns autores apresentam mais que 1 label ao lado do nome, porém o programa n�
 
 
 .. image:: img/doc-mkp-xref-label.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Note que para identificar o label de autor relacionado à afiliação, o tipo de xref (ref-type) selecionado foi o "affiliação" e o rid "aff3" para relacionar o label 3 à afiliação correspondente.
 
@@ -294,6 +389,7 @@ Autores que apresentam a informação de função, como o cargo exercido, o prog
 
 
 .. image:: img/doc-mkp-role-author.jpg
+<<<<<<< HEAD
    :height: 230px
    :align: center
 
@@ -304,6 +400,13 @@ Autores que apresentam a informação de função, como o cargo exercido, o prog
 
 
 .. _afiliação:
+=======
+
+.. image:: img/doc-mkp-mkp-role-author.jpg
+
+
+.. _afiliation:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Afiliações
 ----------
@@ -315,16 +418,22 @@ Para fazer a identificação dos elementos acima vá para o nível inferior do e
 
 
 .. image:: img/doc-mkp-detalhamento-aff.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Após o detalhamento de afiliações o próximo passo é fazer a normalização das instituições e países. Para isso, selecione o elemento [normaff] e clique no "lapis" para editar os atributos. O programa irá apresentar uma janela para normalização dos elementos indicados nos campos em branco. Veja:
 
 
 .. image:: img/doc-mkp-normalizacao-aff.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
@@ -332,6 +441,7 @@ No campo "icountry" selecione o país da instituição maior (orgname), em segui
 
 
 .. image:: img/doc-mkp-normalizadas.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
 
@@ -340,13 +450,22 @@ No campo "icountry" selecione o país da instituição maior (orgname), em segui
 .. image:: img/doc-mkp-aff.jpg
    :height: 150px
    :align: center
+=======
+
+
+.. image:: img/doc-mkp-aff.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
 .. note:: Caso a instituição não exista na lista do Markup, selecione o elemento "No match found" e clique em [OK].
 
 
+<<<<<<< HEAD
 .. _resumo:
+=======
+.. _abstract:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Resumos
 =======
@@ -355,13 +474,21 @@ Os resumos devem ser identificados manualmente. Para marcação de resumos simpl
 Observe que ao utilizar o [xmlabstr] para resumos simples, o programa marca automaticamente o título e o parágrafo do resumo:
 
 Resumo sem seção:
+<<<<<<< HEAD
 -----------------
+=======
+^^^^^^^^^^^^^^^^^
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 selecionando: 
 
 .. image:: img/doc-mkp-select-abstract-s.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Note que ao clicar em [xmlabstr] o programa abrirá uma janela a qual deverá ser indicado o idioma do resumo marcado:
@@ -370,6 +497,7 @@ Note que ao clicar em [xmlabstr] o programa abrirá uma janela a qual deverá se
 marcação: 
 
 .. image:: img/doc-mkp-idioma-resumo.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
@@ -378,19 +506,34 @@ marcação:
 .. image:: img/doc-mkp-mkp-abstract.jpg
    :height: 300px
    :align: center
+=======
+ 
+
+
+.. image:: img/doc-mkp-mkp-abstract.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Já resumos estruturados, além do programa identificar o título automaticamente é identificado também cada seção do resumo e seus respectivos parágrafos. Veja:
 
 
 Resumo com seção:
+<<<<<<< HEAD
 -----------------
+=======
+^^^^^^^^^^^^^^^^^ 
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 selecionando: 
 
 .. image:: img/doc-mkp-select-abstract.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Note que ao clicar em [xmlabstr] o programa abrirá uma janela a qual deverá ser indicado o idioma do resumo marcado:
@@ -398,18 +541,29 @@ Note que ao clicar em [xmlabstr] o programa abrirá uma janela a qual deverá se
 marcação: 
 		  
 .. image:: img/doc-mkp-idioma-abstract.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
 .. image:: img/doc-mkp-mkp-resumo.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
 
 
 .. _palavra-chave:
+=======
+
+
+
+
+.. _keyword:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Keywords
 ========
@@ -418,6 +572,7 @@ O programa Markup apresenta duas tags para identificação de palavra-chave, a t
 A tag [*kwdgrp], com asterisco, é utilizada para identificação automática de cada palavra-chave e também do título. Para isso, selecione toda a informação inclusive o título e identifique os dados com o elemento [*kwdgrp].
 
 Marcação automática:
+<<<<<<< HEAD
 --------------------
 
 selecionando:
@@ -425,6 +580,14 @@ selecionando:
 .. image:: img/doc-mkp-select-kwd.jpg
    :height: 300px
    :align: center
+=======
+^^^^^^^^^^^^^^^^^^^^
+
+selecionando: 
+
+.. image:: img/doc-mkp-select-kwd.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Note que ao clicar em [*kwdgrp] o programa abrirá uma janela a qual deverá ser indicado o idioma das palavra-chave marcada:
@@ -433,6 +596,7 @@ Note que ao clicar em [*kwdgrp] o programa abrirá uma janela a qual deverá ser
 marcação: 
 
 .. image:: img/doc-mkp-mkp-kwd.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
@@ -444,6 +608,17 @@ marcação:
 
 Marcação manual:
 ----------------
+=======
+
+
+
+.. image:: img/doc-mkp-kwd-grp.jpg
+
+          
+
+Marcação manual:
+^^^^^^^^^^^^^^^^
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 A tag [kwdgrp], sem asterisco, deve ser utilizada caso a identificação automática não funcione, porém a especificação das palavras deve ser manual. Ou seja, selecione e marque item por item. Primeiramente selecione o título das palavras-chave e as palavras descritas e em seguida identifique com o elemento [kwdgrp]:
 
@@ -451,26 +626,40 @@ A tag [kwdgrp], sem asterisco, deve ser utilizada caso a identificação automá
 **marcação:**
 
 .. image:: img/doc-mkp-selection-kwd-s.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+ 
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
 Feito a marcação de todos os dados de palavras-chave, o próximo passo é fazer a identificação de item por item, iniciando pelo título. Para isso selecione o título das palavras-chave e identifique com o elemento [sectitle]:
 
 .. image:: img/doc-mkp-sec-kwd.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Em seguida selecione palavra por palavra e identifique com o elemento [kwd]:
 
 .. image:: img/doc-mkp-kwd-kwd.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
 
 .. _historico:
+=======
+
+
+.. _history:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 History
 =======
@@ -479,8 +668,12 @@ O elemento [hist] é utilizado para identificar o histórico do documento. Para 
 
 
 .. image:: img/doc-mkp-hist-select.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
@@ -488,13 +681,18 @@ Feito isso selecione a data de recebido e identifique com o elemento [received].
 ANO MÊS DIA. Veja:
 
 .. image:: img/doc-mkp-received.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Caso haja a data de revisado, selecione o dado e identifique com o elemento [revised]. Faça o mesmo para a data de aceito; selecione a data e identitique com o elemento [received]. Confira a data ISO indicada no campo dateisso e corrija se necessário. Veja:
 
 .. image:: img/doc-mkp-accepted.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
@@ -503,23 +701,41 @@ Caso haja a data de revisado, selecione o dado e identifique com o elemento [rev
 
 Correspondencia
 ===============
+=======
+
+
+
+.. _correspondence:
+
+Correspondence
+==============
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Com o elemento [corresp] é possível fazer a identificação dos dados de correspondência do autor. Note que essa tag possui um subnível para identificação do e-mail do autor. 
 Para identificar esse dado, selecione toda a informação de correspondência e marque com o elemento [corresp]. Note que será apresentado uma janela para identificação do id de correspondência, nesse caso inserir "c" + o número de ordem da correspondencia. Veja:
 
 .. image:: img/doc-mkp-corresp-select.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Feito isso, selecione o e-mail do autor correspondente e identifique com o elemento [email]:
 
 .. image:: img/doc-mkp-email-corresp.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
 
 .. _ensaio-clinico:
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Ensaio Clínico
 ==============
@@ -528,26 +744,39 @@ Cada ensaio clínico deve ter um protocolo, ou plano de ação que descreve o qu
 Arquivos que apresentam informação de ensaio clínico com número de registro, devem ser identificados pela tag [cltrial]:
 
 .. image:: img/doc-mkp-tag-cltrial.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Selecione o número de registro e identifique com o elemento [ctreg]. Veja que o programa irá abrir uma janela com 2 campos para identificação da URL da base de dados onde o Ensaio foi indexado e um campo "ctdbid" para selecionar a base correspondente:
 
 .. image:: img/doc-mkp-clinicaltr.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Para encontrar a URL do ensaio clínico faça uma busca na internet pelo número de registro para preenchimento do atributo conforme exemplo abaixo.
 
 .. image:: img/doc-mkp-ensaio.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: Comumente a informação de ensaio clínico está posicionada abaixo de resumos ou palavras-chave.
 
 
+<<<<<<< HEAD
 .. _referencias:
+=======
+.. _references:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Referencias
 ===========
@@ -558,17 +787,27 @@ Para marcar referências bibliográficas selecione o grupo de referências, incl
 
 
 .. image:: img/doc-mkp-select-refs-mkp.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
 .. image:: img/doc-mkp-mkp-refs.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
 
 .. _tipos-de-referencias:
+=======
+
+
+
+.. _ref-type:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Tipos de Referências
 ====================
@@ -577,6 +816,7 @@ A partir da marcação feita, alguns tipos de referência serão alterados autom
 Para alterar o tipo de referência clique no elemento [ref] e em seguida clique no lápis "Editar Atributos" e em "reftype" selecione o tipo correto. Veja:
 
 .. image:: img/doc-mkp-edit-ref-type.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
@@ -585,6 +825,12 @@ Para alterar o tipo de referência clique no elemento [ref] e em seguida clique 
    :height: 100px
    :width: 300px
    :align: center
+=======
+
+
+.. image:: img/doc-mkp-ref-editado-legal-doc.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 .. note:: Uma referência deve ter sua tipologia sempre baseada no seu conteúdo e nunca no seu suporte. Ou seja uma lei representa um
@@ -595,8 +841,11 @@ Para alterar o tipo de referência clique no elemento [ref] e em seguida clique 
 Veja abaixo os tipos de referência suportados por SciELO e a marcação de cada ref.
 
 
+<<<<<<< HEAD
 .. _lei:
 
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 legal-doc
 ---------
 Utilizada para referenciar documentos jurídicos, incluem informações sobre, legislação, jurisprudência e doutrina. Ex.:
@@ -605,11 +854,17 @@ Utilizada para referenciar documentos jurídicos, incluem informações sobre, l
 	*Brasil. Portaria no 1169/GM em 15 de junho de 2004. Institui a Política Nacional de Atenção Cardiovascular de Alta Complexidade, e dá outras providências. Diário Oficial 2004; seção 1, n.115, p.57.*
 
 .. image:: img/doc-mkp-ref-legal-doc1.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
 
 
 .. _relatorio:
+=======
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Report
 ------
@@ -620,11 +875,16 @@ Utilizada para referenciar relatórios técnicos, normalmente de autoria institu
 
 
 .. image:: img/doc-mkp-ref-report.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
 
 
 .. _livro:
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Book
 -----
@@ -636,11 +896,17 @@ Ex.:
 
 
 .. image:: img/doc-mkp-ref-book.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
 
 
 .. _livro-inpress:
+=======
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Book no prelo
 -------------
@@ -650,11 +916,17 @@ Livros finalizados, porém em fase de edição geralmente ao final da referênci
 	*CIRENO, F.; LUBAMBO, C. Estratégia eleitoral e eleições para Câmara dos Deputados no Brasil em 2006, no prelo.*
 
 .. image:: img/doc-mkp-ref-book-no-prelo.jpg
+<<<<<<< HEAD
    :height: 180px
    :align: center
 
 
 .. _capitulo-de-livro:
+=======
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Book Chapter
 ------------
@@ -664,11 +936,17 @@ Divisão de um documento (título do artigo e seus respectivos autores - Podendo
 	*Lastres, H.M.M.; Ferraz, J.C. Economia da informação, do conhecimento e do aprendizado. In: Lastres, H.M.M.; Albagli, S. (Org.). Informação e globalização na era do conhecimento. Rio de Janeiro: Campus, 1999. p.27-57.*
 
 .. image:: img/doc-mkp-ref-chapter-book.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
 
 .. _tese:
+=======
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Thesis
 ------
@@ -678,10 +956,15 @@ Utilizada para referenciar monografias, dissertações ou teses para obtenção 
 	*PINHEIRO, Fernanda Domingos. Em defesa da liberdade: libertos e livres de cor nos tribu¬nais do Antigo Regime português (Mariana e Lisboa, 1720-1819). Tese de doutorado, Departamento de História, Instituto de Filosofia e Ciências Humanas, Univer¬sidade Estadual de Campinas, 2013*
 
 .. image:: img/doc-mkp-ref-thesis.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
 .. _conferencia:
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Confproc
 --------
@@ -692,10 +975,15 @@ Utilizada para referenciar documentos relacionados à eventos: atas, anais, resu
 
 
 .. image:: img/doc-mkp-ref-confproc.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
 .. _web:
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Webpage
 -------
@@ -705,18 +993,27 @@ Utilizada para referenciar, web sites ou informações contidas em blogs, twiter
 	*UOL JOGOS. Fórum de jogos online: Por que os portugas falam que o sotaque português do Brasil é açucarado???, 2011. Disponível em <http://forum.jogos.uol.com.br/_t_1293567>. Acessado em 06 de fevereiro de 2014.*
 
 .. image:: img/doc-mkp-ref-web-uol.jpg
+<<<<<<< HEAD
    :height: 80px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 	*BANCO CENTRAL DO BRASIL. Disponível em: www.bcb.gov.br.*
 
 .. image:: img/doc-mkp-ref-web-bb.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
 
 .. _revista:
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 journal
 -------
@@ -726,11 +1023,16 @@ Utilizada para referenciar publicações seriadas científicas, como revistas, b
 	*Cardinalli, I. (2011). A saúde e a doença mental segundo a fenomenologia existencial. Revista da Associação Brasileira de Daseinsanalyse, São Paulo, 16, 98-114.*
 
 .. image:: img/doc-mkp-ref-journal.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
 
 .. _outro:
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Other
 -----
@@ -740,12 +1042,18 @@ Utilizada para referenciar tipos não previstos pelo SciELO. Ex.:
 	*INAC. Grupo Nacional de Canto e Dança da República Popular de Moçambique. Maputo, [s.d.].*
 
 .. image:: img/doc-mkp-ref-other.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
 
 
 
 .. _base-de-dados:
+=======
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Database
 --------
@@ -755,11 +1063,15 @@ Utilizada para referenciar bases e bancos de dados. Ex.:
 	*IPEADATA. Disponível em: http://www.ipeadata.gov.br.  Acesso em: 12 fev. 2010.*
 
 .. image:: img/doc-mkp-ref-database.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
 
 
 .. _software:
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Software
 --------
@@ -769,19 +1081,28 @@ Utilizada para referenciar um software, um programa de computador. Ex.:
 	*Nelson KN. Comprehensive body composition software [computer program on disk]. Release 1.0 for DOS. Champaign (IL): Human Kinetics, c1997. 1 computer disk: color, 3 1/2 in.*
 
 .. image:: img/doc-mkp-ref-software.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
 
 
 .. _jornal:
+=======
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Newspaper**
 ---------
 Utilizada para referenciar publicações seriadas sem cunho científico, como revistas e jornais. Ex.:
 
 
+<<<<<<< HEAD
 .. _patente:
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Patent**
 ------
@@ -789,7 +1110,11 @@ Patent**
 Utilizada para referenciar patentes; a patente representa um título de propriedade que confere ao seu titular o direito de impedir terceiros explorarem sua criação.. Ex.:
 
 
+<<<<<<< HEAD
 .. _nota-de-rodape:
+=======
+.. _footnote:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Notas de Rodapé
 ===============
@@ -799,15 +1124,24 @@ As notas de rodapé podem ser identificadas antes do corpo do texto ou depois. N
 Para identificar uma nota selecione o dado indicado e marque com o elemento [fngrp].
 
 .. image:: img/doc-mkp-select-fn-contri.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Caso a nota apresente um título ou um símbolo, selecione a informação e identifique com o elemento [label]:
 
 .. image:: img/doc-mkp-fn-label-con.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Suporte sem Informação de Financiamento
@@ -817,8 +1151,12 @@ Para notas de rodapé que apresentam informação de suporte de entidade, instit
 
 
 .. image:: img/doc-mkp-fn-label-con.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Suporte com Informação de Financiamento
@@ -828,39 +1166,61 @@ Notas de rodapé que apresentam informação de financiamento com número de con
 Para marcar o financiamento selecione os dados de instituição e número e identifique com o elemento [funding]:
 
 .. image:: img/doc-mkp-select-fn-fdiscl.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Feito isso, o próximo passo é selecionar o primeiro grupo de instituição financiadora + número de contrato e identificar com o elemento [award]. Veja:
 
 .. image:: img/doc-mkp-award-select.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Após a identificação de [award] selecione a instituição financiadora e marque com o elemento [fundsrc]:
 
 .. image:: img/doc-mkp-fund-source-fn.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Depois selecione cada número de contrato e identifique com o elemento [contract]:
 
 .. image:: img/doc-mkp-contract-fn.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Caso a nota de rodapé apresente mais que uma instituição financiadora e número de contrato, faça a marcação conforme segue o exemplo abaixo:
 
 .. image:: img/doc-mkp-mkp-fn-fund-2.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
    
 
 .. _apendice:
+=======
+
+   
+
+.. _app:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Apêndices
 =========
@@ -868,22 +1228,31 @@ Apêndices
 A identificação de apêndices, anexos e materiais suplementares devem ser feitas pela tag [appgrp]:
 
 .. image:: img/doc-mkp-element-app.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Selecione todo o grupo de de apêndice, inclusive o título, se existir. Depois clique em [appgrp]:
 
 
 .. image:: img/doc-mkp-app.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 selecione apêndice por apêndice e identifique com o elemento [app]
 
 .. image:: img/doc-mkp-id-app.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: o id deve ser sempre único no documento.
 
@@ -892,6 +1261,7 @@ Caso o apêndice seja de figura, tabela, quadro etc, selecione o título de apê
 **botões flutuantes**
 
 .. image:: img/doc-mkp-tags-flutuantes.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
 
@@ -905,6 +1275,16 @@ Exemplo, selecione a figura com seu respectivo label e caption e identifique com
 .. image:: img/doc-mkp-app-fig2.jpg
    :height: 300px
    :align: center
+=======
+
+Exemplo, selecione a figura com seu respectivo label e caption e identifique com o elemento [figgrp]
+
+.. image:: img/doc-mkp-app-fig1
+
+
+.. image:: img/doc-mkp-app-fig2.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: Assegure-se de que o id da figura de apêndice é único no documento.
 
@@ -912,6 +1292,7 @@ Exemplo, selecione a figura com seu respectivo label e caption e identifique com
 Para apêndices que apresentam parágrafos, selecione o dado apresentado e identifique com o elemento [sec]:
 
 .. image:: img/doc-mkp-app-sec-select.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
@@ -922,6 +1303,14 @@ Para apêndices que apresentam parágrafos, selecione o dado apresentado e ident
 
 
 .. _agradecimentos:
+=======
+
+
+.. image:: img/doc-mkp-app-sec.jpg
+
+
+.. _ack:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Agradecimentos
 ==============
@@ -931,34 +1320,52 @@ A informação de agradecimento fica entre o final do corpo do texto e antes de 
 
 **selecionando [ack]**
 
+<<<<<<< HEAD
 .. image:: img/doc-mkp-ack-nofunding.jpg
    :height: 100px
    :align: center
+=======
+.. image:: img/doc-mkp-nofunding.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 **Resultado esperado**
 
 .. image:: img/doc-mkp-ack-fim.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Comumente os dados de agradecimentos apresentam informação de financiamento, com número de contrato e instituição financiadora. Para esse tipo de marcação é necessário fazer a identificação desses elementos de financiamento em agradecimentos através do elemento [funding].
 Após a marcação de [ack], o próximo passo é selecionar toda a informação de instituição financiadora e número de contrato pelo elemento [funding]. Veja:
 
 .. image:: img/doc-mkp-nivel-inf-ack.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Em seguida, selecione o primeiro conjunto de instituição e número de contrato e identifique com o elemento [award]:
 
 .. image:: img/doc-mkp-select-1-award-ack.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Feito a identificação de [award], selecione a instituição financiadora e identifique com o elemento [fundsrc]:
 
 .. image:: img/doc-mkp-fundsrc1.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: Caso haja mais que uma instituição financiadora para o mesmo número de contrato, selecione cada instituição em um [fundsrc]
 
@@ -966,12 +1373,17 @@ Feito a identificação de [award], selecione a instituição financiadora e ide
 Agora selecione o número de contrato e identifique com o elemento [contract]:
 
 .. image:: img/doc-mkp-ack-contract1.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Para mais que uma instituição financiadora e número de contrato, veja abaixo como deve ser a marcação desses dados:
 
 .. image:: img/doc-mkp-ack-finaliz.jpg
+<<<<<<< HEAD
    :height: 230px
    :align: center
 
@@ -1004,10 +1416,22 @@ Identificação [xmlbody]
 
 
 Tendo formatado o corpo do texto de acordo com o ítem :ref:`format-scielo` e após a identificação das referências bibliográficas, é possível fazer a marcação do [xmlbody].
+=======
+
+
+.. _xmlbody:
+
+Identificação [xmlbody] **
+=======================
+
+
+Tendo formatado o corpo do texto de acordo com o ítem :ref:`.. _format-scielo:` e após a identificação das referências bibliográficas, é possível fazer a marcação do [xmlbody].
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Primeiramente, selecione todo o corpo do texto e clique no botão [xmlbody], confira as informações de seções, subseções, citações etc que é apresentado na caixa de diálogo que abrirá e se necessário, corrija em seguida e clique em “Aplicar”.
 
 .. image:: img/doc-mkp-select-xmlbody.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
@@ -1015,6 +1439,11 @@ Primeiramente, selecione todo o corpo do texto e clique no botão [xmlbody], con
 .. image:: img/doc-mkp-xmlbody-select.jpg
    :height: 300px
    :align: center
+=======
+
+.. image:: img/doc-mkp-xmlbody-select.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: Caso haja alguma informação incorreta, selecione o item a ser corrigido na janela, clique no menu dropdown ao lado do botão
           “Modificar”, selecione a opção correta e clique em “Modificar”. Confira novamente e clique em “Aplicar”.
@@ -1024,6 +1453,7 @@ Ao clicar em "Aplicar" o programa abrirá uma janela perguntando se as referênc
 
 
 .. image:: img/doc-mkp-refs-padrao.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
@@ -1046,11 +1476,36 @@ Perceba que com a formatação do documento indicada no :ref:`format-scielo` o p
    :height: 200px
    :width: 100px
    :align: center
+=======
+
+
+Sistema author-data
+^^^^^^^^^^^^^^^^^^
+
+.. image:: img/doc-mkp-ref-author.jpg
+
+
+Sistema numérico
+^^^^^^^^^^^^^^^^
+
+.. image:: img/doc-mkp-ref-num.jpg
+
+
+
+Perceba que com a formatação do documento indicada no :ref:`.. _format-scielo:` o programa faz a marcação automática de seções, subseções, parágrafos, referências de autores no corpo do texto, chamadas de figuras e tabelas, equações em linha etc. Veja:
+
+.. image:: img/doc-mkp-complete.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Após a marcação automática do corpo do texto o próximo passo é verificar os dados marcados automaticamente e completar a marcação dos elementos disponíveis no documento.
 
 
+<<<<<<< HEAD
 .. _seção:
+=======
+.. _section:
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Seções e subseções
 ==================
@@ -1063,6 +1518,7 @@ Caso o programa não tenha feito a marcação automática correta da seção, ed
 No entanto, caso o programa não faça a identificação automática de seções simples ou compostas, é necessário editar a tag e selecionar o tipo adequado. Para editar selecione a tag de seção e clique no lápis "Editar Atributos" e indique o tipo correto. Veja:
 
 .. image:: img/doc-mkp-sec-compost.jpg
+<<<<<<< HEAD
    :height: 180px
    :align: center
 
@@ -1074,6 +1530,14 @@ No entanto, caso o programa não faça a identificação automática de seções
 
 
 .. _xref:
+=======
+
+.. image:: img/doc-mkp-section-combinada.jpg
+
+
+.. note:: no menu dropdown as seções combinadas são precedidas por asterisco
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Referência Cruzada
 ==================
@@ -1084,27 +1548,42 @@ Há alguns casos que o programa Markup não irá fazer a marcação automática 
 **Sobre nome do autor + informação "in press" ou derivados:**
 
 .. image:: img/doc-mkp-xref-noprelo.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 **Referência com autor corporativo:**
 
 .. image:: img/doc-mkp-ref-cauthor.jpg
+<<<<<<< HEAD
   :height: 180px
   :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Para identificar o [xref] das citações que não foram marcadas, primeiramente verifique qual o id da referência bibliográfica não identificada, em seguida selecione a citação desejada e identifique com a tag flutuante [xref]. Veja:
 
 .. image:: img/doc-mkp-xref-manual.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Note que os dois únicos campos que deverão ser preenchidos são "ref-type" e "rid". Em "ref-type" selecione o tipo de referência cruzada que será feito, nesse caso o valor deve ser "Referencia Bibliográfica", em seguida indique o id correspondente à referência bibliográfica citada. Feito a marcação desses dois campos, confira e clique no botão [Continuar]. Veja o resultado:
 
 .. image:: img/doc-mkp-xref-manual-refs.jpg
+<<<<<<< HEAD
    :height: 180px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: Informamos que não há a necessidade de inserir um hiperlink na informação identificada. O importante é fazer a identificação correta do dado.
 
@@ -1112,6 +1591,7 @@ Note que os dois únicos campos que deverão ser preenchidos são "ref-type" e "
 
 Considerar a orientação acima para a identificação dos tipos "quadro", "equações" e "caixas de texto". Veja abaixo:
 
+<<<<<<< HEAD
 **Quadro:**
 
 .. image:: img/doc-mkp-chart.jpg
@@ -1143,6 +1623,29 @@ Considerar a orientação acima para a identificação dos tipos "quadro", "equa
    :align: center
 
 .. _paragrafo:
+=======
+Quadro:
+
+.. image:: img/doc-mkp-chart.jpg
+
+.. image:: img/doc-mkp-xref-chart.jpg
+
+
+Equações:
+
+.. image:: img/doc-mkp-eq-man.jpg
+
+.. image:: img/doc-mkp-xref-equation.jpg
+
+
+Caixa de Texto:
+
+.. image:: img/doc-mkp-box-man.jpg
+
+.. image:: img/doc-mkp-xref-boxed.jpg
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Parágrafos
 ==========
@@ -1150,6 +1653,7 @@ Os parágrafos são identificados automaticamente no corpo do texto ao fazer a i
 
 
 .. image:: img/doc-mkp-subsec-p.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
 
@@ -1159,6 +1663,14 @@ Os parágrafos são identificados automaticamente no corpo do texto ao fazer a i
 
 
 .. _figura:
+=======
+
+
+.. image:: img/doc-mkp-element-p.jpg
+
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 Figuras
 =======
 Ao fazer a marcação de [xmlbody] o programa identifica automaticamente o "graphic" da imagem, entretanto o responsável pela marcação do documento deve completar a marcação dos dados como label, caption e fonte (esse último, se existir).
@@ -1166,21 +1678,32 @@ Ao fazer a marcação de [xmlbody] o programa identifica automaticamente o "grap
 * Selecione a imagem envolvendo o label, caption e fonte e identifique com o elemento [figgrp]. Veja:
 
 .. image:: img/doc-mkp-select-fig.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * O programa irá abrir uma janela com um campo para identificação do "id" da figura. Veja:
 
 .. image:: img/doc-mkp-id-fig.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Certifique-se de que o id de figura é único no documento. Veja o resultado:
 
 
 .. image:: img/doc-mkp-fig-incomp.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: A marcação completa de figura é de extrema importancia. Caso o responsável pela marcação não faça a identificação de [figgrp] 
           e seus respectivos dados, o programa não irá gerar o documento .xml
@@ -1189,6 +1712,7 @@ Certifique-se de que o id de figura é único no documento. Veja o resultado:
 * Após a marcação de [figgrp] caso a imagem apresente informação de fonte, selecione o dado e identique com o elemento [attrib]:
 
 .. image:: img/doc-mkp-attrib-fig.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
@@ -1200,56 +1724,95 @@ Certifique-se de que o id de figura é único no documento. Veja o resultado:
 
 .. _tabela:
 
+=======
+
+
+.. note:: Note que o programa faz a marcação automática de label e caption, isso porque esses dados estão em conformidade com a 
+          :ref:`.. _format-scielo:`, com label e caption abaixo da imagem no arquivo .doc. A informação de fonte deve estar acima da 
+          imagem. Veja o exemplo da imagem acima.
+
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 Tabelas
 =======
 As tabelas podem ser apresentadas como imagem ou em texto para codificação dos elementos que compõem a tabela. Note que tabelas que estão como imagem devem apresentar o label, caption e notas (essa última, se existir) em texto, para que todos os elementos sejam identificados.
 
 
 Tabelas em imagem
+<<<<<<< HEAD
 -----------------
+=======
+^^^^^^^^^^^^^^^^^^
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 Ao fazer a marcação de [xmlbody] o programa identifica automaticamente o "graphic" da tabela, entretanto o responsável pela marcação do documento deve completar a marcação dos dados como label, caption e notas de rodapé (esse último, se existir).
 
 * Selecione toda a informação de tabela e identique com o elemento [tabwrap]
 
 .. image:: img/doc-mkp-select-tableimg.jpg
+<<<<<<< HEAD
    :height: 350px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * O programa irá abrir uma janela com um campo para identificação do "id" da tabela. Veja:
 
 .. image:: img/doc-mkp-id-figimg.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Certifique-se de que o id de figura é único no documento. Veja o resultado:
 
 .. image:: img/doc-mkp-tabimg.jpg
+<<<<<<< HEAD
    :height: 350px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: O programa faz a marcação automática de label, caption e notas de rodapé de tabela.
 
 
 Tabelas em texto
+<<<<<<< HEAD
 ----------------
 O programa também codifica tabelas em texto. Para isso, selecionte toda a informação de tabela (label, caption, corpo da tabela e notas de rodapé, esse ultimo se existir) e identifique com o elemento [tabwrap]. Veja:
 
 .. image:: img/doc-mkp-select-tab-text.jpg
    :height: 350px
    :align: center
+=======
+^^^^^^^^^^^^^^^^
+O programa também codifica tabelas em texto. Para isso, selecionte toda a informação de tabela (label, caption, corpo da tabela e notas de rodapé, esse ultimo se existir) e identifique com o elemento [tabwrap]. Veja:
+
+.. image:: img/doc-mkp-select-tab-text.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * O programa irá abrir uma janela com um campo para identificação do "id" da tabela. Veja:
 
 .. image:: img/doc-mkp-id-tabtext.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Certifique-se de que o id de figura é único no documento. Veja o resultado:
 
 
 .. image:: img/doc-mkp-tabcomplete.jpg
+<<<<<<< HEAD
    :height: 350px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Veja que o programa fez a marcação automática de label, caption, notas de rodapé e ainda, a codificação da tabela.
 
@@ -1257,35 +1820,51 @@ Veja que o programa fez a marcação automática de label, caption, notas de rod
           correta de [thead] e os elementos que o compõe.
 
 
+<<<<<<< HEAD
 .. _equação:
 
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 Equações
 ========
 Há dois tipos de equações que o programa suporta: as equações em linha e as equações como imagem no decorrer do texto.
 
 **Equação em linha**
+<<<<<<< HEAD
 
 As equações em linha devem ser inseridas no parágrafo como imagem. A identificação é feita automaticamente pelo programa Markup ao fazer a identificação de [xmlbody]. Veja:
 
 .. image:: img/doc-mkp-eqline.jpg
    :height: 200px
    :align: center
+=======
+As equações em linha devem ser inseridas no parágrafo como imagem. A identificação é feita automaticamente pelo programa Markup ao fazer a identificação de [xmlbody]. Veja:
+
+.. image:: img/doc-mkp-eqline.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Porém, se o programa Markup não fizer a marcação automática da equação em linha, é possível fazer a marcação manualmente. Para isso selecione a equação em linha e identifique com o elemento [graphic]. Veja:
 
 .. image:: img/doc-mkp=eqline-man.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Note que o programa abre uma janela com um campo para a identificação do "href" da equação. Nesse campo insira o nome do arquivo:
 
 .. image:: img/doc-mkp-eq-line-href.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Veja o resultado final:
 
 .. image:: img/doc-mkp-eqline.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
@@ -1296,16 +1875,28 @@ As equações disponíveis no decorrer do texto devem ser identificadas com a ta
 .. image:: img/doc-mkp-eq1.jpg
    :height: 200px
    :align: center
+=======
+
+
+**Equações**
+As equações disponíveis no decorrer do texto devem ser identificadas com a tag [equation]
+
+.. image:: img/doc-mkp-eq1.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 O programa irá abrir uma janela com um campo para a identificação do "id" da equação. Certifique-se de que o id da equação é único no documento.
 
 .. image:: img/doc-mkp-eq2.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Perceba que ao fazer a marcação da equação o programa identifica o elemento [equation] e, caso haja informação de label na equação, é possível identificar esse dado com o botão [label]. Veja:
 
 .. image:: img/doc-mkp-eq3.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
@@ -1325,30 +1916,54 @@ Certifique-se de que o id de boxed-text é unico no documento.
 .. image:: img/doc-mkp-id-bxt.jpg
    :height: 200px
    :align: center
+=======
+
+
+
+Caixa de texto
+==============
+As caixas de texto podem apresentar figuras, equações, listas ou um texto. Para identificar esse elemento selecione toda a informação de caixa de texto, inclusive o label e caption e identifique com o botão [*boxedtxt]:
+
+.. image:: img/doc-mkp-boxselect.jpg
+
+O programa irá abrir uma janela com um campo para a identificação de id da caixa de texto. Certifique-se de que o id de boxed-text é unico no documento.
+
+.. image:: img/doc-mkp-id-bxt.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Note que utilizando o botão [*boxedtxt] o programa faz a marcação automática de [sectitle] da caixa de texto e também dos parágrafos:
 
 .. image:: img/doc-mkp-resultboxed.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Caso a caixa de texto apresente uma figura, uma tabela, listas etc, é possível também utilizar o elemento [*boxedtxt] e depois fazer a identificação desses objetos através das tags flutuantes do programa.
 
 
+<<<<<<< HEAD
 
 .. _verso:
 
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 Marcação de versos
 ==================
 Para identificar versos ou poemas no corpo do texto, selecione toda a informação, inclusive título e autoria, se existir, e identifique com o elemento [versegrp]: 
 
 .. image:: img/doc-mkp-selectverse.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 O programa irá identificar cada linha como [verseline]. Caso o poema apresente título, exclua a marcação de verseline, selecione o elemento e identifique com o botão [label]. A autoria do poema deve ser identificada com o elemento [attrib]. Veja:
 
 .. image:: img/doc-mkp-versee.jpg
+<<<<<<< HEAD
    :height: 180px
    :align: center
 
@@ -1358,41 +1973,62 @@ O programa irá identificar cada linha como [verseline]. Caso o poema apresente 
    :align: center
 
 .. _citação:
+=======
+
+.. image:: img/doc-mkp-versline-attr.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Citações
 ========
 As citações são identificadas automaticamente no corpo do texto, ao fazer a marcação de [xmlbody]. Porém para isso, as citações devem ser alinhadas à direita com 4cm de recuo. Veja:
 
 .. image:: img/mkp-doc-quoteok.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Caso o programa não faça a marcação desse dado no documento, é possível fazer a identificação de citações manualmente. Primeiramente selecione a citação desejada e em seguida marque com o botão [quote]:
 
 .. image:: img/doc-mkp-quotee.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 O resultado deve ser:
 
 .. image:: img/mkp-doc-quoteok.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
 
 .. _lista:
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Listas
 ======
 Para identificar listas selecione todos os itens e identifique com o elemento [*list]. Em seguida veja que o programa apresenta uma janela com um campo para identificar o tipo de lista:
 
 .. image:: img/doc-mkp-list-type.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Verifique os tipos possíveis de lista em :ref:`elemento-list`.
 Veja abaixo o resultado da marcação:
 
 .. image:: img/doc-mkp-list.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
 
@@ -1400,12 +2036,19 @@ Veja abaixo o resultado da marcação:
 
 
 .. _lista-definição:
+=======
+
+
+.. note:: O programa Markup não faz a marcação de sublistas. Portanto, para verificar como identificar sublistas, consulte a documentação "Markup_90_O_que_ha_novo.pdf" item "Processos Manuais".
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Lista de Definição
 ==================
 Para identificar listas de definições selecione todos os dados, inclusive o título se existir, e marque com o elemento [*deflist]
 
 .. image:: img/doc-mkp-deflistselect.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
 
@@ -1415,11 +2058,18 @@ Certifique-se de que o id é único no documento.
 .. image:: img/doc-mkp-def-selec.jpg
    :height: 200px
    :align: center
+=======
+
+O programa irá abrir uma janela com um campo para identificação de id da lista. Certifique-se de que o id é único no documento.
+
+.. image:: img/doc-mkp-def-selec.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Após isso, o programa pede que o responsável pela marcação confirme o título da lista de definição e em seguida a marcação do título:
 
 .. image:: img/doc-mkp-question-def.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
 
@@ -1427,13 +2077,21 @@ Após isso, o programa pede que o responsável pela marcação confirme o títul
 .. image:: img/doc-mkp-def-sectitle.jpg
    :height: 100px
    :align: center
+=======
+
+.. image:: img/doc-mkp-def-sectitle.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Ao finalizar, veja que o programa fez a marcação automática de cada termo e definição da lista de definição.
 
 .. image:: img/doc-mkp-deflist.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 .. note:: O programa faz a marcação automática de cada item da lista de definições apneas de a lista estiver com 
           a formatação requerida pelo SciELO: com o termo em negrito, hífen como separador e a definição do termo sem formatação.
@@ -1443,39 +2101,73 @@ Caso o programa não faça a marcação automática da lista de definições, é
 * Selecione toda a lista de denifições e identifique com o elemento [deflist], sem asterisco:
 
 .. image:: img/doc-mkp-mandef1.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
 
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * Identifique o título com o elemento [sectitle] (apenas se houver informação de título):
 
 .. image:: img/doc-mkp-defsect.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * Selecione o termo e a definição e identifique com o botão [defitem]:
 
 .. image:: img/doc-mkp-defitem.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * Feito isso, selecione apenas o termo e marque com o botão [term]:
 
 .. image:: img/doc-mkp-term.jpg
+<<<<<<< HEAD
    :height: 100px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 * O próximo passo é selecionar a definição e identificar com o botão [def]:
 
 .. image:: img/mkp-doc-def.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Faça o mesmo para os demais termos e definições.
 
 
+<<<<<<< HEAD
 .. _material-suplementar:
+=======
+Glossário
+=========
+A identificação de glossário é basicamente a mesma que a lista de definições, pois ao selecionar um glossário e identificar com o elemento [glossary] o próximo passo é selecionar toda a lista e marcar com o elemento [*deflist]. No entanto a diferença é que o glossário deve ser identificado apenas "back", "app" ou "boxed-text". Veja a marcação de glossário abaixo de referências, em "back":
+
+.. image:: img/doc-mkp-glossary-.jpg
+
+
+Selecione todos os dados de glossário e marque com o elemento [*deflist]:
+
+.. image:: img/doc-mkp-select-gdef.jpg
+
+
+Feito isso, verifique abaixo o resultado da marcação de glossário:
+
+.. image:: img/doc-mkp-glossary.jpg
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Material Suplementar
 ====================
@@ -1483,23 +2175,35 @@ A identificação de materiais suplementares deve ser feita pela tag [supplmat].
 
 
 Material suplementar
+<<<<<<< HEAD
 --------------------
+=======
+^^^^^^^^^^^^^^^^^^^^
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Selecione toda a informação de material suplementar, incluindo label e caption - se existir - e identifique com o elemento [supplmat]:
 
 .. image:: img/doc-mkp-suppl-f.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 O programa irá abrir uma janela apresentando um campo de id o qual deverá ser único no documento e um campo para indicação de "href". Em "href" insira o nome do arquivo .doc:
 
 .. image:: img/doc-mkp-supplfig.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Feito isso, faça a identificação do label do material suplementar e em seguida selecione toda a informação de figura e marque com p botão [figgrp]. A marcação deverá ser conforme segue o exemplo abaixo:
 
 .. image:: img/doc-mkp-suppl2.jpg
+<<<<<<< HEAD
    :height: 250px
    :align: center
 
@@ -1511,52 +2215,91 @@ Selecione a informação de material suplementar e identifique com o elemento [s
 .. image:: img/doc-mkp-selectms.jpg
    :height: 180px
    :align: center
+=======
+
+
+
+Material suplementar em linha
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Selecione a informação de material suplementar e identifique com o elemento [supplmat]:
+
+.. image:: img/doc-mkp-selectms.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Note que o programa irá abrir uma janela apresentando um campo de id o qual deverá ser único no documento e um campo para indicação de "href". Em "href" insira o nome do pdf suplementar exatamente como consta na pasta "src". Veja:
 
 .. image:: img/doc-mkp-camposms.jpg
+<<<<<<< HEAD
    :height: 200px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 A marcação deverá ser conforme segue abaixo:
 
+<<<<<<< HEAD
 .. image:: img/doc-mkp-supple.jpg
    :height: 200px
    :align: center
 
 .. note:: Antes de iniciar a marcação de material suplementar certifique-se de que o PDF suplementar foi incluído na 
           pasta "src" comentado em :ref:`structure-folders`.
+=======
+.. image:: img/doc-nkp-supple.jpg
+
+
+.. note:: Antes de iniciar a marcação de material suplementar certifique-se de que o PDF suplementar foi incluído na 
+          pasta "src" comentado no :ref:`.. _structure-folders`
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 
 Material Suplementar em Apêndice
+<<<<<<< HEAD
 --------------------------------
 Para Material suplementar que está posicionado abaixo de [xmlbody], a marcação desse objeto deverá ser primeiramente pelo elemento [appgrp] e em seguida pelos elementos de material suplementar. Veja:
 
 .. image:: img/doc-mkp-suppl-appo.jpg
   :height: 300px
   :align: center
+=======
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Para Material suplementar que está posicionado abaixo de [xmlbody], a marcação desse objeto deverá ser primeiramente pelo elemento [appgrp] e em seguida pelos elementos de material suplementar. Veja:
+
+.. image:: img/doc-mkp-suppl-appo.jpg
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Selecione novamente toda a informação desse material suplementar e identifique com o elemento [app]. Em seguida, marque o label do material com a tag [sectitle]:
 
 .. image:: img/doc-mkp-suppl-app.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
+=======
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Feito isso, selecione o material suplementar e identifique com a tag [supplmat]:
 
 .. image:: img/doc-mkp-app-suuol.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
    
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 Após a marcação de [supplmat] identifique o objeto do material com as tags flutuantes:
 
 .. image:: img/doc-mkp-suppl4.jpg
+<<<<<<< HEAD
    :height: 300px
    :align: center
    
+=======
+
+>>>>>>> 679664d99bf97aad061ca169a4e700dda583da03
 
 
 Gerando o Arquivo .xml
