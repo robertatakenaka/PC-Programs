@@ -1,8 +1,12 @@
 # coding=utf-8
 
+import urllib
 import os
+import json
+
 import utils
 import dbm_sql
+import ws_requester
 
 
 curr_path = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')
@@ -14,26 +18,51 @@ br_state_list = None
 orgname_list = None
 location_list = None
 
+previous_requests = {}
+
+
+def normalize_term(term):
+    if term is not None:
+        if not isinstance(term, unicode):
+            term = term.decode('utf-8')
+        term = ' '.join([item.strip() for item in term.split()])
+    return term
+
 
 class OrgManager(object):
 
     def __init__(self):
-        self.manager = OrgDBManager()
+        self.local_institutions_manager = OrgDBManager()
 
     def load(self):
         pass
 
-    def get_institutions(self, orgname, city, state, country_code, country_name):
-        return self.manager.get_institutions(orgname, city, state, country_code, country_name)
+    def search_institutions(self, orgname, city, state, country_code, country_name, exact_country=None):
+        results = self.local_institutions_manager.get_institutions(orgname, city, state, country_code, country_name)
+        results += self.search_at_wayta(orgname, country_name, exact_country, [city, state])
+        results = sorted(list(set(results)))
+        return results
 
     def institution_exists(self, orgname, city, state, country_code, country_name):
-        return self.manager.institution_exists(orgname, city, state, country_code, country_name)
+        results = self.local_institutions_manager.institution_exists(orgname, city, state, country_code, country_name)
+        results += self.search_at_wayta(orgname, country_name)
+        results = sorted(list(set([(_orgname, _city, _state, _code, _country_name) for _orgname, _city, _state, _code, _country_name in results if _orgname == orgname])))
+        return results
 
-    def similar_institutions(self, orgname, city, state, country_code, country_name):
-        return self.manager.similar_institutions(orgname, city, state, country_code, country_name)
+    def search_institution_and_country_items(self, orgname, country_name, exact_country):
+        items = self.search_institutions(orgname, None, None, None, country_name, exact_country)
+        results = sorted(list(set([_orgname + ' - ' + _country_name for _orgname, _city, _state, _code, _country_name in items])))
+        return results
 
     def create_db(self):
-        self.manager.create_db()
+        self.local_institutions_manager.create_db()
+
+    def search_at_wayta(self, orgname, country_name, exact_country=None, complements=[]):
+        #keys = ['score', 'value', 'city', 'state', 'iso3166', 'country']
+        r = [(_orgname, _city, _state, _country_code, _country_name) for score, _orgname, _city, _state, _country_code, _country_name in wayta_search(orgname, country_name, exact_country, complements) if _orgname == orgname]
+        if not len(r) == 1:
+            r = [(_orgname, _city, _state, _country_code, _country_name) for score, _orgname, _city, _state, _country_code, _country_name in wayta_search(orgname, country_name, exact_country, complements)]
+        return r
 
 
 class OrgDBManager(object):
@@ -79,28 +108,21 @@ class OrgDBManager(object):
         return country_name
 
     def get_institutions(self, orgname, city, state, country_code, country_name):
-        if orgname is not None:
-            if not isinstance(orgname, unicode):
-                orgname = orgname.decode('utf-8')
-        if city is not None:
-            if not isinstance(city, unicode):
-                city = city.decode('utf-8')
-        if country_name is not None:
-            if not isinstance(country_name, unicode):
-                country_name = country_name.decode('utf-8')
-
+        orgname, city, state, country_code, country_name = [normalize_term(item) for item in [orgname, city, state, country_code, country_name]]
         norm_country_name = self.normalized_country_name(country_code, country_name)
         if norm_country_name is not None and country_code is None:
             country_code = self.normalized_country_items.get(norm_country_name)
         results = self.institution_exists(orgname, city, state, country_code, norm_country_name)
 
         if not len(results) == 1:
-            results += self.institution_exists(orgname, None, None, country_code, norm_country_name)
+            _results = self.institution_exists(orgname, None, None, country_code, norm_country_name)
+            if len(_results) == 1:
+                results = _results
+            else:
+                results += _results
 
-        if len(results) == 0:
-            results += self.similar_institutions(orgname, city, state, country_code, country_name)
-
-        return list(set(results))
+        results = list(set(results))
+        return results
 
     def get_countries_expr(self, country_names):
         or_expr = self.sql.format_expr(['country_name' for item in country_names], country_names, ' OR ')
@@ -134,41 +156,9 @@ class OrgDBManager(object):
         where_expr = ' AND '.join(items)
 
         expr = self.sql.get_select_statement(self.table_name, self.fields, where_expr)
-        
+
         r = self.sql.query(expr)
         r = list(set(r))
-        return r
-
-
-class OrgListManager(object):
-
-    def __init__(self):
-        self.indexedby_orgname = {}
-        self.indexedby_isocountry = {}
-        self.indexedby_country_name = {}
-
-    def load(self):
-        for item in open(curr_path + '/../tables/orgname_location_country.csv', 'r').readlines():
-            if not isinstance(item, unicode):
-                item = item.decode('utf-8')
-            item = item.replace('"', '').strip().split('\t')
-            if len(item) == 5:
-                orgname, city, state, iso_country, country_name = item
-
-                if not orgname in self.indexedby_orgname.keys():
-                    self.indexedby_orgname[orgname] = []
-                if not iso_country in self.indexedby_isocountry.keys():
-                    self.indexedby_isocountry[iso_country] = []
-
-                self.indexedby_orgname[orgname].append([city, state, iso_country])
-                self.indexedby_isocountry[iso_country].append([orgname, city, state])
-                self.indexedby_country_name[country_name] = iso_country
-
-    def get_countries_orgnames(self):
-        r = {}
-        for country_name, country_code in self.indexedby_country_name.items():
-            k = country_name + ' - ' + country_code
-            r[k] = sorted(['\t'.join(item) for item in self.indexedby_isocountry[country_code]])
         return r
 
 
@@ -186,16 +176,9 @@ def remove_sgml_tags(text):
 
 
 def wayta_request(text):
-    import urllib
-    import urllib2
 
-    print(text)
-    print(type(text))
     if isinstance(text, unicode):
         text = text.encode('utf-8')
-    print(text)
-    print(type(text))
-
     result = None
     values = {
                 'q': text,
@@ -204,29 +187,30 @@ def wayta_request(text):
     try:
         data = urllib.urlencode(values)
         full_url = url + '?' + data
-        print(full_url)
-        response = urllib2.urlopen(full_url, timeout=30)
-        result = response.read()
-        print('result type')
-        print(type(result))
+
+        result = previous_requests.get(full_url)
+        if result is None:
+            result = ws_requester.wsr.request(full_url, timeout=30)
+            previous_requests[full_url] = result
     except Exception as e:
+        print('wayta_request:')
         print(e)
-        result = []
     return result
 
 
-def format_wayta_results(result, country):
-    import json
+def format_wayta_results(result, filter_country=None):
     r = []
-
+    keys = ['score', 'value', 'city', 'state', 'iso3166', 'country']
     try:
         results = json.loads(result)
-        for item in results.get('choices'):
-            if item.get('country', '') == country and item.get('value', '') != '':
-                #location = [item.get('country'), item.get('state'), item.get('city')]
-                r.append(item.get('value') + ' - ' + item.get('country'))
+        if filter_country is None:
+            r = [tuple([item.get(key) for key in keys]) for item in results.get('choices') if item.get('value', '') != '']
+        else:
+            r = [tuple([item.get(key) for key in keys]) for item in results.get('choices') if item.get('value', '') != '' and filter_country == item.get('country')]
     except Exception as e:
+        print('format_wayta_results:')
         print(e)
+        print(result)
     return r
 
 
@@ -250,40 +234,55 @@ def unicode2cp1252(results):
     return '\n'.join(r)
 
 
-def get_normalized_from_wayta(orgname, country):
-    text = orgname + ', ' + country
+def wayta_search(orgname, country, filter_country=None, complements=[]):
     results = []
-    for part in text.split(','):
+    for text in orgname.split(','):
         try:
-            wayta_result = wayta_request(part)
-            result = format_wayta_results(wayta_result, country)
+            if len(complements) > 0:
+                text += ', ' + ', '.join(complements)
+            if country is not None:
+                text += ', ' + country
+            wayta_result = wayta_request(text)
+            result = format_wayta_results(wayta_result, filter_country)
             results += result
         except:
             pass
     results = sorted(list(set(results)))
-    #print('\nWayta')
-    #print('\n'.join(results))
+    results.reverse()
     return results
 
 
-def validate_organization(org_manager, orgname, norgname, country_name, country_code, state, city):
-    orgname_and_location_items = []
-    if norgname is not None:
-        orgname_and_location_items += org_manager.get_institutions(norgname, city, state, country_code, country_name)
+def validate_organization(orgname, norgname, country_name, country_code, state, city):
+    org_manager = OrgManager()
+    normalized_results = []
+    not_normalized_results = []
+    if orgname is not None and norgname is not None:
+        if orgname != norgname:
+            if norgname is not None:
+                normalized_results = org_manager.search_institutions(norgname, city, state, country_code, country_name)
+            if orgname is not None:
+                not_normalized_results = org_manager.search_institutions(orgname, city, state, country_code, country_name)
+        else:
+            normalized_results = org_manager.search_institutions(norgname, city, state, country_code, country_name)
+    elif orgname is not None:
+        not_normalized_results = org_manager.search_institutions(orgname, city, state, country_code, country_name)
+    elif norgname is not None:
+        normalized_results = org_manager.search_institutions(norgname, city, state, country_code, country_name)
 
-    if not len(orgname_and_location_items) == 1:
-        if orgname is not None:
-            orgname_and_location_items += org_manager.get_institutions(orgname, city, state, country_code, country_name)
+    _results = normalized_results + not_normalized_results
+    if len(normalized_results) == 1:
+        if normalized_results[0] in not_normalized_results:
+            _results = normalized_results
 
-    return list(set(orgname_and_location_items))
-
-
-def get_similars_from_normalized_list_for_wayta(org_manager, orgname, country_name):
-    items = org_manager.get_institutions(orgname, None, None, None, country_name)
-    results = sorted(list(set([_orgname + ' - ' + _country_name for _orgname, city, state, code, _country_name in items])))
-    #print('\nNormalized')
-    #print('\n'.join(results))
-    return results
+    _results = list(set(_results))
+    if len(_results) > 1:
+        fixed = []
+        for orgname, city, state, country_code, country_name in _results:
+            fixed.append((orgname, '', '', country_code, country_name))
+        fixed = list(set(fixed))
+        if len(fixed) == 1:
+            _results = fixed
+    return _results
 
 
 def display_results(results):
@@ -291,41 +290,14 @@ def display_results(results):
 
 
 def normaff_search(text):
-    print(text)
-    print(type(text))
-    if not isinstance(text, unicode):
-        text = text.decode('cp1252')
 
-    print(text)
-    print(type(text))
     text = remove_sgml_tags(text)
 
     orgname, country = text.split('|')
     if '(' in country:
         country = country[0:country.find('(')].strip()
 
-    print(orgname)
-    print(country)
+    org_manager = OrgManager()
+    results = org_manager.search_institution_and_country_items(orgname, country, country)
 
-    results = []
-    try:
-        results = get_normalized_from_wayta(orgname, country)
-        print('wayta results:')
-        print(len(results))
-    except:
-        pass
-
-    try:
-        org_manager = OrgManager()
-        org_manager.load()
-        results += get_similars_from_normalized_list_for_wayta(org_manager, orgname, country)
-        print('list results')
-        print(len(results))
-    except:
-        pass
-
-    results = sorted(list(set(results)))
-    print('all results:')
-    print(len(results))
-    #display_results(results)
     return results

@@ -2,14 +2,32 @@
 import os
 import shutil
 import tempfile
+from datetime import datetime
 
 import files_extractor
+import zipfile
 
 
-def write_file(filename, content):
+def read_file(filename, encode='utf-8'):
+    content = open(filename, 'r').read()
+    if not isinstance(content, unicode):
+        try:
+            content = content.decode(encode)
+        except:
+            content = content.decode('iso-8859-1')
+    return content
+
+
+def write_file(filename, content, encode='utf-8'):
     if isinstance(content, unicode):
-        content = content.encode('utf-8')
+        content = content.encode(encode)
     open(filename, 'w').write(content)
+
+
+def append_file(filename, content, encode='utf-8'):
+    if isinstance(content, unicode):
+        content = content.encode(encode)
+    open(filename, 'a+').write(content + '\n')
 
 
 def delete_file_or_folder(path):
@@ -19,6 +37,26 @@ def delete_file_or_folder(path):
         shutil.rmtree(path)
     elif os.path.isfile(path):
         os.unlink(path)
+
+
+def move_file(src, dest):
+    errors = []
+    if os.path.isfile(src):
+        src_folder = os.path.dirname(dest)
+        if not os.path.isdir(src_folder):
+            os.makedirs(src_folder)
+        if os.path.isfile(dest):
+            try:
+                os.unlink(dest)
+            except:
+                errors.append(dest + ' is already exists.')
+        try:
+            shutil.move(src, src_folder)
+        except:
+            errors.append('Unable to move ' + src + ' to ' + src_folder + '.')
+    else:
+        errors.append('Source ' + src + ' does not exist.')
+    return errors
 
 
 def extract_package(pkg_file, pkg_work_path):
@@ -56,6 +94,23 @@ def extract_package(pkg_file, pkg_work_path):
     return r
 
 
+def unzip(compressed_filename, destination_path):
+    """
+    Extract files to destination_path from compressed files that are in compressed_path
+    """
+    r = False
+
+    if os.path.isfile(compressed_filename):
+        if files_extractor.is_compressed_file(compressed_filename):
+            if not os.path.isdir(destination_path):
+                os.makedirs(destination_path)
+            # delete content of destination path
+            # create tempdir
+            # extract in tempdir
+            r = files_extractor.extract_file(compressed_filename, destination_path)
+    return r
+
+
 def fix_path(path):
     path = path.replace('\\', '/')
     if path.endswith('/'):
@@ -64,9 +119,44 @@ def fix_path(path):
 
 
 def zip_report(report_filename):
-    import zipfile
     zip_path = report_filename.replace('.html', '.zip')
     myZipFile = zipfile.ZipFile(zip_path, "w")
     myZipFile.write(report_filename, os.path.basename(report_filename), zipfile.ZIP_DEFLATED)
     return zip_path
 
+
+def update_file_content_if_there_is_new_items(new_content, filename):
+    current_content = u''
+    if os.path.isfile(filename):
+        current_content = read_file(filename)
+    current_items = current_content.split('\n')
+
+    if new_content is None:
+        new_content = current_content
+    if not isinstance(new_content, unicode):
+        new_content = new_content.decode('utf-8')
+    new_items = new_content.split('\n')
+
+    allow_update = (len(new_items) > len(current_items)) or (len(new_items) == len(current_items) and new_content != current_content)
+
+    if allow_update is True:
+        write_file(filename, new_content)
+
+
+def last_modified_datetime(filename):
+    return datetime.fromtimestamp(os.path.getmtime(filename))
+
+
+class ProcessLogger(object):
+
+    def __init__(self):
+        self.logged_items = []
+
+    def register(self, text):
+        self.logged_items.append(datetime.now().isoformat() + ' ' + text)
+
+    def write(self, filename):
+        write_file(filename, '\n'.join(self.logged_items))
+
+    def display(self):
+        print('\n'.join(self.logged_items))

@@ -1,34 +1,38 @@
 
-Support for SciELO Methodology
-------------------------------
+=======
+Support
+=======
 
-`http://docs.scielo.org <http://docs.scielo.org/en/latest/#support>`_
+
+Before You Ask
+==============
+
+Try to find an answer by reading the manual. Give us feedback which parts is not clear enough.
+Try to find an answer by searching the maillist archives.
+    
+
+Questions about SciELO PC Programs (Markup, Title Manager, Converter, etc)
+==========================================================================
+
+`http://groups.google.com/group/scielo-discuss <http://groups.google.com/group/scielo-discuss>`_
+
+It is the forum to discuss questions and make suggestions related to the **programs** or other subjects related to SciELO Methodology.
 
 
-SciELO XML Forum
-----------------
+Questions about SciELO XML / SciELO Publishing Schema
+=====================================================
 
 `http://groups.google.com/group/scielo-xml <http://groups.google.com/group/scielo-xml>`_
 
-It is the forum to discuss questions and make suggestions related to SciELO XML.
+It is the forum to discuss questions and make suggestions related to **SciELO XML** / **SciELO Publishing Schema**.
 
-**How to subscribe:**
+**How to subscribe**
 
-To subscribe, send an e-mail to this list: **scielo-xml+subscribe@googlegroups.com**
+    Send an e-mail to: **scielo-xml+subscribe@googlegroups.com**
 
-**How to unsubscribe:**
+**How to unsubscribe**
 
-To unsubscribe, send an e-mail to this list: **scielo-xml+unsubscribe@googlegroups.com**
-
-**How to send a e-mail do SciELO XML:**
-
-To send an e-mail to this list: **scielo-xml@googlegroups.com**
-
-The archives for this list can also be browsed online.
+    Send an e-mail to: **scielo-xml+unsubscribe@googlegroups.com**
 
 
-
-
-----------------
-
-Last update of this page: Abril 1, 2014
+.. include:: pt_faq-scielo-xml.rst

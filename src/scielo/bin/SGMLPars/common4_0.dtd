@@ -8,7 +8,7 @@
 <!--   Common Models                                                      -->
 <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 
-<!ENTITY % i.float  "aff | corresp | ign | tabwrap | figgrps |  figgrp | equation | cltrial | xref | uri | sciname | quote | element | graphic | supplmat | related | product | sup " > 
+<!ENTITY % i.float  "aff | corresp | ign | tabwrap | figgrps |  figgrp | equation | cltrial | xref | uri | sciname | quote | element | graphic | supplmat | related | product | sup | cpright | licinfo " > 
 <!ENTITY % m.name   "(fname? & surname & ctrbid*)" >
 <!ENTITY % m.org    "(orgname? & orgdiv?)" >
 <!ENTITY % m.title  "title, subtitle?" >
@@ -43,7 +43,7 @@
           blcktype CDATA     #REQUIRED>
 
 
-<!ELEMENT corresp - - (email+ & (#PCDATA)?)>
+<!ELEMENT corresp - - (label? & email+ & (#PCDATA)?)>
 <!ATTLIST corresp
           id ID    #REQUIRED >
 
@@ -153,18 +153,28 @@ filename       CDATA #IMPLIED>
 
 <!ELEMENT sciname - - (#PCDATA) >
 
-<!ELEMENT fngrp - - (label?, ((#PCDATA) & funding?)) +(%i.float;) >
-<!ATTLIST fngrp
+<!ELEMENT fngrp - - (sectitle?, fn+) >
+
+<!ELEMENT fn - - (label?, ((#PCDATA) & funding?)) +(%i.float;) >
+<!ATTLIST fn
           id       CDATA    #REQUIRED
           fntype       CDATA    #REQUIRED 
           
-	 >
+      >
 <!ELEMENT fntable - - (label?, (#PCDATA)) +(%i.float;) >
 <!ATTLIST fntable
           id       CDATA    #REQUIRED 
 	 >
 <!ELEMENT quote - - (#PCDATA)>
 <!ELEMENT sup - - (#PCDATA)>
+
+<!ELEMENT cpright - - (cpyear? | cpholder? | (#PCDATA)) >
+<!ELEMENT licinfo - - (#PCDATA) >
+<!ATTLIST licinfo
+          language CDATA    #REQUIRED 
+          href CDATA    #REQUIRED 
+          >
+
 <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 <!--    pubid                                                        -->
 <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
@@ -298,7 +308,7 @@ filename       CDATA #IMPLIED>
 <!ELEMENT glossary  - - (sectitle?, (glossary | deflist)+)  >
 
 <!ELEMENT appgrp  - - (app+) >
-<!ELEMENT app  - - (sectitle?, (sec | p)*) +(%i.float;) >
+<!ELEMENT app  - - (label, sectitle?, p*) +(%i.float;) >
 <!ATTLIST app 
           id ID #REQUIRED >
 

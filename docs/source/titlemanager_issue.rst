@@ -113,7 +113,9 @@ How to list the issue numbers of a volume
 
 1. Fill in the volume field.
 2. Click on the 
+
 .. image:: img/titlemanager_list_button.jpg 
+
 button.
 
 
@@ -121,7 +123,9 @@ How to list all
 ...............
 
 1. Click on the 
+
 .. image:: img/titlemanager_list_button.jpg 
+
 button.
 
 
@@ -227,7 +231,7 @@ Field: 435, subfield ^t = 'ONLIN'
 Enter the Electronic ISSN if it is a current ISSN, if applicable.
 
 
-Editor issue
+Issue Editor
 ............
 
 Field: 62
@@ -339,7 +343,3 @@ Deleting issue
 .. note:: This option only delete the record of the issue database. This action will not be reflected immediately on the website. 
 
 
-
------
-
-Last update: Feb 7, 2014

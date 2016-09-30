@@ -9,14 +9,37 @@ Const changelinetextbox = vbCrLf
 
 Sub Serial_GetExisting(list As ListBox)
     Dim i As Long
-    
+    Dim current_status As String
+    Dim publication_status As String
+    On Error GoTo handle_error
     list.Clear
     Set jlist = journalDAO.getJournalList()
     
     For i = 1 To jlist.count
-        list.AddItem jlist.getItemByIndex(i).Title + " [" + jlist.getItemByIndex(i).ISSN + "]"
+        current_status = jlist.getItemByIndex(i).journalStatusHistory.current_status
+        publication_status = jlist.getItemByIndex(i).is_published
+        
+        If publication_status = "" Or current_status = "" Then
+            current_status = ""
+        ElseIf publication_status <> "C" Then
+            current_status = codeStatus.item(publication_status).value
+        ElseIf current_status <> "C" Then
+            current_status = codeHistory.item(current_status).value
+        Else
+            current_status = ""
+        End If
+        If current_status <> "" Then
+            current_status = "* (" + current_status + ") "
+        Else
+            current_status = "  "
+        End If
+        list.AddItem current_status + jlist.getItemByIndex(i).Title + " [" + jlist.getItemByIndex(i).ISSN + "]" ' + " (" + codeStatus.item(jlist.getItemByIndex(i).is_published) + ")"
     Next
+    Exit Sub
+handle_error:
+    Debug.Print i
 End Sub
+
 
 Function Serial_CheckExisting(SerialTitle_to_find As String) As Long
     Dim journalKey As String
@@ -32,9 +55,9 @@ Function Serial_CheckExisting(SerialTitle_to_find As String) As Long
     End If
 End Function
 
-Function Serial_TxtContent(mfn As Long, tag As Long, Optional language As String) As String
+Function Serial_TxtContent(Mfn As Long, tag As Long, Optional language As String) As String
 'xxx
-    Serial_TxtContent = journalDAO.getFieldContentByLanguage(mfn, tag, language)
+    Serial_TxtContent = journalDAO.getFieldContentByLanguage(Mfn, tag, language)
 End Function
 
 Function Serial_ComboDefaultValue(Code As ColCode, DefaultOption As String) As String
@@ -55,8 +78,8 @@ Function Serial_ComboDefaultValue(Code As ColCode, DefaultOption As String) As S
     
     Serial_ComboDefaultValue = content
 End Function
-Function Serial_ComboContent(Code As ColCode, mfn As Long, tag As Long, Optional DefaultOption As String) As String
-    Serial_ComboContent = journalDAO.getDecodedValue(Code, mfn, tag, DefaultOption)
+Function Serial_ComboContent(Code As ColCode, Mfn As Long, tag As Long, Optional DefaultOption As String) As String
+    Serial_ComboContent = journalDAO.getDecodedValue(Code, Mfn, tag, DefaultOption)
 End Function
 
 Function TagTxtContent(content As String, tag As Long) As String
@@ -74,7 +97,7 @@ Function TagTxtContent(content As String, tag As Long) As String
         Wend
     TagTxtContent = NewContent
 End Function
-Sub serial_issn_get(mfn As Long, ByRef pissn As String, ByRef eissn As String)
+Sub serial_issn_get(Mfn As Long, ByRef pissn As String, ByRef eissn As String)
     Dim v435 As String
     Dim v35 As String
     Dim v935 As String
@@ -85,11 +108,11 @@ Sub serial_issn_get(mfn As Long, ByRef pissn As String, ByRef eissn As String)
     
     pissn = ""
     eissn = ""
-    v435 = journalDAO.getRepetitiveFieldValue(mfn, 435, "%")
+    v435 = journalDAO.getRepetitiveFieldValue(Mfn, 435, "%")
     If Len(v435) = 0 Then
-        v35 = journalDAO.getRepetitiveFieldValue(mfn, 35, "")
-        v935 = journalDAO.getRepetitiveFieldValue(mfn, 935, "")
-        v400 = journalDAO.getRepetitiveFieldValue(mfn, 400, "")
+        v35 = journalDAO.getRepetitiveFieldValue(Mfn, 35, "")
+        v935 = journalDAO.getRepetitiveFieldValue(Mfn, 935, "")
+        v400 = journalDAO.getRepetitiveFieldValue(Mfn, 400, "")
         If v35 = "ONLIN" Then
             eissn = v935
             If v935 <> v400 Then
@@ -103,12 +126,14 @@ Sub serial_issn_get(mfn As Long, ByRef pissn As String, ByRef eissn As String)
         End If
     Else
         issns = Split(v435, "%")
-        For i = 0 To UBound(issns) - 1
-            issn_type = Split(issns(i), "^t")
-            If issn_type(1) = "ONLIN" Then
-                eissn = issn_type(0)
-            Else
-                pissn = issn_type(0)
+        For i = 0 To UBound(issns)
+            If Len(issns(i)) > 0 Then
+                issn_type = Split(issns(i), "^t")
+                If issn_type(1) = "ONLIN" Then
+                    eissn = issn_type(0)
+                Else
+                    pissn = issn_type(0)
+                End If
             End If
         Next
     End If
@@ -126,7 +151,7 @@ Sub serial_issn_build_field(ByRef pissn As String, ByRef eissn As String, ByRef 
         v935 = eissn
     End If
 End Sub
-Sub Serial_ListContent(list As ListBox, Code As ColCode, mfn As Long, tag As Long)
+Sub Serial_ListContent(list As ListBox, Code As ColCode, Mfn As Long, tag As Long)
     Dim content As String
     Dim exist As Boolean
     Dim itemCode As ClCode
@@ -137,7 +162,7 @@ Sub Serial_ListContent(list As ListBox, Code As ColCode, mfn As Long, tag As Lon
     Dim found As Boolean
     
     sep = "%"
-    content = journalDAO.getRepetitiveFieldValue(mfn, tag, sep)
+    content = journalDAO.getRepetitiveFieldValue(Mfn, tag, sep)
     
     For i = 0 To list.ListCount - 1
         list.selected(i) = False
@@ -175,127 +200,125 @@ Function Serial_Save(MfnTitle As Long) As Long
     Dim i As Long
     Dim msgwarning As String
     Dim OK As Boolean
+            
+        reccontent = reccontent + TagTxtContent(Serial1.TxtISSN.text, 400)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtSerTitle.text, 100)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtSubtitle.text, 110)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtShortTitle.text, 150)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtISOStitle.text, 151)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtSectionTitle.text, 130)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtParallel.text, 230)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtOthTitle.text, 240)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtOldTitle.text, 610)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtNewTitle.text, 710)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtIsSuppl.text, 560)
+        reccontent = reccontent + TagTxtContent(Serial1.TxtHasSuppl.text, 550)
         
-    
-    If Serial_ChangedContents(MfnTitle) Then
-    
-    reccontent = reccontent + TagTxtContent(Serial1.TxtISSN.text, 400)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtSerTitle.text, 100)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtSubtitle.text, 110)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtShortTitle.text, 150)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtISOStitle.text, 151)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtSectionTitle.text, 130)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtParallel.text, 230)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtOthTitle.text, 240)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtOldTitle.text, 610)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtNewTitle.text, 710)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtIsSuppl.text, 560)
-    reccontent = reccontent + TagTxtContent(Serial1.TxtHasSuppl.text, 550)
-    
-    
-    For i = 1 To idiomsinfo.count
-        If Len(Serial2.TxtMission(i).text) > 0 Then reccontent = reccontent + TagTxtContent(Serial2.TxtMission(i).text + "^l" + idiomsinfo(i).Code, 901)
-    Next
-    
-    reccontent = reccontent + TagTxtContent(UCase(Serial2.TxtDescriptors.text), 440)
-    reccontent = reccontent + TagListContent(CodeStudyArea, Serial2.ListStudyArea, 441)
-    reccontent = reccontent + TagListContent(wok_subjects, Serial2.List_wok_area, 854)
-    
-    If Serial2.check_wok_scie.value = 1 Then
-        reccontent = reccontent + TagTxtContent("SCIE", 851)
-    End If
-    If Serial2.check_wok_ssci.value = 1 Then
-        reccontent = reccontent + TagTxtContent("SSCI", 852)
-    End If
-    If Serial2.check_wok_aehci.value = 1 Then
-        reccontent = reccontent + TagTxtContent("A&HCI", 853)
-    End If
-    reccontent = reccontent + TagTxtContent(Serial2.TxtIdxRange.text, 450)
-    
-    reccontent = reccontent + TagComboContent(CodeLiteratureType, Serial3.ComboTpLit.text, 5)
-    reccontent = reccontent + TagComboContent(CodeTreatLevel, Serial3.ComboTreatLev.text, 6)
-    reccontent = reccontent + TagComboContent(CodePubLevel, Serial3.ComboPubLev.text, 330)
         
-    reccontent = reccontent + TagTxtContent(Serial3.TxtInitDate.text, 301)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtInitVol.text, 302)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtInitNo.text, 303)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtTermDate.text, 304)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtFinVol.text, 305)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtFinNo.text, 306)
+        For i = 1 To idiomsinfo.count
+            If Len(Serial2.TxtMission(i).text) > 0 Then reccontent = reccontent + TagTxtContent(Serial2.TxtMission(i).text + "^l" + idiomsinfo(i).Code, 901)
+        Next
         
-    reccontent = reccontent + TagComboContent(CodeFrequency, Serial3.ComboFreq.text, 380)
-    reccontent = reccontent + TagComboContent(codeStatus, Serial3.ComboPubStatus.text, 50)
-    reccontent = reccontent + TagComboContent(CodeAlphabet, Serial3.ComboAlphabet.text, 340)
-    reccontent = reccontent + TagListContent(CodeTxtLanguage, Serial3.ListTextIdiom, 350)
-    reccontent = reccontent + TagListContent(CodeAbstLanguage, Serial3.ListAbstIdiom, 360)
+        reccontent = reccontent + TagTxtContent(UCase(Serial2.TxtDescriptors.text), 440)
+        reccontent = reccontent + TagListContent(CodeStudyArea, Serial2.ListStudyArea, 441)
+        reccontent = reccontent + TagListContent(wok_subjects, Serial2.List_wok_area, 854)
         
-    reccontent = reccontent + TagTxtContent(Serial3.TxtNationalcode.text, 20)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtClassif.text, 430)
-    reccontent = reccontent + TagComboContent(CodeStandard, Serial3.ComboStandard.text, 117)
-    reccontent = reccontent + TagListContent(CodeScheme, Serial3.ListScheme, 85)
-    
-    reccontent = reccontent + TagTxtContent(Serial4.TxtPublisher.text, 480)
-    
-    reccontent = reccontent + TagComboContent(CodeCountry, Serial4.ComboCountry.text, 310)
-    reccontent = reccontent + TagComboContent(CodeState, Serial4.ComboState.text, 320)
-    'reccontent = reccontent + TagTxtContent(Serial3.TxtPubState.Text, 320)
-    
-    reccontent = reccontent + TagTxtContent(Serial4.TxtPubCity.text, 490)
+        If Serial2.check_wok_scie.value = 1 Then
+            reccontent = reccontent + TagTxtContent("SCIE", 851)
+        End If
+        If Serial2.check_wok_ssci.value = 1 Then
+            reccontent = reccontent + TagTxtContent("SSCI", 852)
+        End If
+        If Serial2.check_wok_aehci.value = 1 Then
+            reccontent = reccontent + TagTxtContent("A&HCI", 853)
+        End If
+        reccontent = reccontent + TagTxtContent(Serial2.TxtIdxRange.text, 450)
         
-    reccontent = reccontent + TagTxtContent(Serial4.TxtAddress.text, 63)
-    reccontent = reccontent + TagTxtContent(Serial4.TxtPhone.text, 631)
-    reccontent = reccontent + TagTxtContent(Serial4.TxtFaxNumber.text, 632)
-    reccontent = reccontent + TagTxtContent(Serial4.TxtEmail.text, 64)
-    reccontent = reccontent + TagTxtContent(JOURNAL5.TxtCprightDate.text, 621)
-    reccontent = reccontent + TagTxtContent(JOURNAL5.TxtCprighter.text, 62)
-    reccontent = reccontent + TagTxtContent(Serial4.TxtSponsor.text, 140)
+        reccontent = reccontent + TagComboContent(CodeLiteratureType, Serial3.ComboTpLit.text, 5)
+        reccontent = reccontent + TagComboContent(CodeTreatLevel, Serial3.ComboTreatLev.text, 6)
+        reccontent = reccontent + TagComboContent(CodePubLevel, Serial3.ComboPubLev.text, 330)
+            
+        reccontent = reccontent + TagTxtContent(Serial3.TxtInitDate.text, 301)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtInitVol.text, 302)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtInitNo.text, 303)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtTermDate.text, 304)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtFinVol.text, 305)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtFinNo.text, 306)
+            
+        reccontent = reccontent + TagComboContent(CodeFrequency, Serial3.ComboFreq.text, 380)
+        reccontent = reccontent + TagComboContent(codeStatus, Serial3.ComboPubStatus.text, 50)
+        reccontent = reccontent + TagComboContent(CodeAlphabet, Serial3.ComboAlphabet.text, 340)
+        reccontent = reccontent + TagListContent(CodeTxtLanguage, Serial3.ListTextIdiom, 350)
+        reccontent = reccontent + TagListContent(CodeAbstLanguage, Serial3.ListAbstIdiom, 360)
+            
+        reccontent = reccontent + TagTxtContent(Serial3.TxtNationalcode.text, 20)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtClassif.text, 430)
+        reccontent = reccontent + TagComboContent(CodeStandard, Serial3.ComboStandard.text, 117)
+        reccontent = reccontent + TagListContent(CodeScheme, Serial3.ListScheme, 85)
         
-    reccontent = reccontent + TagTxtContent(Serial3.TxtSECS.text, 37)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtMEDLINE.text, 420)
-    reccontent = reccontent + TagTxtContent(Serial3.TxtMEDLINEStitle.text, 421)
-    reccontent = reccontent + TagTxtContent(SERIAL8.TxtNotes.text, 900)
-    
-    reccontent = reccontent + TagTxtContent(SERIAL7.TxtSiglum.text, 930)
-    reccontent = reccontent + TagTxtContent(SERIAL7.TxtPubId.text, 68)
-    reccontent = reccontent + TagTxtContent(SERIAL7.TxtSep.text, 65)
-    reccontent = reccontent + TagTxtContent(SERIAL7.TxtSiteLocation.text, 69)
-    reccontent = reccontent + TagComboContent(CodeFTP, SERIAL7.ComboFTP.text, 66)
-    
-    Dim v435 As String
-    Dim v35 As String
-    Dim v935 As String
-    
-    Call serial_issn_build_field(SERIAL7.Text_PISSN.text, SERIAL7.Text_EISSN.text, v435, v35, v935)
-    reccontent = reccontent + TagTxtContent(v435, 435)
-    reccontent = reccontent + TagTxtContent(v935, 935)
-    reccontent = reccontent + TagTxtContent(v35, 35)
-    
-    reccontent = reccontent + TagComboContent(CodeUsersubscription, SERIAL7.ComboUserSubscription.text, 67)
-    reccontent = reccontent + TagTxtContent(SERIAL7.Text1.text, 690)
-    reccontent = reccontent + TagTxtContent(SERIAL7.ScieloNetWrite, 691)
-    reccontent = reccontent + TagTxtContent(SERIAL7.Text_SubmissionOnline.text, 692)
-    
-    
-    reccontent = reccontent + TagComboContent(CodeCCode, SERIAL8.ComboCCode.text, 10)
-    reccontent = reccontent + TagTxtContent(SERIAL8.TxtIdNumber.text, 30)
-    reccontent = reccontent + TagTxtContent(SERIAL8.TxtDocCreation.text, 950)
-    reccontent = reccontent + TagTxtContent(SERIAL8.TxtCreatDate.text, 940)
-    reccontent = reccontent + TagTxtContent(SERIAL8.TxtDocUpdate.text, 951)
-    
-    SERIAL8.TxtUpdateDate.text = getDateIso(Date)
-    reccontent = reccontent + TagTxtContent(SERIAL8.TxtUpdateDate.text, 941)
-    reccontent = reccontent + SERIAL6.getDataToSave
-    reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicText.text, 541)
-    If MfnTitle = 0 Then
-        If journalDAO.return_mfn_by_ISSN(Serial1.TxtISSN.text) > 0 Then
+        reccontent = reccontent + TagTxtContent(Serial4.TxtPublisher.text, 480)
         
+        reccontent = reccontent + TagComboContent(CodeCountry, Serial4.ComboCountry.text, 310)
+        reccontent = reccontent + TagComboContent(CodeState, Serial4.ComboState.text, 320)
+        'reccontent = reccontent + TagTxtContent(Serial3.TxtPubState.Text, 320)
+        
+        reccontent = reccontent + TagTxtContent(Serial4.TxtPubCity.text, 490)
+            
+        reccontent = reccontent + TagTxtContent(Serial4.TxtAddress.text, 63)
+        reccontent = reccontent + TagTxtContent(Serial4.TxtPhone.text, 631)
+        reccontent = reccontent + TagTxtContent(Serial4.TxtFaxNumber.text, 632)
+        reccontent = reccontent + TagTxtContent(Serial4.TxtEmail.text, 64)
+        reccontent = reccontent + TagTxtContent(JOURNAL5.TxtCprightDate.text, 621)
+        reccontent = reccontent + TagTxtContent(JOURNAL5.TxtCprighter.text, 62)
+        reccontent = reccontent + TagTxtContent(Serial4.TxtSponsor.text, 140)
+            
+        reccontent = reccontent + TagTxtContent(Serial3.TxtSECS.text, 37)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtMEDLINE.text, 420)
+        reccontent = reccontent + TagTxtContent(Serial3.TxtMEDLINEStitle.text, 421)
+        reccontent = reccontent + TagTxtContent(SERIAL8.TxtNotes.text, 900)
+        
+        reccontent = reccontent + TagTxtContent(SERIAL7.TxtSiglum.text, 930)
+        reccontent = reccontent + TagTxtContent(SERIAL7.TxtPubId.text, 68)
+        reccontent = reccontent + TagTxtContent(SERIAL7.TxtSep.text, 65)
+        reccontent = reccontent + TagTxtContent(SERIAL7.TxtSiteLocation.text, 69)
+        reccontent = reccontent + TagComboContent(CodeFTP, SERIAL7.ComboFTP.text, 66)
+        
+        Dim v435 As String
+        Dim v35 As String
+        Dim v935 As String
+        
+        Call serial_issn_build_field(SERIAL7.Text_PISSN.text, SERIAL7.Text_EISSN.text, v435, v35, v935)
+        reccontent = reccontent + TagTxtContent(v435, 435)
+        reccontent = reccontent + TagTxtContent(v935, 935)
+        reccontent = reccontent + TagTxtContent(v35, 35)
+        
+        reccontent = reccontent + TagComboContent(CodePublishingModel, SERIAL7.ComboPublishingModel.text, 699)
+        reccontent = reccontent + TagComboContent(CodeUsersubscription, SERIAL7.ComboUserSubscription.text, 67)
+        reccontent = reccontent + TagTxtContent(SERIAL7.Text1.text, 690)
+        reccontent = reccontent + TagTxtContent(SERIAL7.ScieloNetWrite, 691)
+        reccontent = reccontent + TagTxtContent(SERIAL7.Text_SubmissionOnline.text, 692)
+        
+        
+        reccontent = reccontent + TagComboContent(CodeCCode, SERIAL8.ComboCCode.text, 10)
+        reccontent = reccontent + TagTxtContent(SERIAL8.TxtIdNumber.text, 30)
+        reccontent = reccontent + TagTxtContent(SERIAL8.TxtDocCreation.text, 950)
+        reccontent = reccontent + TagTxtContent(SERIAL8.TxtCreatDate.text, 940)
+        reccontent = reccontent + TagTxtContent(SERIAL8.TxtDocUpdate.text, 951)
+        
+        SERIAL8.TxtUpdateDate.text = getDateIso(Date)
+        reccontent = reccontent + TagTxtContent(SERIAL8.TxtUpdateDate.text, 941)
+        reccontent = reccontent + SERIAL6.getDataToSave
+        reccontent = reccontent + TagTxtContent(JOURNAL5.ComboLicText.text, 541)
+        
+        If MfnTitle = 0 Then
+            If journalDAO.return_mfn_by_ISSN(Serial1.TxtISSN.text) > 0 Then
+            
+            Else
+                Call journalDAO.save(MfnTitle, reccontent)
+            End If
         Else
             Call journalDAO.save(MfnTitle, reccontent)
         End If
-        Else
-            Call journalDAO.save(MfnTitle, reccontent)
-        End If
-    End If
     Serial_Save = MfnTitle
 End Function
 
@@ -526,6 +549,7 @@ Function Serial_ChangedContents(MfnTitle As Long) As Boolean
     
     change = change Or (StrComp(SERIAL7.Text1.text, Serial_TxtContent(MfnTitle, 690)) <> 0)
     change = change Or (StrComp(SERIAL7.ComboUserSubscription.text, Serial_ComboContent(CodeUsersubscription, MfnTitle, 67)) <> 0)
+    change = change Or (StrComp(SERIAL7.ComboPublishingModel.text, Serial_ComboContent(CodePublishingModel, MfnTitle, 699)) <> 0)
     change = change Or (StrComp(SERIAL7.Text_SubmissionOnline.text, Serial_TxtContent(MfnTitle, 692)) <> 0)
     
     change = change Or (StrComp(SERIAL8.ComboCCode.text, Serial_ComboContent(CodeCCode, MfnTitle, 10)) <> 0)
@@ -709,18 +733,17 @@ Sub generateFile_JournalList4Automata()
     Next
     Close fn
 End Sub
-Function isTitleFormCompleted(mfn As Long) As Boolean
+Function isTitleFormCompleted(Mfn As Long) As Boolean
     Dim i As Long
-    Dim completed As Boolean
+    Dim Data As String
+    Dim missing As String
     
-    completed = True
+    For i = 1 To Fields.getMandatoryFields.count
+        Data = journalDAO.getRepetitiveFieldValue(Mfn, CLng(Fields.getMandatoryFields.item(i)), "")
+        If Len(Data) = 0 Then
+            missing = missing + vbCrLf + Fields.getMandatoryFields.item(i)
+        End If
+    Next
     
-    While i < Fields.getMandatoryFields.count And (completed)
-        
-        i = i + 1
-        
-        completed = (Len(journalDAO.getRepetitiveFieldValue(mfn, CLng(Fields.getMandatoryFields.item(i)), "")) > 0)
-    Wend
-    
-    isTitleFormCompleted = completed
+    isTitleFormCompleted = (Len(missing) = 0)
 End Function

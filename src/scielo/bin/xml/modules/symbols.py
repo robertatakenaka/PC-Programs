@@ -13,6 +13,8 @@ symbols = None
 def html2table():
     _items = []
     c = open(path + '/symbols.html', 'r').read()
+    if not isinstance(c, unicode):
+        c = c.decode('utf-8')
     c = c.replace('<tr', '~BREAK~<tr').replace('</tr>', '</tr>~BREAK~')
     items = [item for item in c.split('~BREAK~') if item.startswith('<tr') and item.endswith('</tr>') and 'Symbol' in item]
     for item in items:
@@ -27,13 +29,14 @@ def html2table():
             _ent = _ent[_ent.rfind('&'):]
             _ent = _ent[0:_ent.rfind(';')+1]
             _items.append(_char + '\t' + _ent + '\t' + _def)
-    open(path + '/symbols.csv', 'w').write('\n'.join(_items))
+    open(path + '/symbols.csv', 'w').write('\n'.join(_items).encode('utf-8'))
 
 
 def load_symbols():
     symbols_items = {}
-    content = open(path + '/symbols.csv', 'r').readlines()
-    for row in content:
+    for row in open(path + '/symbols.csv', 'r').readlines():
+        if not isinstance(row, unicode):
+            row = row.decode('utf-8')
         cells = row.split('\t')
         if len(cells) == 3:
             char, ent, descr = cells

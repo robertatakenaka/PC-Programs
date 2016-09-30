@@ -1,10 +1,11 @@
 BODY {
     font-family: Verdana;
     font-size: 10pt;
+    padding: 20px;
 }
 /**/
 sub, sup{
-    background-color: #F18D05;
+    background-color: #E3A79F;
 }
 p {
     padding-left: 2px;
@@ -13,16 +14,48 @@ p {
 div {
     border: none;
 }
+ul li{
+  list-style: square;
+}
+ol{
+  counter-reset: myCounter;
+}
+ol li{
+  list-style: none;
+  
+}
+ol li:before {
+  counter-increment: myCounter;
+  content:counter(myCounter);
+  color: white;
+  background: #9FD6D2;
+  display: inline-block;
+  text-align: center;
+  font-family: Verdana;
+  font-weight: bold;
+  font-size: 60%;
+  margin: 1px;
+  padding: 5px;
+  border-radius: 30px;
+}
 
 
+
+td {
+  vertical-align: top;
+  padding: 1px;
+}
 .subtitle {
   margin: 5px;
   font-size: 8pt;
-  font-family: Arial;
+  font-family: Verdana;
   color: #3D3832;
   background-color: #F0CEC2;
   padding: 5px;
   float: right;
+}
+.element-table {
+  width: 90%
 }
 .element-table table {
    border: 1px solid gray;
@@ -51,6 +84,13 @@ pre {
     word-wrap:break-word;
     color: #113F8C;
 }
+code {
+    color: #113F8C;
+    background-color: white;
+    font-size: 7pt;
+    font-family: Courier;
+    word-wrap:break-word;
+}
 h1 {
     text-align: center;
     font-family: "Verdana";
@@ -68,12 +108,13 @@ h5 {
     text-align: left;
     margin: 5px;
 }
-.xml {
+.td_xml {
     color: #113F8C;
     background-color: white;
     font-size: 7pt;
     font-family: Courier;
     word-wrap:break-word;
+    width: 20%;
 }
 .validation {
    border: 1px dotted #8B85AB;
@@ -89,7 +130,7 @@ h5 {
    font-size: 10pt;
    color: black;
    vertical-align: top;
-   width:10%; 
+   width:20%; 
    word-wrap:break-word;
 } 
 .td_status {
@@ -103,12 +144,20 @@ h5 {
 } 
 .td_message {
    border: 1px dotted gray;
-   font-family: Courier;
-   font-size: 10pt;
+   font-family: Verdana;
+   font-size: 9pt;
    color: black;
    vertical-align: top;
    word-wrap:break-word;
-   max-width:80%;  
+   width:30%;  
+} 
+.td_regular {
+   border: 1px dotted gray;
+   font-family: Verdana;
+   font-size: 9pt;
+   color: black;
+   vertical-align: top;
+   max-width:20%;  
 } 
 .fatalerror .td_label {
    border: 1px solid gray;
@@ -131,16 +180,16 @@ h5 {
 } 
 .fatalerror .td_message {
    border: 1px solid gray;
-   font-family: Courier;
-   font-size: 10pt;
+   font-family: Verdana;
+   font-size: 9pt;
    color: white;
    vertical-align: top;
    word-wrap:break-word;
-   max-width:80%;  
+   width:30%;  
 } 
 .validation th {
   border: 1px solid gray;
-  background-color: #A6C1BC;
+  background-color: #547980;
   color: white;
 }
 .sheet {
@@ -198,6 +247,15 @@ h5 {
     color: black;
     padding: 2px;
 }
+.valid {
+    background-color: #799888;
+    color: white;
+    padding: 2px;
+}
+.info {
+    background-color: #D8DD47;
+    padding: 2px;
+}
 .label {
     font-weight: bold;
     font-family: Courier;
@@ -223,7 +281,7 @@ h5 {
     margin: 5px;
 }
 .article-title {
-    color: #748C83;
+    color: #004C75;
     font-size: 10pt;
     margin: 5px;
     font-weight: bold;
@@ -255,7 +313,7 @@ h5 {
 }
 /* MESSAGES */
 .issue-messages{
-    background-color: #9ECFA2;
+    background-color: #547980;
     border: 1px solid gray;
     color: white;
 }
@@ -302,23 +360,34 @@ h5 {
     padding: 5px;
 }
 
-td img {
-  max-width: 200px;
-  max-height: 200px;
-  
+.thumb {
+  height: auto;
+  width: auto;
+  min-height: 40px;
+  max-height: 300px;
+  max-width: 80%;
 }
 
 .delete {
+  background-color: gray;
+}
+.deleted {
   background-color: gray;
 }
 .none {
   background-color: white;
 }
 .add {
-  background-color: #B2D9D8;
+  background-color: #E0F9F5;
+}
+.added {
+  background-color: #E0F9F5;
 }
 .update {
-  background-color: #F6938E;
+  background-color: #CBF2FF;
+}
+.updated {
+  background-color: #CBF2FF;
 }
 .skip-update {
   background-color: #FDD186;
@@ -331,7 +400,6 @@ td img {
   max-width: 100%;
   word-wrap:break-word;
   margin: 5px;
-  padding: 1px;
   font-family: Verdana;
   font-size: 8pt;
 } 
@@ -348,7 +416,12 @@ td img {
 .report-date {
   text-align: left;
   font-size: 9pt;
-  font-family: Verdana
+  font-family: Verdana;
+  font-weight: bold;
+  color: #4677A6;
+  background-color: #F8C751;
+  border-radius: 1em;
+  padding: 5px;
 }
 .endreport {
   text-align: center;
@@ -397,25 +470,32 @@ td img {
   color: black;
   background-color: white;
 }
-
 .not-selected-tab {
-  background-color: #CAC7BE;
+  /* background-color: #CAC7BE; */
+  background-color: #A7B3C6;
   color: white;
   padding: 10px;
   border: 1px solid white;
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+
 }
 .selected-tab {
-  background-color: #004C75;
+  background-color: #4677A6;
   color: #C8E7EA;
   padding: 10px;
   font-weight: bold;
   border: 1px solid white;
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+
 }
 .not-selected-tab-content {
   display: none;
-  border: 5px solid #004C75;
+  border: 5px solid #C7DEEB;
   margin: 5px;
   padding: 5px;
+
 }
 .selected-tab-content {
   display: block;
@@ -485,7 +565,7 @@ td img {
 } 
 .reports-sheet th {
   border: 0.5px solid gray;
-    background-color: #CCADBC;
+    background-color: #BBACAF;
     color: white;
     font-family: Verdana;
 }
@@ -551,6 +631,7 @@ td img {
 } 
 
 .report-block-xmlrep {
+    font-family: "Courier";
     border: 5px solid #55C3DC;
     padding: 2px;
     display: none;
@@ -572,5 +653,78 @@ td img {
 }
 
 .package {
-  background-color: #EFF5C5;
+  background-color: #69D2E7;
+  font-weight: bold;
+}
+
+.smaller {
+  font-size: 75%
+}
+
+.note {
+  background-color: #E3A79F;
+  color: #FFFFFF;
+  font-family: Verdana;
+  font-size: 9pt;
+  padding: 10pt;
+  width: 30%;
+  float: right;
+}
+
+.compare_ {
+  padding: 10px;
+  background-color: #E3CBC9;
+}
+.compare_inline {
+  padding: 10px;
+  background-color: #E3CBC9;
+}
+.compare_equation {
+  padding: 10px;
+  background-color: #E7E4D3;
+}
+.compare_figgrp {
+  padding: 10px;
+  background-color: #E7807B;
+}
+.compare_tabwrap {
+  padding: 10px;
+  background-color: #FF9985;
+}
+.compare_images {
+  border: 1px solid gray;
+  border-radius: 10px;
+  margin: 5px;
+  padding: 5px;
+}
+
+.blockingerror {
+  background-color: #B7A2D6;
+  color: white;
+}
+
+.hist-registered {
+  background-color: #9BF0E9;
+  color: #451E0F;
+}
+.hist-package {
+  background-color: #EDDE45;  
+  color: #451E0F;
+}
+.hist-package-messages {
+  background-color: #F2CACA;
+  color: #451E0F;
+}
+.hist-converted {
+  background-color: #61D2D6;
+  color: #451E0F;
+}
+.hist-excluded {
+  background-color: #EDE5E2;
+}
+.hist-replaces {
+  background-color: #EA3556;
+}
+.hist-replaced {
+  background-color: #ED146F;
 }

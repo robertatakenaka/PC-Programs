@@ -2,12 +2,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Code Database
+List of codes
 =============
 
-Its content is not customized and it is managed by `Code Manager <codemanager.html>`_ program by SciELO IT Team.
-
-
+.. toctree::
+    :maxdepth: 1
+    
 acquisition priority
 --------------------
 +-+-----------------------------------------+
@@ -41,6 +41,14 @@ article status
 +-+---------+
 |1|Available|
 +-+---------+
+
+authidtp
+--------
++------+--------+
+|orcid |orcid   |
++------+--------+
+|lattes| lattes |
++------+--------+
 
 blcktype
 --------
@@ -516,11 +524,6 @@ ctdbid
 |UMIN  |UMIN - University Hospital Medical Information Network                     |
 +------+---------------------------------------------------------------------------+
 
-ctrbidtp
---------
-+-----+-----+
-|ORCID|ORCID|
-+-----+-----+
 
 date
 ----
@@ -852,6 +855,23 @@ history
 |S|Indexing interrupted by committee|
 +-+---------------------------------+
 
+Note: history was replaced by `historystatus`_
+
+
+historystatus
+-------------
++--------------+-----------------------+-----------------------------------------+
+|values for ^d | values for ^e         |                                         |
++--------------+-----------------------+-----------------------------------------+
+|D             |                       |Ceased                                   |
++--------------------------------------+-----------------------------------------+
+|S             |not-open-access        |Not open access                          |
++--------------------------------------+-----------------------------------------+
+|S             |suspended-by-committee |Indexing interrupted by committee        |
++--------------------------------------+-----------------------------------------+
+|S             |suspended-by-editor    |Indexing interrupted by editor           |
++--------------------------------------+-----------------------------------------+
+
 id
 --
 +--+-----------+
@@ -937,7 +957,7 @@ language
 +--+-----------+
 |ca|Catalan    |
 +--+-----------+
-|ch|Chinese    |
+|zh|Chinese    |
 +--+-----------+
 |cs|Czech      |
 +--+-----------+

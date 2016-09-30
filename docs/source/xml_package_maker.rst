@@ -26,12 +26,26 @@ Select the folder which contains XML package files
 .. image:: img/xpm_gui_selected_folder.png
 
 
-Inform the journal acronym which will be used to form the files and package names
-
-.. image:: img/xpm_gui_acron.png
-
 
 Press **XML Package Maker**.
+
+
+.. _viacomando:
+
+Or, to execute Package Maker via command line, open the terminal and go to the folder where the program is installed:
+
+.. image:: img/mkp-pkm-dos.jpg
+   :align: center
+
+Then type: 
+
+.. code::
+
+    python xml_package_maker.py <xml_package_folder>
+
+.. image:: img/mkp-pm-cmd.jpg
+   :align: center
+
 
 
 Results
@@ -191,10 +205,3 @@ Sources report
 .. image:: img/xpm_report_sources_others.png
 
 
-
-
-
-
-----------------
-
-Last update of this page: August, 2015

@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"  xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML">
    	
-    <xsl:import href="../nlm-style-5.8/nlm-stylechecker.xsl"/>
-    <xsl:variable name="fig_count"><xsl:value-of select="count(.//fig)"/></xsl:variable>
-    <xsl:variable name="table_count"><xsl:value-of select="count(.//table-wrap)"/></xsl:variable>
-    <xsl:variable name="equation_count"><xsl:value-of select="count(.//disp-formula)"/></xsl:variable>
-    <xsl:variable name="ref_count"><xsl:value-of select="count(.//ref)"/></xsl:variable>
-    <xsl:variable name="page_count"><xsl:choose>
-        <xsl:when test="string(number(@fpage))!='NaN' and string(number(@lpage))!='NaN'"><xsl:value-of select="@lpage - @fpage + 1"/></xsl:when>
-        <xsl:otherwise>?</xsl:otherwise>
-    </xsl:choose></xsl:variable>
+    <xsl:import href="../nlm-style-5.10/nlm-stylechecker.xsl"/>
+    
     <xsl:param name="filename"/>
 	 <xsl:template match="/">
 	   <ERR>
@@ -81,99 +74,13 @@
             </xsl:when>
         </xsl:choose>
     </xsl:variable>
-  
-	<xsl:template match="article-meta//aff">
-		<!-- overwrite stylecheck-match-templates.xsl -->
-		<xsl:call-template name="ms-stream-id-test"/>
-		<xsl:if test="not(institution)">
-			<xsl:call-template name="make-error">
-			 	<xsl:with-param name="error-type">aff institution check</xsl:with-param>
-			 	<xsl:with-param name="description">aff must have institution</xsl:with-param>
-
-			</xsl:call-template>
-         </xsl:if>
-         <xsl:if test="not(addr-line)">
-			<xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">aff addr-line check</xsl:with-param>
-                <xsl:with-param name="description">aff should have addr-line, including city</xsl:with-param>
-			  <xsl:with-param name="class">warning</xsl:with-param>
-            </xsl:call-template>
-         </xsl:if>
-         <xsl:if test="not(country)">
-			<xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">aff country check</xsl:with-param>
-                <xsl:with-param name="description">aff must have country</xsl:with-param>
-			  <xsl:with-param name="class">warning</xsl:with-param>
-            </xsl:call-template>
-         </xsl:if>
-        <xsl:apply-templates select="." mode="output"/>
-	</xsl:template>
     
-    <xsl:template match="counts">
-        <xsl:call-template name="empty-element-check"/>
-        <xsl:if test="$fig_count!=fig-count/@count">
-            <xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">fig-count check</xsl:with-param>
-                <xsl:with-param name="description">fig-count (<xsl:value-of select="fig-count/@count"/>) and number of fig (<xsl:value-of select="$fig_count"/>) in XML do not match</xsl:with-param>
-                <xsl:with-param name="class">error</xsl:with-param>
-            </xsl:call-template>
-        </xsl:if>
-        <xsl:if test="$table_count!=table-count/@count">
-            <xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">table-count check</xsl:with-param>
-                <xsl:with-param name="description">table-count (<xsl:value-of select="table-count/@count"/>) and number of table-wrap (<xsl:value-of select="$table_count"/>) in XML do not match</xsl:with-param>
-                <xsl:with-param name="class">error</xsl:with-param>
-            </xsl:call-template>
-        </xsl:if>
-        <xsl:if test="$equation_count!=equation-count/@count">
-            <xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">equation-count check</xsl:with-param>
-                <xsl:with-param name="description">equation-count (<xsl:value-of select="equation-count/@count"/>) and number of equation (<xsl:value-of select="$equation_count"/>) in XML do not match</xsl:with-param>
-                <xsl:with-param name="class">error</xsl:with-param>
-            </xsl:call-template>
-        </xsl:if>
-        <xsl:if test="$ref_count!=ref-count/@count">
-            <xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">ref-count check</xsl:with-param>
-                <xsl:with-param name="description">ref-count (<xsl:value-of select="ref-count/@count"/>) and number of ref (<xsl:value-of select="$ref_count"/>) in XML do not match</xsl:with-param>
-                <xsl:with-param name="class">error</xsl:with-param>
-            </xsl:call-template>
-        </xsl:if>
-        <xsl:choose>
-            <xsl:when test="$page_count!='?'">
-                <xsl:if test="$page_count!=page-count/@count">
-                    <xsl:call-template name="make-error">
-                        <xsl:with-param name="error-type">page-count check</xsl:with-param>
-                        <xsl:with-param name="description">page-count (<xsl:value-of select="page-count/@count"/>) and @lpage - @fpage + 1 (<xsl:value-of select="$page_count"/>) in XML do not match</xsl:with-param>
-                        <xsl:with-param name="class">error</xsl:with-param>
-                    </xsl:call-template>
-                </xsl:if>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:if test="not(page-count) or string(number(page-count/@count))='NaN'">
-                    <xsl:call-template name="make-error">
-                        <xsl:with-param name="error-type">page-count check</xsl:with-param>
-                        <xsl:with-param name="description">Invalid value for page-count/@count: <xsl:value-of select="page-count/@count"></xsl:value-of></xsl:with-param>
-                        <xsl:with-param name="class">error</xsl:with-param>
-                    </xsl:call-template>
-                </xsl:if>
-            </xsl:otherwise>
-        </xsl:choose>
-        <xsl:apply-templates select="." mode="output"/>
+    <xsl:template match="ext-link[@ext-link-type='clinical-trial']">
+         <xsl:call-template name="web-ext-link-check"/>        
+         <xsl:call-template name="href-content-check"/>
+         <xsl:apply-templates select="." mode="output"/>
     </xsl:template>
-    <xsl:template match="ack">
-        <xsl:call-template name="empty-element-check"/>
-        <xsl:call-template name="back-element-check"/>
-        <xsl:call-template name="ms-stream-id-test"/>
-        <xsl:if test="$check_funding='maybe-has-funding-group'">
-            <xsl:call-template name="make-error">
-                <xsl:with-param name="error-type">funding group check</xsl:with-param>
-                <xsl:with-param name="description">It seems there is funding information (contract number) in acknowledgement. Create funding-group in article-meta</xsl:with-param>
-                <xsl:with-param name="class">warning</xsl:with-param>
-            </xsl:call-template>
-        </xsl:if>
-        <xsl:apply-templates select="." mode="output"/>
-    </xsl:template>
+   
 	<xsl:template match="ref">
         <xsl:call-template name="ms-stream-id-test"/>
         <xsl:call-template name="empty-element-check"/>
@@ -301,5 +208,75 @@
       
    </xsl:template>
  
-  
+    <xsl:template match="contrib">
+        
+        <xsl:call-template name="empty-element-check"/>
+        
+        <xsl:choose>
+            <xsl:when test="$stream='manuscript'">
+                <xsl:call-template name="ms-contrib-content-test"/>
+                <xsl:call-template name="ms-contrib-attribute-test-alt"/>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:call-template name="contrib-attribute-checking"/>
+            </xsl:otherwise>
+        </xsl:choose>
+        
+        <xsl:call-template name="contrib-author-notes-test"/>
+        
+        <xsl:call-template name="contrib-content-test"/>
+        
+        <!--  <xsl:call-template name="xlink-attribute-check"/>  -->
+        
+        <xsl:apply-templates select="." mode="output"/>
+    </xsl:template>
+    <xsl:template name="ms-contrib-attribute-test-alt">
+        
+        <xsl:if test="not(@contrib-type)">
+            <xsl:call-template name="make-error">
+                <xsl:with-param name="error-type" select="'contrib attribute'"/>
+                <xsl:with-param name="description">
+                    <xsl:text>&lt;contrib&gt; must contain a contrib-type attribute</xsl:text>
+                </xsl:with-param>
+                <xsl:with-param name="tg-target" select="'tags.html#el-contrib'"/>
+            </xsl:call-template>
+        </xsl:if>
+        
+        <xsl:if test="contains('|author|editor|translator|compiler|',concat('|',@contrib-type,'|'))">
+            <xsl:call-template name="make-error">
+                <xsl:with-param name="error-type" select="'contrib attribute'"/>
+                <xsl:with-param name="description">
+                    <xsl:text>contrib-type attribute must be set to either 'author' or 'editor' or 'translator' or 'compiler'</xsl:text>
+                </xsl:with-param>
+                <xsl:with-param name="tg-target" select="'tags.html#el-contrib'"/>
+            </xsl:call-template>
+        </xsl:if>
+        
+        <xsl:if test="@id">
+            <xsl:call-template name="make-error">
+                <xsl:with-param name="error-type" select="'contrib attribute'"/>
+                <xsl:with-param name="description">
+                    <xsl:text>&lt;contrib&gt; should not contain an id attribute</xsl:text>
+                </xsl:with-param>
+                <xsl:with-param name="tg-target" select="'tags.html#el-contrib'"/>
+            </xsl:call-template>
+        </xsl:if>
+        
+        <xsl:if test="@rid">
+            <xsl:call-template name="make-error">
+                <xsl:with-param name="error-type" select="'contrib attribute'"/>
+                <xsl:with-param name="description">
+                    <xsl:text>&lt;contrib&gt; should not contain an rid attribute</xsl:text>
+                </xsl:with-param>
+                <xsl:with-param name="tg-target" select="'tags.html#el-contrib'"/>
+            </xsl:call-template>
+        </xsl:if>
+    </xsl:template>
+    <xsl:template match="contrib-id">
+        <xsl:call-template name="empty-element-check"/>
+        <!--xsl:call-template name="scielo-contrib-id-check"/-->
+        <xsl:apply-templates select="." mode="output"/>
+    </xsl:template>
+    
 </xsl:stylesheet>
+

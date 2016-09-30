@@ -2,11 +2,17 @@
 
 
 import os
+import sys
 from tempfile import mkdtemp, NamedTemporaryFile
 
 from article_utils import u_encode
 import xml_utils
 import utils
+import fs_utils
+
+
+def change_circ(content):
+    return content.replace('^', '<PRESERVECIRC/>')
 
 
 def format_value(content):
@@ -41,35 +47,40 @@ def format_value(content):
         utils.debbuging(e)
         utils.debbuging(content)
 
-    return content
+    return content.strip()
 
 
 class IDFile(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, content_formatter=None):
+        self.content_formatter = content_formatter
 
     def _format_file(self, records):
-        r = ''
+        r = []
         index = 0
         for item in records:
             index += 1
-            r += self._format_id(index) + self._format_record(item)
-        return r
+            r.append(self._format_id(index) + self._format_record(item))
+        return ''.join(r)
 
     def _format_id(self, index):
         i = '000000' + str(index)
         return '!ID ' + i[-6:] + '\n'
 
     def _format_record(self, record):
-        r = []
+        result = ''
         if record is not None:
             #utils.debbuging(record)
+            r = []
             for tag_i in sorted([int(s) for s in record.keys() if s.isdigit()]):
                 tag = str(tag_i)
                 data = record.get(tag)
                 r.append(self.tag_data(tag, data))
-        return ''.join(r)
+            result = ''.join(r)
+
+            if self.content_formatter is not None:
+                result = self.content_formatter(result)
+        return result
 
     def tag_data(self, tag, data):
         occs = []
@@ -95,9 +106,12 @@ class IDFile(object):
         try:
             first = u''
             value = u''
-            for k, v in subf_and_value_list.items():
+            #for k, v in subf_and_value_list.items():
+            for k in sorted(subf_and_value_list.keys()):
+                v = subf_and_value_list[k]
                 if v is not None and v != '' and len(k) == 1:
                     v = format_value(v)
+                    v = change_circ(v)
                     if k in 'abcdefghijklmnopqrstuvwxyz123456789':
                         value += u'^' + k + v
                     elif k in '_':
@@ -117,7 +131,9 @@ class IDFile(object):
                 try:
                     tag = '000' + tag
                     tag = tag[-3:]
-                    r = '!v' + tag + '!' + format_value(value) + '\n'
+                    value = format_value(value)
+                    #value = change_circ(value)
+                    r = '!v' + tag + '!' + value + '\n'
                 except Exception as e:
                     utils.debbuging('tag_content: ')
                     utils.debbuging(e)
@@ -190,38 +206,43 @@ class IDFile(object):
 
         if isinstance(content, unicode):
             content = u_encode(content, 'iso-8859-1')
+            content = content.replace('<PRESERVECIRC/>', '&#94;')
         try:
             open(filename, 'w').write(content)
         except Exception as e:
             utils.debbuging('saving...')
             utils.debbuging(e)
+            print(e)
 
 
 class CISIS(object):
 
     def __init__(self, cisis_path):
-        cisis_path = cisis_path.replace('\\', '/')
-        self.temp_dir = mkdtemp().replace('\\', '/')
+        self.cisis_path = None
         if os.path.exists(cisis_path):
             self.cisis_path = cisis_path
-        else:
-            utils.debbuging('Invalid cisis path: ' + cisis_path)
+
+    @property
+    def is_available(self):
+        cmd = self.cisis_path + '/mx what > ./status'
+        run_command(cmd)
+        return open('./status', 'r').read().startswith('CISIS')
 
     def crunchmf(self, mst_filename, wmst_filename):
         cmd = self.cisis_path + '/crunchmf ' + mst_filename + ' ' + wmst_filename
-        os.system(cmd)
+        run_command(cmd)
 
     def id2i(self, id_filename, mst_filename):
         cmd = self.cisis_path + '/id2i ' + id_filename + ' create=' + mst_filename
-        os.system(cmd)
+        run_command(cmd)
 
     def append(self, src, dest):
         cmd = self.cisis_path + '/mx ' + src + '  append=' + dest + ' now -all'
-        os.system(cmd)
+        run_command(cmd)
 
     def create(self, src, dest):
         cmd = self.cisis_path + '/mx ' + src + ' create=' + dest + ' now -all'
-        os.system(cmd)
+        run_command(cmd)
 
     def append_id_to_master(self, id_filename, mst_filename, reset):
         if reset:
@@ -238,55 +259,61 @@ class CISIS(object):
 
     def i2id(self, mst_filename, id_filename):
         cmd = self.cisis_path + '/i2id ' + mst_filename + ' > ' + id_filename
-        os.system(cmd)
+        run_command(cmd)
 
     def mst2iso(self, mst_filename, iso_filename):
         cmd = self.cisis_path + '/mx ' + mst_filename + ' iso=' + iso_filename + ' now -all'
-        os.system(cmd)
+        run_command(cmd)
 
     def iso2mst(self, iso_filename, mst_filename):
         cmd = self.cisis_path + '/mx iso=' + iso_filename + ' create=' + mst_filename + ' now -all'
-        os.system(cmd)
+        run_command(cmd)
 
     def copy_record(self, src_mst_filename, mfn, dest_mst_filename):
         cmd = self.cisis_path + '/mx ' + src_mst_filename + ' from=' + mfn + ' count=1 ' + ' append=' + dest_mst_filename + ' now -all'
-        os.system(cmd)
+        run_command(cmd)
 
     def modify_records(self, mst_filename, proc):
-        temp = self.temp_dir + '/f'
-        cmd = self.cisis_path + '/mx ' + mst_filename + ' "proc=' + proc + '" append=' + temp + ' now -all'
-        os.system(cmd)
-        self.create(temp, mst_filename)
+        cmd = self.cisis_path + '/mx ' + mst_filename + ' "proc=' + proc + '" copy=' + mst_filename + ' now -all'
+        run_command(cmd)
 
     def find_record(self, mst_filename, expression):
         r = mst_filename + expression
         cmd = self.cisis_path + '/mx ' + mst_filename + ' "bool=' + expression + '"  lw=999 "pft=mfn/" now > ' + r
-        os.system(cmd)
-        return [l.replace('\n', '') for l in open(r, 'r').readlines()]
+        run_command(cmd)
+        return [l.strip().decode('utf-8') for l in open(r, 'r').readlines()]
 
     def new(self, mst_filename):
         cmd = self.cisis_path + '/mx null count=0 create="' + mst_filename + '" now -all'
-        os.system(cmd)
+        run_command(cmd)
 
     def search(self, mst_filename, expression, result_filename):
         if os.path.isfile(result_filename + '.mst'):
             os.unlink(result_filename + '.mst')
             os.unlink(result_filename + '.xrf')
         cmd = self.cisis_path + '/mx btell=0 ' + mst_filename + ' "bool=' + expression + '"  lw=999 append=' + result_filename + ' now -all'
-        os.system(cmd)
+        #print(type(cmd))
+        run_command(cmd)
 
     def generate_indexes(self, mst_filename, fst_filename, inverted_filename):
         cmd = self.cisis_path + '/mx ' + mst_filename + ' fst=@' + fst_filename + ' fullinv=' + inverted_filename
-        os.system(cmd)
+        run_command(cmd)
 
     def is_readable(self, mst_filename):
         s = ''
         if os.path.isfile(mst_filename + '.mst'):
-            temp = self.temp_dir + '/readable'
-            cmd = self.cisis_path + '/mx ' + mst_filename + ' +control now > ' + temp
-            os.system(cmd)
-            if os.path.isfile(temp):
-                s = open(temp, 'r').read()
+            temp_file = NamedTemporaryFile(delete=False)
+            temp_file.close()
+
+            cmd = self.cisis_path + '/mx ' + mst_filename + ' +control now > ' + temp_file.name.replace('\\', '/')
+            run_command(cmd)
+            ##print(cmd)
+            if os.path.isfile(temp_file.name):
+                s = open(temp_file.name, 'r').read()
+                try:
+                    os.unlink(temp_file.name)
+                except:
+                    print(os.path.isfile(temp_file.name))
         return len(s) > 0
 
 
@@ -295,7 +322,10 @@ class UCISIS(object):
     def __init__(self, cisis1030, cisis1660):
         self.cisis1030 = cisis1030
         self.cisis1660 = cisis1660
-        self.temp_dir = mkdtemp().replace('\\', '/')
+
+    @property
+    def is_available(self):
+        return self.cisis1660.is_available or self.cisis1030.is_available
 
     def cisis(self, mst_filename):
         if os.path.isfile(mst_filename + '.mst'):
@@ -314,9 +344,11 @@ class UCISIS(object):
 
     def convert1660to1030(self, mst_filename):
         if os.path.isfile(mst_filename + '.mst'):
-            name = self.temp_dir + '/' + os.path.basename(mst_filename)
-            self.cisis1660.mst2iso(mst_filename, name)
-            self.cisis1030.iso2mst(name, mst_filename)
+            temp_file = NamedTemporaryFile(delete=False)
+            temp_file.close()
+            self.cisis1660.mst2iso(mst_filename, temp_file.name)
+            self.cisis1030.iso2mst(temp_file.name, mst_filename)
+            os.unlink(temp_file.name)
 
     def crunchmf(self, mst_filename, wmst_filename):
         self.cisis(mst_filename).crunchmf(mst_filename, wmst_filename)
@@ -328,7 +360,7 @@ class UCISIS(object):
         self.cisis(src).append(src, dest)
 
     def create(self, src, dest):
-        self.cisis(src).append(src, dest)
+        self.cisis(src).create(src, dest)
 
     def append_id_to_master(self, id_filename, mst_filename, reset):
         self.cisis(mst_filename).append_id_to_master(id_filename, mst_filename, reset)
@@ -367,10 +399,11 @@ class IsisDAO(object):
         self.cisis = cisis
 
     def save_records(self, records, db_filename, fst_filename=None):
-        id_file = mkdtemp().replace('\\', '/') + '/' + os.path.basename(db_filename) + '.id'
-        IDFile().save(id_file, records)
-        self.cisis.id2i(id_file, db_filename)
-        os.unlink(id_file)
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        IDFile().save(temp_file.name, records)
+        self.cisis.id2i(temp_file.name, db_filename)
+        os.unlink(temp_file.name)
         self.update_indexes(db_filename, fst_filename)
 
     def update_indexes(self, db_filename, fst_filename):
@@ -381,10 +414,11 @@ class IsisDAO(object):
         path = os.path.dirname(db_filename)
         if not os.path.isdir(path):
             os.makedirs(path)
-        id_temp = mkdtemp().replace('\\', '/') + '/' + os.path.basename(db_filename) + '.id'
-        IDFile().save(id_temp, records)
-        self.cisis.append_id_to_master(id_temp, db_filename, False)
-        os.unlink(id_temp)
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        IDFile().save(temp_file.name, records)
+        self.cisis.append_id_to_master(temp_file.name, db_filename, False)
+        os.unlink(temp_file.name)
         self.update_indexes(db_filename, fst_filename)
 
     def save_id_records(self, id_filename, db_filename, fst_filename=None):
@@ -396,37 +430,113 @@ class IsisDAO(object):
         self.update_indexes(db_filename, fst_filename)
 
     def get_records(self, db_filename, expr=None):
-        temp_file = None
+        temp_dir = None
         if expr is None:
             base = db_filename
         else:
-            temp_file = NamedTemporaryFile(delete=False)
-            base = temp_file.name
+            temp_dir = mkdtemp().replace('\\', '/')
+            base = temp_dir + '/' + os.path.basename(db_filename)
             self.cisis.search(db_filename, expr, base)
 
+        r = []
         id_filename = base + '.id'
+        if os.path.isfile(base + '.mst'):
+            self.cisis.i2id(base, id_filename)
+            r = IDFile().read(id_filename)
 
-        self.cisis.i2id(base, id_filename)
-        r = IDFile().read(id_filename)
-        if len(r) > 0:
-            if temp_file is not None:
-                try:
-                    os.unlink(temp_file.name)
-                except:
-                    pass
+        if temp_dir is not None:
+            try:
+                fs_utils.delete_file_or_folder(temp_dir)
+            except:
+                pass
+        if os.path.isfile(id_filename):
             try:
                 os.unlink(id_filename)
             except:
                 pass
-        else:
-            print('get_records: verificar')
-            print(db_filename)
-            print(expr)
-            print(id_filename)
         return r
 
     def get_id_records(self, id_filename):
         return IDFile().read(id_filename)
 
-    def save_id(self, id_filename, records):
-        IDFile().save(id_filename, records)
+    def save_id(self, id_filename, records, content_formatter=None):
+        IDFile(content_formatter).save(id_filename, records)
+
+
+class IsisDB(object):
+
+    def __init__(self, cisis, db_filename, fst_filename):
+        self.cisis = cisis
+        self.db_filename = db_filename
+        self.fst_filename = fst_filename
+
+    def save_records(self, records):
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        IDFile().save(temp_file.name, records)
+        self.cisis.id2i(temp_file.name, self.db_filename)
+        os.unlink(temp_file.name)
+        self.update_indexes()
+
+    def update_indexes(self):
+        if self.fst_filename is not None:
+            self.cisis.generate_indexes(self.db_filename, self.fst_filename, self.db_filename)
+
+    def append_records(self, records):
+        path = os.path.dirname(self.db_filename)
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        temp_file = NamedTemporaryFile(delete=False)
+        temp_file.close()
+        IDFile().save(temp_file.name, records)
+        self.cisis.append_id_to_master(temp_file.name, self.db_filename, False)
+        os.unlink(temp_file.name)
+        self.update_indexes()
+
+    def save_id_records(self, id_filename):
+        self.cisis.id2i(id_filename, self.db_filename)
+        self.update_indexes()
+
+    def append_id_records(self, id_filename):
+        self.cisis.append_id_to_master(id_filename, self.db_filename, False)
+        self.update_indexes()
+
+    def get_records(self, expr=None):
+        temp_dir = None
+        if expr is None:
+            base = self.db_filename
+        else:
+            temp_dir = mkdtemp().replace('\\', '/')
+            base = temp_dir + '/' + os.path.basename(self.db_filename)
+            self.cisis.search(self.db_filename, expr, base)
+
+        r = []
+        id_filename = base + '.id'
+        if os.path.isfile(base + '.mst'):
+            self.cisis.i2id(base, id_filename)
+            r = IDFile().read(id_filename)
+
+        if temp_dir is not None:
+            try:
+                fs_utils.delete_file_or_folder(temp_dir)
+            except:
+                pass
+        if os.path.isfile(id_filename):
+            try:
+                os.unlink(id_filename)
+            except:
+                pass
+        return r
+
+    def get_id_records(self, id_filename):
+        return IDFile().read(id_filename)
+
+    def save_id(self, id_filename, records, content_formatter=None):
+        IDFile(content_formatter).save(id_filename, records)
+
+
+def run_command(cmd):
+    if isinstance(cmd, unicode):
+        ##print(cmd)
+        cmd = cmd.encode(encoding=sys.getfilesystemencoding())
+    os.system(cmd)

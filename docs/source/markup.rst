@@ -1,4 +1,5 @@
-.. pcprograms documentation master file, created by
+.. markup:
+
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
@@ -333,12 +334,6 @@ Up
 
 
 .. image:: img/markup_barra_front_0.jpg
-
-
-How to use
-----------
-
-`How to identify a document using DOC DTD <markup_doc.html>`_.
 
 
 Error messages

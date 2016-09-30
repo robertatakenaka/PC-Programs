@@ -2,10 +2,21 @@
 # coding=utf-8
 
 from datetime import datetime
-import urllib2
 import json
 
+from PIL import Image
+
+import validation_status
+import utils
+import institutions_service
+import article as article_module
+
+
+URL_CHECKED = []
+
 MONTHS = {'': '00', 'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12', }
+_MONTHS = {v: k for k, v in MONTHS.items()}
+MONTHS_ABBREV = '|' + '|'.join([_MONTHS[k] for k in sorted(_MONTHS.keys()) if k != '00']) + '|'
 
 
 def display_date(dateiso):
@@ -17,14 +28,21 @@ def display_date(dateiso):
 
 
 def dateiso2datetime(dateiso):
-    y = int(dateiso[0:4])
-    m = int(dateiso[4:6])
-    d = int(dateiso[6:8])
-    if d == 0:
-        d = 1
-    if m == 0:
-        m = 1
-    return datetime(y, m, d)
+    r = None
+    if dateiso is not None:
+        dateiso = dateiso + '0'*8
+        dateiso = dateiso[0:8]
+        y = int(dateiso[0:4])
+        m = int(dateiso[4:6])
+        d = int(dateiso[6:8])
+        if y == 0:
+            y = 1
+        if d == 0:
+            d = 1
+        if m == 0:
+            m = 1
+        r = datetime(y, m, d)
+    return r
 
 
 def normalize_number(number):
@@ -64,38 +82,13 @@ def get_number_suppl_compl(issue_element_content):
     return (number, suppl, compl)
 
 
-def format_issue_label(year, volume, number, volume_suppl, number_suppl):
+def format_issue_label(year, volume, number, volume_suppl, number_suppl, compl):
     year = year if number == 'ahead' else ''
     v = 'v' + volume if volume is not None else None
     vs = 's' + volume_suppl if volume_suppl is not None else None
     n = 'n' + number if number is not None else None
     ns = 's' + number_suppl if number_suppl is not None else None
-    return ''.join([i for i in [year, v, vs, n, ns] if i is not None])
-
-
-def url_check(url, _timeout=30):
-    print(datetime.now().isoformat() + ' url checking ' + url)
-    try:
-        r = urllib2.urlopen(url, timeout=_timeout).read()
-    except urllib2.URLError, e:
-        r = None
-        print(datetime.now().isoformat() + " Oops, timed out?")
-    except urllib2.socket.timeout:
-        r = None
-        print(datetime.now().isoformat() + " Timed out!")
-    except:
-        r = None
-        print(datetime.now().isoformat() + " unknown")
-    return (r is not None)
-
-
-def how_similar(this, that):
-    import difflib
-    if this is None:
-        this = ''
-    if that is None:
-        that = ''
-    return difflib.SequenceMatcher(None, this.lower(), that.lower()).ratio()
+    return ''.join([i for i in [year, v, vs, n, ns, compl] if i is not None])
 
 
 def u_encode(u, encoding):
@@ -109,20 +102,6 @@ def u_encode(u, encoding):
             except Exception as e:
                 r = u.encode(encoding, 'ignore')
     return r
-
-
-def doi_pid(doi_query_result):
-    pid = None
-    if doi_query_result is not None:
-        article_json = json.loads(doi_query_result)
-        alt_id_items = article_json.get('message', {}).get('alternative-id')
-        pid = None
-        if alt_id_items is not None:
-            if isinstance(alt_id_items, list):
-                pid = alt_id_items[0]
-            else:
-                pid = alt_id_items
-    return pid
 
 
 def format_dateiso_from_date(year, month, day):
@@ -203,21 +182,18 @@ def display_values_with_attributes(label, values_with_attributes):
 
 
 def conditional_required(label, value):
-    return display_value(label, value) if value is not None else 'WARNING: Required ' + label + ', if exists. '
+    return display_value(label, value) if value is not None else validation_status.STATUS_WARNING + ': Required ' + label + ', if exists. '
 
 
 def required(label, value):
-    return display_value(label, value) if value is not None else 'ERROR: Required ' + label + '. '
+    return display_value(label, value) if value is not None else validation_status.STATUS_ERROR + ': Required ' + label + '. '
 
 
 def required_one(label, value):
-    return display_attributes(label, value) if value is not None else 'ERROR: Required ' + label + '. '
+    return display_attributes(label, value) if value is not None else validation_status.STATUS_ERROR + ': Required ' + label + '. '
 
 
-def expected_values(label, value, expected):
-    return display_value(label, value) if value in expected else 'ERROR: ' + value + ' - Invalid value for ' + label + '. Expected values ' + ', '.join(expected)
-
-
+#FIXME apagar
 def add_new_value_to_index(dict_key_and_values, key, value, normalize_key=True):
     def normalize_value(value):
         if not isinstance(value, unicode):
@@ -266,55 +242,79 @@ def four_digits_year(year):
         if not year.isdigit():
             if not 's/d' in year and not 's.d' in year:
                 year = year.replace('/', '-')
+                splited = None
                 if '-' in year:
-                    year = year.split('-')
-                    year = [y for y in year if len(y) == 4]
-                    if len(year) == 1:
-                        year = year[0]
-                    else:
-                        year = ''
-                if len(year) > 4:
-                    if year[0:4].isdigit():
-                        year = year[0:4]
-                    elif year[1:5].isdigit():
-                        year = year[1:5]
+                    splited = year.split('-')
+                elif ' ' in year:
+                    splited = year.split(' ')
+                if splited is None:
+                    splited = [year]
+                splited = [y for y in splited if len(y) == 4 and y.isdigit()]
+                if len(splited) > 0:
+                    year = splited[0]
+        if len(year) > 4:
+            if year[0:4].isdigit():
+                year = year[0:4]
+            elif year[1:5].isdigit():
+                year = year[1:5]
     return year
 
 
-def doi_query(doi):
-    r = None
-    if doi is not None:
-        if 'dx.doi.org' in doi:
-            doi = doi[doi.find('dx.doi.org/')+len('dx.doi.org/'):]
-        _url = 'http://api.crossref.org/works/' + doi
-        try:
-            r = urllib2.urlopen(_url, timeout=20).read()
-        except urllib2.URLError, e:
-            r = '{}'
-            print(_url)
-            print(datetime.now().isoformat() + " Oops, timed out?")
-        except urllib2.socket.timeout:
-            r = None
-            print(_url)
-            print(datetime.now().isoformat() + " Timed out!")
-        except:
-            print(_url)
-            r = None
-            print(datetime.now().isoformat() + " unknown")
-    return r
+def normalize_affiliations(article):
+    article.normalized_affiliations = {}
+    for aff in article.affiliations:
+        norm_aff, ign = normalized_institution(aff)
+        if norm_aff is not None:
+            article.normalized_affiliations[aff.id] = norm_aff
 
 
-def doi_journal_and_article(doi_query_result):
-    journal_titles = None
-    article_titles = None
-    if doi_query_result is not None:
-        article_json = json.loads(doi_query_result)
-        journal_titles = article_json.get('message', {}).get('container-title')
-        if journal_titles is not None:
-            if not isinstance(journal_titles, list):
-                journal_titles = [journal_titles]
-        article_titles = article_json.get('message', {}).get('title')
-        if article_titles is not None:
-            if not isinstance(article_titles, list):
-                article_titles = [article_titles]
-    return (journal_titles, article_titles)
+def normalized_institution(aff):
+    norm_aff = None
+    found_institutions = None
+    orgnames = [item.upper() for item in [aff.orgname, aff.norgname] if item is not None]
+    if aff.norgname is not None or aff.orgname is not None:
+        found_institutions = institutions_service.validate_organization(aff.orgname, aff.norgname, aff.country, aff.i_country, aff.state, aff.city)
+
+    if found_institutions is not None:
+        if len(found_institutions) == 1:
+            valid = found_institutions
+        else:
+            valid = []
+            # identify i_country
+            if aff.i_country is None and aff.country is not None:
+                country_info = {norm_country_name: norm_country_code for norm_orgname, norm_city, norm_state, norm_country_code, norm_country_name in found_institutions if norm_country_name is not None and norm_country_code is not None}
+                aff.i_country = country_info.get(aff.country)
+
+            # match norgname and i_country in found_institutions
+            for norm_orgname, norm_city, norm_state, norm_country_code, norm_country_name in found_institutions:
+                if norm_orgname.upper() in orgnames:
+                    if aff.i_country is None:
+                        valid.append((norm_orgname, norm_city, norm_state, norm_country_code, norm_country_name))
+                    elif aff.i_country == norm_country_code:
+                        valid.append((norm_orgname, norm_city, norm_state, norm_country_code, norm_country_name))
+
+            # mais de uma possibilidade, considerar somente norgname e i_country, desconsiderar city, state, etc
+            if len(valid) > 1:
+                valid = list(set([(norm_orgname, None, None, norm_country_code, None) for norm_orgname, norm_city, norm_state, norm_country_code, norm_country_name in valid]))
+
+        if len(valid) == 1:
+            norm_orgname, norm_city, norm_state, norm_country_code, norm_country_name = valid[0]
+
+            if norm_orgname is not None and norm_country_code is not None:
+                norm_aff = article_module.Affiliation()
+                norm_aff.id = aff.id
+                norm_aff.norgname = norm_orgname
+                norm_aff.city = norm_city
+                norm_aff.state = norm_state
+                norm_aff.i_country = norm_country_code
+                norm_aff.country = norm_country_name
+    return (norm_aff, found_institutions)
+
+
+def image_heights(path, href_list):
+    items = []
+    for href in href_list:
+        img = utils.tiff_image(path + '/' + href.src)
+        if img is not None:
+            items.append(img.size[1])
+    return sorted(items)

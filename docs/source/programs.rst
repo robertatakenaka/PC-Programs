@@ -3,9 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+Programs
+========
 
-Programs for local server
--------------------------
+.. _local-server:
+
+Databases Managers (Local server)
+---------------------------------
+
+Programs to manage journals, issues and articles databases.
 
 .. toctree::
    :maxdepth: 1
@@ -13,11 +19,17 @@ Programs for local server
    codemanager.rst
    titlemanager.rst
    converter.rst
+   xml_converter.rst
    xml_exporter.rst   
 
 
-Programs for desktop
---------------------
+
+.. _desktop:
+
+Markup and Validators (Desktop)
+-------------------------------
+
+Programs to generate and validate SGML/HTML or XML files.
 
 .. toctree::
    :maxdepth: 1
@@ -25,9 +37,4 @@ Programs for desktop
    markup.rst
    parser.rst
    xml_package_maker.rst
-   xml_converter.rst
 
-
-----------------
-
-Last update of this page: Abril 2, 2014

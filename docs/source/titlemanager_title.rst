@@ -599,12 +599,12 @@ Enter in HTML in English, Portuguese, Spanish, a text, which inform the license 
 
 
 
-Copyrighter 
-...........
+Copyright holder 
+................
 
 Field: 62
 
-Copyrighter
+Copyright holder
 
 Examples:    
 - Brazilian Journal of Medical and Biological Research    
@@ -749,9 +749,21 @@ Field: 67
 Identifies how to access to the articles by subscription. 
 
 Select the corresponding option:
+
 - sub: regular subscription 
 - reg: electronic subscription 
 - na: not available
+
+
+Publishing Model
+................
+
+Field: 699
+
+Select the publishing model. 
+
+- countinous: journal publishes articles in batch (rolling pass)
+- undefined: journal publishes articles in issues
 
 
 SciELO Net

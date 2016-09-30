@@ -27,9 +27,6 @@ Select the folder which contains XML package files
 .. image:: img/xc_gui_selected_folder.png
 
 
-No need to inform journal acronym. It is only needed to run XML Package Maker.
-
-
 Press **XML Converter**.
 
 
@@ -161,6 +158,3 @@ Presents the status of the database after the conversion.
 .. image:: img/xc_reports_after.png
 
 
-----------------
-
-Last update of this page: August 2015
