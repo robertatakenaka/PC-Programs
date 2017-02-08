@@ -172,9 +172,7 @@ class HRef(object):
         self.src = src
         self.element = element
         self.xml = xml
-
-        ext = '.jpg' if not '.' in src else src[src.rfind('.'):]
-
+        self.name_without_extension, self.ext = os.path.splitext(src)
         self.id = element.attrib.get('id', None)
         if self.id is None and parent is not None:
             self.id = parent.attrib.get('id', None)
@@ -182,27 +180,18 @@ class HRef(object):
         self.is_internal_file = (not '/' in src)
         if element.tag in ['ext-link', 'uri', 'related-article']:
             self.is_internal_file = False
-        self.is_image = ext in IMG_EXTENSIONS
-
-    def file_location(self, path):
-        location = None
-        if self.src is not None and self.src != '':
-            if self.is_internal_file:
-                location = path + '/' + self.src
-
-                if self.is_image:
-                    if location.endswith('.tiff'):
-                        location = location.replace('.tiff', '.jpg')
-                    elif location.endswith('.tif'):
-                        location = location.replace('.tif', '.jpg')
-                    else:
-                        if location[-5:-4] != '.' and location[-4:-3] != '.':
-                            location += '.jpg'
-        return location
+        self.is_image = self.ext in IMG_EXTENSIONS or self.ext == ''
 
     @property
-    def name_without_extension(self):
-        return self.src[0:self.src.rfind('.')] if '.' in self.src else self.src
+    def fixed_src(self):
+        fixed = None
+        if self.src is not None and self.src != '':
+            if self.is_internal_file:
+                fixed = self.src
+                if self.is_image:
+                    if self.ext in ['.tiff', '.tif', '']:
+                        fixed = self.name_without_extension + '.jpg'
+        return fixed
 
 
 class PersonAuthor(object):
@@ -1360,8 +1349,17 @@ class ArticleXML(object):
             return self.tree.findall('.//*[@id]')
 
     @property
+    def xml_href_files(self):
+        _href_items = {}
+        for item in self.hrefs:
+            if href.is_internal_file:
+                _href_items[href.src] = item
+                _href_items[href.name_without_extension] = item
+        return _href_items
+
+    @property
     def href_files(self):
-        return [href for href in self.hrefs if href.is_internal_file] if self.hrefs is not None else []
+        return [href for href in self.hrefs if href.is_internal_file]
 
     @property
     def hrefs(self):
@@ -1406,6 +1404,127 @@ class ArticleXML(object):
         return r
 
 
+class ArticleFiles(object):
+
+    def __init__(self, name, package_files, href_files, lang, trans_languages):
+        self.package_files = package_files
+        self.href_files = href_files
+        self.lang = lang
+        self.trans_languages = trans_languages
+        self.name = name
+        self.package_pdf_files = {}
+        self.package_href_files = []
+        self.package_href_names = {}
+        
+        self.xml_pdf_files = {}
+        self.xml_href_files = {}
+        self.xml_href_names = {}
+        
+        self._organize_package_files()
+        self._organize_xml_files()
+
+    def _organize_package_files(self):
+        self.package_pdf_files = self._organize_package_pdf_files()
+        self.package_href_files, self.package_href_names = self._organize_package_href_files()
+
+    def _organize_xml_files(self):
+        self.xml_pdf_files = self._organize_xml_pdf_files()
+        self.xml_href_files, self.xml_href_names = self._organize_xml_href_files()
+
+    def _organize_package_pdf_files(self):
+        items = {}
+        if self.name + '.pdf' in self.package_files:
+            items[''] = self.name+'.pdf'
+        for f in self.package_files:
+            if f.endswith('.pdf'):
+                lang = f[f.rfind('-')+1:-4]
+                if lang in attributes.LANGUAGES.keys():
+                    items.append(f)
+        return items
+
+    def _organize_package_href_files(self):
+        names = {}
+        files = []
+        for item in self.package_files:
+            name, ext = os.path.splitext(item)
+            if not item in self.package_pdf_files:
+                if not name in names.keys():
+                    names[name] = []
+                names[name].append(item)
+                files.append(item)
+        return (files, names)
+
+    def _organize_xml_pdf_files(self):
+        items = {}
+        items[self.lang] = self.name + '.pdf'
+        for lang in self.trans_languages:
+            items[lang] = self.name+'-'+lang+'.pdf'
+        return items
+
+    def _organize_xml_href_files(self):
+        files = {}
+        names = {}
+        for href in self.href_files:
+            name, ext = os.path.splitext(href.src)
+            names[name] = href
+            files[name] = href
+        return (files, names)
+
+    @property
+    def package_pdf_files_checking(self):
+        found = {}
+        not_found = {}
+        for lang, name in self.package_pdf_files.items():
+            owner = 'article'
+            if lang != '':
+                owner = 'sub-article({lang})'.format(lang=lang)
+            label = _('{} for {}').format(name, owner)
+
+            if name in self.xml_pdf_files.values():
+                found[name] = label
+            else:
+                not_found[name] = label
+        return (found, not_found)
+        
+    @property
+    def xml_pdf_files_checking(self):
+        found = {}
+        not_found = {}    
+        for lang, name in self.xml_pdf_files.items():
+            owner = 'article ({})'.format(lang)
+            if lang != self.lang:
+                owner = 'sub-article({lang})'.format(lang=lang)
+            label = _('{} for {}').format(owner, name)
+            if name in self.package_pdf_files.values():
+                found[name] = label
+            else:
+                not_found[name] = label
+        return (found, not_found)
+
+    @property
+    def package_href_files_checking(self):
+        found = {}
+        not_found = {}
+        for name, filenames in self.package_href_names.items():
+            href = self.xml_href_names.get(name)
+            if href is None:
+                not_found[name] = filenames
+            else:
+                found[name] = href
+        return (found, not_found)
+        
+    @property
+    def xml_href_files_checking(self):
+        found = {}
+        not_found = {}    
+        for name, href in self.xml_href_names.items():
+            if href.src in self.package_href_files:
+                found[name] = href
+            else:
+                not_found[name] = href
+        return (found, not_found)
+
+
 class Article(ArticleXML):
 
     def __init__(self, tree, xml_name):
@@ -1429,10 +1548,19 @@ class Article(ArticleXML):
         self._previous_pid = None
         self.normalized_affiliations = None
         self.article_records = None
-        self.related_files = []
         self.is_ex_aop = False
         self.section_code = None
-        self.package_files = None
+        self._package_files = []
+        #self.organized_files = ArticleFiles(xml_name, package_path, self.package_files, self.href_files, self.language, self.trans_languages)
+
+    @property
+    def package_files(self):
+        return self._package_files
+
+    @package_files.setter
+    def package_files(self, value):
+        self._package_files = value
+        self.organized_files = ArticleFiles(self.new_prefix, value, self.href_files, self.language, self.trans_languages)
 
     @property
     def clinical_trial_url(self):
@@ -1997,3 +2125,6 @@ def doi_data(doi):
             if len(results) > 0:
                 results = {'journal-titles': results[0], 'article-titles': results[1], 'pid': results[2][0] if results[2] is not None else None}
     return results
+
+
+

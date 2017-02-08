@@ -501,7 +501,7 @@ class ArticleDisplayReport(object):
 
     def embedded_pdf_items(self, page_id='', width='400px', height='400px'):
         items = []
-        for item in self.article.related_files:
+        for item in self.article.organized_files.package_pdf_files.values():
             items.append(html_reports.tag('p', html_reports.display_embedded_object(
                 item,
                 os.path.basename(item), page_id + item, width, height)))
@@ -509,7 +509,7 @@ class ArticleDisplayReport(object):
 
     def link_to_pdf_and_xml_files(self):
         items = []
-        for item in self.article.related_files + [self.article.filename]:
+        for item in self.article.organized_files.package_pdf_files.values() + [self.article.filename]:
             location = '{PDF_PATH}' if item.endswith('.pdf') else '{XML_PATH}'
             items.append(html_reports.tag('p', html_reports.link(
                 location + item,

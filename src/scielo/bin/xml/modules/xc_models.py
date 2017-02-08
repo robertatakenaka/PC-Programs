@@ -1357,7 +1357,10 @@ class DBManager(object):
                     j_data.e_issn = [t.e_issn]
                     j_data.abbrev_title = [t.abbrev_title]
                     j_data.nlm_title = [t.journal_id_nlm_ta]
-                    j_data.publisher_name = [t.publisher_name]
+                    if isinstance(t.publisher_name, list):
+                        j_data.publisher_name = t.publisher_name
+                    else:
+                        j_data.publisher_name = [t.publisher_name]
                     j_data.license = [t.license]
                     j_data.collection_acron = [None]
                     j_data.journal_title = [journal_title]

@@ -1462,7 +1462,7 @@ class ArticleContentValidation(object):
             if hrefitem.is_internal_file:
                 min_height = None
                 max_height = None
-                file_location = hrefitem.file_location(path)
+                file_location = path + '/' + hrefitem.fixed_src
                 if hrefitem in self.article.inline_graphics:
                     min_height = min_inline
                     max_height = max_inline
@@ -1508,6 +1508,164 @@ class ArticleContentValidation(object):
         return href_items
 
     def package_files(self, pkg_path):
+        reports = {}
+
+        found, not_found = self.article.organized_files.package_pdf_files_checking
+        status = validation_status.STATUS_INFO
+        for name, label in found.items():
+            if not name in reports.keys():
+                reports[name] = []
+            msg = _('Found {label} in {item}. ').format(label=label, item='XML')
+            reports[name].append((status, msg))
+            
+        status = validation_status.STATUS_ERROR
+        for name, label in not_found.items():
+            if not name in reports.keys():
+                reports[name] = []
+            msg = _('Not found {label} in {item}. ').format(label=label, item='XML')
+            reports[name].append((status, msg))
+            
+        found, not_found = self.article.organized_files.xml_pdf_files_checking
+        status = validation_status.STATUS_INFO
+        for name, label in found.items():
+            if not name in reports.keys():
+                reports[name] = []
+            msg = _('Found {label} in {item}. ').format(label=label, item=_('package'))
+            reports[name].append((status, msg))
+            
+        status = validation_status.STATUS_ERROR
+        for name, label in not_found.items():
+            if not name in reports.keys():
+                reports[name] = []
+            msg = _('Not found {label} in {item}. ').format(label=label, item=_('package'))
+            reports[name].append((status, msg))
+            
+
+        
+        print(reports)
+
+        _pkg_files = {}
+        #from XML, find files
+        pdf_langs = [item[-6:-4] for item in self.article.package_files if item.endswith('.pdf') and item[-7:-6] == '-']
+        if self.article.language is not None:
+            filename = self.article.new_prefix + '.pdf'
+            _pkg_files = update_pkg_files_report(_pkg_files, filename, validation_status.STATUS_INFO, 'PDF ({lang}). '.format(lang=self.article.language))
+            if not filename in self.article.package_files:
+                _pkg_files = update_pkg_files_report(_pkg_files, filename, validation_status.STATUS_ERROR, _('Not found {label} in the {item}. ').format(label=_('file'), item=_('package')))
+        for lang in self.article.trans_languages:
+            if not lang in pdf_langs:
+                filename = self.article.new_prefix + '-' + lang + '.pdf'
+                _pkg_files = update_pkg_files_report(_pkg_files, filename, validation_status.STATUS_ERROR, _('Not found {label} in the {item}. ').format(label=_('file'), item=_('package')))
+
+        #from files, find in XML
+        href_items_in_xml = [item.name_without_extension for item in self.article.href_files]
+        href_items_in_xml += [item.src for item in self.article.href_files]
+        for item in self.article.package_files:
+            fname, ext = os.path.splitext(item)
+
+            if item.startswith(self.article.new_prefix):
+                status = validation_status.STATUS_INFO
+                message = _('Found {label} in the {item}. ').format(label=_('file'), item=_('package'))
+            else:
+                status = validation_status.STATUS_FATAL_ERROR
+                message = _('{label} must start with {prefix}. ').format(label=_('file'), prefix=self.article.new_prefix)
+
+            _pkg_files = update_pkg_files_report(_pkg_files, item, status, message)
+
+            status = validation_status.STATUS_INFO
+            message = None
+            if item in href_items_in_xml:
+                message = _('Found {label} in the {item}. ').format(label=_('file'), item='XML')
+            elif item == self.article.new_prefix + '.pdf':
+                message = None
+            elif ext == '.pdf':
+                suffix = filename_language_suffix(fname)
+                if suffix is None:
+                    message = _('Not found {label} in the {item}. ').format(label=_('file'), item='XML')
+                    status = validation_status.STATUS_ERROR
+                else:
+                    if suffix in self.article.trans_languages:
+                        message = _('Found {label} in {item}. ').format(label='sub-article({lang})'.format(lang=suffix), item='XML')
+                    elif suffix == self.article.language:
+                        status = validation_status.STATUS_ERROR
+                        message = _('PDF ({lang}). ').format(lang=suffix) + _(' must not have -{lang} in PDF name. ').format(lang=suffix)
+                    else:
+                        status = validation_status.STATUS_WARNING
+                        message = _('Not found {label} in {item}. ').format(label='sub-article({lang})'.format(lang=suffix), item='XML')
+            elif fname in href_items_in_xml:
+                message = _('Found {label} in the {item}. ').format(label=_('file'), item='XML')
+            elif not ext == '.jpg':
+                status = validation_status.STATUS_ERROR
+                message = _('Not found {label} in the {item}. ').format(label=_('file'), item='XML')
+
+            if message is not None:
+                _pkg_files = update_pkg_files_report(_pkg_files, item, status, message)
+        items = []
+        for filename in sorted(_pkg_files.keys()):
+            for status, message_list in _pkg_files[filename].items():
+                items.append((filename, status, message_list))
+        return items
+
+    def old_href_list(self, path):
+        href_items = {}
+        min_inline, max_inline = utils.valid_formula_min_max_height(self.article.inline_graphics_heights(path))
+        min_disp, max_disp = utils.valid_formula_min_max_height(self.article.disp_formulas_heights(path), 0.3)
+        if min_disp < min_inline:
+            min_disp = min_inline
+        if max_disp < max_inline:
+            max_disp = max_inline
+        for hrefitem in self.article.hrefs:
+            status_message = []
+
+            if hrefitem.is_internal_file:
+                min_height = None
+                max_height = None
+                file_location = path + '/' + hrefitem.fixed_src
+                if hrefitem in self.article.inline_graphics:
+                    min_height = min_inline
+                    max_height = max_inline
+                elif hrefitem in self.article.disp_formulas:
+                    min_height = min_disp
+                    max_height = max_disp
+                status_message = evaluate_tiff(path + '/' + hrefitem.src, min_height, max_height)
+
+                if os.path.isfile(file_location):
+                    if not '.' in hrefitem.src:
+                        status_message.append((validation_status.STATUS_WARNING, _('missing extension of ') + hrefitem.src + '.'))
+                else:
+                    if file_location.endswith(hrefitem.src):
+                        status_message.append((validation_status.STATUS_FATAL_ERROR, _('Not found {label} in the {item}. ').format(label=hrefitem.src, item=_('package'))))
+                    elif file_location.endswith('.jpg') and (hrefitem.src.endswith('.tif') or hrefitem.src.endswith('.tiff')):
+                        status_message.append((validation_status.STATUS_FATAL_ERROR, _('Not found {label} in the {item}. ').format(label=os.path.basename(file_location), item=_('package'))))
+                    elif file_location.endswith('.jpg') and not '.' in hrefitem.src:
+                        status_message.append((validation_status.STATUS_WARNING, _('Not found {label} in the {item}. ').format(label=_('extension'), item=hrefitem.src)))
+                        status_message.append((validation_status.STATUS_FATAL_ERROR, _('Not found {label} in the {item}. ').format(label=os.path.basename(file_location), item=_('package'))))
+                hreflocation = file_location
+                if hrefitem.is_image:
+                    display = html_reports.thumb_image(hreflocation.replace(path, '{IMG_PATH}'))
+                else:
+                    display = html_reports.link(hreflocation.replace(path, '{PDF_PATH}'), hrefitem.src)
+                if len(status_message) == 0:
+                    status_message.append((validation_status.STATUS_INFO, ''))
+                href_items[hrefitem.src] = {'display': display, 'elem': hrefitem, 'results': status_message}
+            else:
+                hreflocation = hrefitem.src
+                if self.check_url or ('scielo' in hrefitem.src and not hrefitem.src.endswith('.pdf')):
+                    if not ws_requester.wsr.is_valid_url(hrefitem.src, 30):
+                        message = invalid_value_message(hrefitem.src, 'URL')
+                        if ('scielo' in hrefitem.src and not hrefitem.src.endswith('.pdf')):
+                            message += _('Be sure that there is no missing character such as _. ')
+                        status_message.append((validation_status.STATUS_WARNING, hrefitem.src + message))
+                        if hrefitem.is_image:
+                            display = html_reports.thumb_image(hreflocation)
+                        else:
+                            display = html_reports.link(hreflocation, hrefitem.src)
+                        if len(status_message) == 0:
+                            status_message.append((validation_status.STATUS_INFO, ''))
+                        href_items[hrefitem.src] = {'display': display, 'elem': hrefitem, 'results': status_message}
+        return href_items
+
+    def old_package_files(self, pkg_path):
         _pkg_files = {}
         #from XML, find files
         pdf_langs = [item[-6:-4] for item in self.article.package_files if item.endswith('.pdf') and item[-7:-6] == '-']

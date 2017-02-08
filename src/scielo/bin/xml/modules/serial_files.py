@@ -31,7 +31,6 @@ class ArticleWorkArea(object):
         self.html_filename = None
         self.report_path = report_path
         self.wrk_path = wrk_path
-        self.related_files = []
         self.is_sgmxml = xml_filename.endswith('.sgm.xml')
         self.xml_filename = xml_filename
         self.new_xml_filename = self.xml_filename

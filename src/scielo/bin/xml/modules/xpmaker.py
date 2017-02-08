@@ -722,8 +722,6 @@ class ArticlePkgMaker(object):
 
         fs_utils.write_file(self.doc_files_info.err_filename, '\n'.join(self.text_messages))
         html_reports.save(self.doc_files_info.images_report_filename, '', self.get_images_comparison_report())
-        if len(self.replacements_related_files_items) > 0:
-            self.doc.related_files = [os.path.basename(f) for f in self.replacements_related_files_items.values()]
         
         self.doc.package_files = package_files(self.scielo_pkg_path, self.doc.new_prefix)
 
@@ -1451,8 +1449,6 @@ def get_number_from_element_id(element_id):
         if n != '':
             n = str(int(n))
     return n
-
-
 
 
 def package_files(pkg_path, xml_filename):
