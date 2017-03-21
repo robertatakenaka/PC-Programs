@@ -1696,9 +1696,12 @@ class ReferenceContentValidation(object):
             if looks_like is not None:
                 r.append(('@publication-type', validation_status.STATUS_ERROR, _('Be sure that {item} is correct. ').format(item='@publication-type=' + str(self.reference.publication_type)) + _('This reference looks like {publication_type}. ').format(publication_type=looks_like)))
             
-            if ' In: ' in self.reference.mixed_citation and self.reference.article_title is None and self.reference.chapter_title is None:
-                r.append(('article-title', validation_status.STATUS_FATAL_ERROR, _('It seems {} is not identified. ').format('article-title')))
-                r.append(('chapter-title', validation_status.STATUS_FATAL_ERROR, _('It seems {} is not identified. ').format('chapter-title')))
+
+            if ' In: ' in self.reference.mixed_citation:
+                if not 'conf' in self.reference.publication_type:
+                    if self.reference.article_title is None and self.reference.chapter_title is None:
+                        r.append(('article-title', validation_status.STATUS_FATAL_ERROR, _('It seems {} is not identified. ').format('article-title')))
+                        r.append(('chapter-title', validation_status.STATUS_FATAL_ERROR, _('It seems {} is not identified. ').format('chapter-title')))
 
             for item in items:
                 if item is not None:
@@ -1818,7 +1821,7 @@ class ReferenceContentValidation(object):
     def person_group_type(self):
         r = []
         groups_type = [item[0] for item in self.reference.authors_by_group]
-        if ' In: ' in self.reference.mixed_citation and len(groups_type) < 2:
+        if ' In: ' in self.reference.mixed_citation and 'book' in self.reference.publication_type and len(groups_type) < 2:
             r.append(('@person-group-type', validation_status.STATUS_FATAL_ERROR, _(u'It is expected more than one person-group. ')))
         if len(groups_type) > 1:
             no_repetition = list(set(groups_type))
