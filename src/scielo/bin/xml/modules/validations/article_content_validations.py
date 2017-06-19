@@ -4,15 +4,16 @@ import os
 from datetime import datetime
 
 from ..__init__ import _
-from .. import ws_requester
-from .. import xml_utils
-from .. import utils
+from ..ws import ws_requester
+from ..utils import xml_utils
+from ..utils import utils
+from ..utils import article_utils
+from ..data import article
+from ..doi_validations import doi_validations
+
 from .. import html_reports
 from .. import validation_status
 from .. import attributes
-from .. import article_utils
-from .. import article
-from ..doi_validations import doi_validations
 
 
 MIN_IMG_DPI = 300
@@ -1308,9 +1309,19 @@ class ArticleContentValidation(object):
         return messages
 
     @property
+    def inline_graphics_heights(self):
+        files = [self.pkgfiles.path + '/' + href.src for href in self.article.inline_graphics]
+        return img_utils.image_heights(files)
+
+    @property
+    def disp_formulas_heights(self):
+        files = [self.pkgfiles.path + '/' + href.src for href in self.article.disp_formulas]
+        return img_utils.image_heights(files)
+
+    @property
     def graphics_min_and_max_height(self):
-        min_inline, max_inline = utils.valid_formula_min_max_height(self.article.inline_graphics_heights(self.pkgfiles.path))
-        min_disp, max_disp = utils.valid_formula_min_max_height(self.article.disp_formulas_heights(self.pkgfiles.path), 0.3)
+        min_inline, max_inline = utils.valid_formula_min_max_height(self.inline_graphics_heights)
+        min_disp, max_disp = utils.valid_formula_min_max_height(self.disp_formulas_heights, 0.3)
         if min_disp < min_inline:
             min_disp = min_inline
         if max_disp < max_inline:

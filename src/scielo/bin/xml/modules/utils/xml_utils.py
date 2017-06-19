@@ -4,11 +4,11 @@ import shutil
 import tempfile
 import xml.etree.ElementTree as etree
 import HTMLParser
-from StringIO import StringIO
 import xml.dom.minidom
+from StringIO import StringIO
 
-from __init__ import _
-import fs_utils
+from ..__init__ import _
+from . import fs_utils
 
 
 ENTITIES_TABLE = None

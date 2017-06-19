@@ -5,10 +5,25 @@ import os
 import sys
 from tempfile import mkdtemp, NamedTemporaryFile
 
-from article_utils import u_encode
 import xml_utils
 import utils
 import fs_utils
+
+
+def u_encode(u, encoding):
+    r = u
+    if isinstance(u, unicode):
+        try:
+            r = u.encode(encoding)
+        except Exception as e:
+            try:
+                r = u.encode(encoding, 'xmlcharrefreplace')
+            except Exception as e:
+                try:
+                    r = u.encode(encoding, 'replace')
+                except Exception as e:
+                    r = u.encode(encoding, 'ignore')
+    return r
 
 
 def change_circ(content):

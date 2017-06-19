@@ -8,6 +8,12 @@ from datetime import datetime
 from . import files_extractor
 
 
+def read_file_lines(filename, encode='utf-8'):
+    if os.path.isfile(filename):
+        return [item.decode(encode).strip() for item in open(filename, 'r').readlines()]
+    return []
+
+
 def read_file(filename, encode='utf-8'):
     if os.path.isfile(filename):
         content = open(filename, 'r').read()

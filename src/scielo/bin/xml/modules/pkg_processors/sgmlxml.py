@@ -5,14 +5,14 @@ import sys
 import shutil
 
 from ..__init__ import _
-from .. import fs_utils
-from .. import java_xml_utils
-from .. import xml_utils
+from ..utils import fs_utils
+from ..utils import java_xml_utils
+from ..utils import xml_utils
 from .. import validation_status
 from .. import text_report
 from .. import html_reports
 from .. import xml_versions
-from .. import article
+from ..data import article
 from .. import symbols
 from ..data import workarea
 from . import sps_pkgmaker

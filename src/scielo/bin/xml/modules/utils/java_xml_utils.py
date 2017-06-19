@@ -4,8 +4,8 @@ import os
 import shutil
 import tempfile
 
-import xml_utils
-import fs_utils
+from . import xml_utils
+from . import fs_utils
 
 
 THIS_LOCATION = os.path.dirname(os.path.realpath(__file__))

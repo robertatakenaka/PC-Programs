@@ -5,8 +5,8 @@ import shutil
 
 from ..__init__ import _
 
-from .. import utils
-from .. import fs_utils
+from ..utils import utils
+from ..utils import fs_utils
 from .. import html_reports
 from .. import validation_status
 from .. import article_reports

@@ -6,9 +6,8 @@ from datetime import datetime
 from __init__ import _
 
 import validation_status
-import utils
-import institutions_service
-import article as article_module
+from ..ws import institutions_service
+from ..data import article as article_module
 
 
 URL_CHECKED = []
@@ -109,22 +108,6 @@ def format_issue_label(year, volume, number, volume_suppl, number_suppl, compl):
     n = 'n' + number if number is not None else None
     ns = 's' + number_suppl if number_suppl is not None else None
     return ''.join([i for i in [year, v, vs, n, ns, compl] if i is not None])
-
-
-def u_encode(u, encoding):
-    r = u
-    if isinstance(u, unicode):
-        try:
-            r = u.encode(encoding)
-        except Exception as e:
-            try:
-                r = u.encode(encoding, 'xmlcharrefreplace')
-            except Exception as e:
-                try:
-                    r = u.encode(encoding, 'replace')
-                except Exception as e:
-                    r = u.encode(encoding, 'ignore')
-    return r
 
 
 def format_dateiso_from_date(year, month, day):
@@ -332,12 +315,3 @@ def normalized_institution(aff):
                 norm_aff.i_country = norm_country_code
                 norm_aff.country = norm_country_name
     return (norm_aff, found_institutions)
-
-
-def image_heights(path, href_list):
-    items = []
-    for href in href_list:
-        img = utils.tiff_image(path + '/' + href.src)
-        if img is not None:
-            items.append(img.size[1])
-    return sorted(items)

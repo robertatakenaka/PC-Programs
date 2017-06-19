@@ -2,8 +2,8 @@
 
 import os
 
-from .. import fs_utils
-from .. import article
+from ..data import article
+from ..utils import fs_utils
 from ..db import workarea
 
 

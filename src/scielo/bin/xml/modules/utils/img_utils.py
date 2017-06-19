@@ -98,3 +98,11 @@ def evaluate_tiff(img_filename, min_height=None, max_height=None):
             status_message.append((validation_status.STATUS_INFO, '; '.join(info)))
 
     return status_message
+
+def image_heights(image_filenames):
+    items = []
+    for image_filename in image_filenames:
+        img = utils.tiff_image(image_filename)
+        if img is not None:
+            items.append(img.size[1])
+    return sorted(items)

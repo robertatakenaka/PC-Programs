@@ -1391,12 +1391,6 @@ class ArticleXML(object):
     def disp_formulas(self):
         return [item for item in self.hrefs if item.is_disp_formula]
 
-    def inline_graphics_heights(self, path):
-        return article_utils.image_heights(path, self.inline_graphics)
-
-    def disp_formulas_heights(self, path):
-        return article_utils.image_heights(path, self.disp_formulas)
-
     @property
     def tables(self):
         r = []
