@@ -2,11 +2,11 @@
 
 from ..__init__ import _
 
-from .. import utils
-from .. import fs_utils
-from .. import img_utils
-from .. import xml_utils
-from .. import html_reports
+from ..utils import utils
+from ..utils import fs_utils
+from ..utils import img_utils
+from ..utils import xml_utils
+from ..reoirts import html_reports
 
 from .. import xml_versions
 from ..data import workarea

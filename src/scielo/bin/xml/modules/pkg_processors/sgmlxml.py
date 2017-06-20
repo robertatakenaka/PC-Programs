@@ -9,8 +9,8 @@ from ..utils import fs_utils
 from ..utils import java_xml_utils
 from ..utils import xml_utils
 from .. import validation_status
-from .. import text_report
-from .. import html_reports
+from ..reports import text_report
+from ..reports import html_reports
 from .. import xml_versions
 from ..data import article
 from .. import symbols

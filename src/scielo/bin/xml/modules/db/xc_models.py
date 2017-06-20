@@ -10,9 +10,9 @@ from ..__init__ import app_ws_requester
 from .. import validation_status
 from .. import attributes
 from . import serial
-from .. import html_reports
 from .. import article_reports
 
+from ..reports import html_reports
 from ..data.article import Issue, PersonAuthor, Article, Journal
 from ..utils import utils
 from ..utils import xml_utils

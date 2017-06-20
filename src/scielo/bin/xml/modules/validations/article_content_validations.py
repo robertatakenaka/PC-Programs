@@ -11,7 +11,7 @@ from ..utils import article_utils
 from ..data import article
 from ..doi_validations import doi_validations
 
-from .. import html_reports
+from ..reports import html_reports
 from .. import validation_status
 from .. import attributes
 

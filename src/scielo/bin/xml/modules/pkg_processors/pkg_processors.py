@@ -5,12 +5,12 @@ import shutil
 
 from ..__init__ import _
 
+from .. import validation_status
+from . import pmc_pkgmaker
 from ..utils import utils
 from ..utils import fs_utils
-from .. import html_reports
-from .. import validation_status
-from .. import article_reports
-from . import pmc_pkgmaker
+from ..reports import html_reports
+from ..validations import article_data_reports
 from ..validations import package_validations
 from ..data import package
 from ..db import workarea
@@ -146,11 +146,11 @@ class ArticlesConverter(object):
         items = []
         for xml_name, hist in history:
             values = []
-            values.append(article_reports.display_article_data_in_toc(hist[-1][1]))
-            values.append(article_reports.article_history([item for item in hist if item[0] == 'registered article']))
-            values.append(article_reports.article_history([item for item in hist if item[0] == 'package']))
-            values.append(article_reports.article_history([item for item in hist if not item[0] in ['registered article', 'package', 'rejected', 'converted', 'not converted']]))
-            values.append(article_reports.article_history([item for item in hist if item[0] in ['rejected', 'converted', 'not converted']]))
+            values.append(article_data_reports.display_article_data_in_toc(hist[-1][1]))
+            values.append(article_data_reports.article_history([item for item in hist if item[0] == 'registered article']))
+            values.append(article_data_reports.article_history([item for item in hist if item[0] == 'package']))
+            values.append(article_data_reports.article_history([item for item in hist if not item[0] in ['registered article', 'package', 'rejected', 'converted', 'not converted']]))
+            values.append(article_data_reports.article_history([item for item in hist if item[0] in ['rejected', 'converted', 'not converted']]))
 
             items.append(html_reports.label_values(labels, values))
         return html_reports.tag('h3', _('Conversion steps')) + html_reports.sheet(labels, items, html_cell_content=[_('article'), _('registered') + '/' + _('before conversion'), _('package'), _('executed actions'), _('achieved results')], widths=widths)

@@ -5,7 +5,7 @@ import os
 from ..__init__ import _
 from ..utils import fs_utils
 from ..utils import utils
-from .. import html_reports
+from ..reports import html_reports
 from .. import validation_status
 from .. import xml_versions
 from .. import attributes
