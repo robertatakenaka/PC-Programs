@@ -260,7 +260,7 @@ class WebServicesRequester(object):
         result = None
         if url is not None:
             r = self.request(url, timeout, debug)
-            if r is not None:
+            if r is not None and len(r) > 0:
                 result = json.loads(encoding.encode(r))
         return result
 

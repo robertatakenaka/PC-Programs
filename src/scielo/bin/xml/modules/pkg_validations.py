@@ -1084,7 +1084,7 @@ class ArticlesSetValidations(object):
 
         error_level = validation_status.STATUS_BLOCKING_ERROR
         fpage_and_article_id_other_status = [all([a.fpage, a.lpage, a.article_id_other]) for xml_name, a in self.articles]
-        if all(fpage_and_article_id_other_status):
+        if all(fpage_and_article_id_other_status) or self.is_aop_issue:
             error_level = validation_status.STATUS_ERROR
 
         for xml_name, article in self.articles:
