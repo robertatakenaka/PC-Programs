@@ -1,16 +1,22 @@
-﻿4.0.094
-=======
-
+﻿4.0.093 - Release 5 - 30/08/2017
+================================
+- Download
+  - (bug) [] Fix download of Spain data
 - Markup
   - (new) [2602] sec as new element in app
   - (new) [2593] Generate other history date types
 - XML Markup
   - (bug) [2622] Fix prefix generation
   - (bug) [2600] Fix sub-article/fn-group generation
+  - (bug) [2680] Fix generation of xref[@rid] which has no corresponding fn[@id]
 - XPM
   - (improvement) [2615] ORCID Validation
+- XC
+  - (bug) [2611, 2616] Fix comparison between registered article and package article data
+- XC server
+  - (improvement) [] Allow TRANSFER_SERVER with PORT
 
-﻿4.0.093 - Release 4 - 30/06/2017
+4.0.093 - Release 4 - 27/06/2017
 ================================
 - XPM
   - (bug) [2579] Fix the validation of history date 
@@ -23,7 +29,6 @@
   - (bug) [2524] Fix aop pdf replacement in the web site
   - (bug) [2603] Fix remove tags from abstract function
   - (bug) [2611] Fix comparison between registered article and package article data
-  - (improvement) [] Allow TRANSFER_SERVER with PORT
 - Markup XML
   - (bug) [2606] Fix function which identifies xref
   - (bug) [2608] Fix identification of sub and sup.
