@@ -34,7 +34,7 @@ item: Global
   Version Company=SciELO
   Distribute Path=C:\2007\scielo
   Distribute Type=1
-  Step View=All
+  Step View=Properties
   Variable Name1=_SYS_
   Variable Default1=C:\WINNT\system32
   Variable Flags1=00001000
@@ -1102,6 +1102,11 @@ end
 item: Install File
   Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\modules\xml_versions.py
   Destination=%PROGDIR%\xml\modules\xml_versions.py
+  Flags=0000000010000010
+end
+item: Install File
+  Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\modules\svg_conversion.py
+  Destination=%PROGDIR%\xml\modules\svg_conversion.py
   Flags=0000000010000010
 end
 item: Install File
