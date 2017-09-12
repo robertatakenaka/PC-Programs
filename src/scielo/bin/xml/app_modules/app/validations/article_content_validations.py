@@ -841,39 +841,7 @@ class ArticleContentValidation(object):
 
     @property
     def history(self):
-        received = self.article.received_dateiso
-        accepted = self.article.accepted_dateiso
-        r = []
-        error_level = validation_status.STATUS_FATAL_ERROR if self.article.article_type in attributes.HISTORY_REQUIRED_FOR_DOCTOPIC else validation_status.STATUS_INFO
-        if received is not None and accepted is not None:
-            errors = []
-            errors.extend(article_utils.is_fulldate('received', received))
-            errors.extend(article_utils.is_fulldate('accepted', accepted))
-            if len(errors) > 0:
-                r.append(('history', validation_status.STATUS_FATAL_ERROR, '\n'.join(errors)))
-            else:
-                dates = []
-                if not received < accepted:
-                    dates.append(('received: {value}'.format(value=received), 'accepted: {value}'.format(value=accepted)))
-                if self.article.pub_date_year is not None:
-                    if self.article.pub_date_year < received[0:4]:
-                        dates.append(('received: {value}'.format(value=received), 'pub-date: {value}'.format(value=self.article.pub_date_year)))
-                    if self.article.pub_date_year < accepted[0:4]:
-                        dates.append(('accepted: {value}'.format(value=accepted), 'pub-date: {value}'.format(value=self.article.pub_date_year)))
-
-                if len(dates) > 0:
-                    for date in dates:
-                        r.append(('history', validation_status.STATUS_FATAL_ERROR, _('{date1} must be before {date2}. ').format(date1=date[0], date2=date[1])))
-
-        elif received is None and accepted is None:
-            r = [('history', error_level, _('Not found: {label}. ').format(label='history'))]
-        else:
-            if received is None:
-                r.append(data_validations.is_required_data('history: received', received, error_level))
-            if accepted is None:
-                r.append(data_validations.is_required_data('history: accepted', accepted, error_level))
-
-        return r
+        return ArticleHistoryValidation(self.article).validate()
 
     @property
     def received(self):
@@ -1328,3 +1296,45 @@ class HRefValidation(object):
             return html_reports.thumb_image(location.replace(self.pkgfiles.path, '{IMG_PATH}'))
         else:
             return html_reports.link(location.replace(self.pkgfiles.path, '{PDF_PATH}'), self.hrefitem.src)
+
+
+class ArticleHistoryValidation(object):
+
+    def __init__(self, article):
+        self.article = article
+
+    def validate(self):
+        received = self.article.received_dateiso
+        accepted = self.article.accepted_dateiso
+        r = []
+        error_level = validation_status.STATUS_FATAL_ERROR if self.article.article_type in attributes.HISTORY_REQUIRED_FOR_DOCTOPIC else validation_status.STATUS_INFO
+        if received is not None and accepted is not None:
+            errors = []
+            errors.extend(article_utils.is_fulldate('received', received))
+            errors.extend(article_utils.is_fulldate('accepted', accepted))
+            if len(errors) > 0:
+                r.append(('history', validation_status.STATUS_FATAL_ERROR, '\n'.join(errors)))
+            else:
+                dates = []
+                if not received < accepted:
+                    dates.append(('received: {value}'.format(value=received), 'accepted: {value}'.format(value=accepted)))
+                if self.article.pub_date_year is not None:
+                    if self.article.pub_date_year < received[0:4]:
+                        dates.append(('received: {value}'.format(value=received), 'pub-date: {value}'.format(value=self.article.pub_date_year)))
+                    if self.article.pub_date_year < accepted[0:4]:
+                        dates.append(('accepted: {value}'.format(value=accepted), 'pub-date: {value}'.format(value=self.article.pub_date_year)))
+
+                if len(dates) > 0:
+                    for date in dates:
+                        r.append(('history', validation_status.STATUS_FATAL_ERROR, _('{date1} must be before {date2}. ').format(date1=date[0], date2=date[1])))
+
+        elif received is None and accepted is None:
+            r = [('history', error_level, _('Not found: {label}. ').format(label='history'))]
+        else:
+            if received is None:
+                label = 'history: received'
+            if accepted is None:
+                label = 'history: accepted'
+            r.append(data_validations.is_required_data(label, None, error_level))
+
+        return r
