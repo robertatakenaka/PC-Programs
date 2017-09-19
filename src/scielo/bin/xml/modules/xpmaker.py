@@ -1001,13 +1001,14 @@ class ArticlePkgMaker(object):
 
         last = format_last_part(fpage, seq, elocation_id, order, doi, issn, publisher_article_id)
         if issueno:
-            if issueno == 'ahead' or int(issueno) == 0:
-                issueno = None
-            else:
-                n = len(issueno)
-                if len(issueno) < 2:
-                    n = 2
-                issueno = issueno.zfill(n)
+            if issueno.isdigit():
+                if int(issueno) == 0:
+                    issueno = 'ahead'
+                else:
+                    n = len(issueno)
+                    if len(issueno) < 2:
+                        n = 2
+                    issueno = issueno.zfill(n)
         if suppl:
             suppl = 's' + suppl if suppl != '0' else 'suppl'
         parts = [issn, self.acron, vol, issueno, suppl, last, self.doc.compl]
