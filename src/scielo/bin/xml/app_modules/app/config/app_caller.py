@@ -52,7 +52,7 @@ class AppCaller(object):
             _commands.append(u'echo Deactivating {}'.format(self.venv_path))
         _commands = [item for item in _commands if len(item) > 0]
         encoding.debugging('app_caller.execute()', self.sep.join(_commands))
-        encoding.debugging(self.sep.join(_commands))
+        encoding.debugging('commands', self.sep.join(_commands))
         system.run_command(self.sep.join(_commands))
 
     def install_requirements(self, requirements_file, requirements_checker):

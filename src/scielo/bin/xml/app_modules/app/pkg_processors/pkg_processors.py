@@ -62,14 +62,18 @@ def xpm_version():
     version_files = [
         BIN_PATH + '/xpm_version.txt',
         BIN_PATH + '/cfg/xpm_version.txt',
-        BIN_PATH + '/cfg/version.txt',
     ]
-    version = ''
+    version = '|'
     for f in version_files:
+        encoding.debugging('xpm_version', f)
         if os.path.isfile(f):
             version = fs_utils.read_file_lines(f)[0]
             break
-    return version
+    if '|' not in version:
+        version += '|'
+    encoding.debugging('version', version)
+    major_version, minor_version = version.split('|')
+    return major_version, minor_version
 
 
 def normalize_xml_packages(xml_list, dtd_location_type, stage):
@@ -346,7 +350,7 @@ class PkgProcessor(object):
         self.stage = stage
         self.is_xml_generation = stage == 'xml'
         self.is_db_generation = stage == 'xc'
-        self.xpm_version = xpm_version() if stage == 'xpm' else ''
+        self.xpm_version = xpm_version() if stage == 'xpm' else None
         self._db_manager = None
         self.ws_journals = ws_journals.Journals(self.config.app_ws_requester)
         self.ws_journals.update_journals_file()
