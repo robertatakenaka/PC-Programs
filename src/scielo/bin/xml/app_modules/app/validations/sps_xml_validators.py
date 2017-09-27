@@ -33,9 +33,6 @@ class PackToolsValidator(object):
 
     def __init__(self, dtd_name, sps_version):
         self.xml_validator = None
-        self.dtd_name = dtd_name
-        self.dtd = packtools.etree.DTD(dtd_name)
-        print('PackToolsValidator.dtd', self.dtd)
         self.version = packtools.__version__
         self.is_valid = False
         self.style_errors = 0
@@ -51,26 +48,39 @@ class PackToolsValidator(object):
         self.annoted = None
 
     def setup(self, xml_filename):
+        from packtools import exceptions
+        self.xml_validator = None
+        self.is_valid = False
+        self.style_errors = 1
         try:
-            self.xml_validator = packtools.XMLValidator(
-                                    packtools.etree.parse(xml_filename),
-                                    dtd=self.dtd)
-            self.xml_validator.style_validators = self.style_validators
+            parsed_xml = packtools.XML(xml_filename)
+            self.xml_validator = packtools.XMLValidator.parse(parsed_xml)
             self.annotate_errors()
-        except Exception as e:
-            self.xml_validator = None
+        except (packtools.etree.XMLSyntaxError, exceptions.XMLDoctypeError,
+                exceptions.XMLSPSVersionError) as e:
+            ERR_MESSAGE = "Something went wrong while working on {filename}: {details}."
+            self.annoted = ERR_MESSAGE.format(filename=xml_filename, details=e)
 
     def annotate_errors(self):
         if self.annoted is None:
+            """
+            summary = {
+                'dtd_errors': [_make_err_message(err) for err in dtd_errors],
+                'style_errors': {},
+                'is_valid': bool(dtd_is_valid and sps_is_valid),
+            }
+            """
             content = packtools.etree.tostring(
                 self.xml_validator.annotate_errors(),
                 pretty_print=True,
                 encoding='utf-8',
                 xml_declaration=True)
             content = encoding.decode(content)
-            self.is_valid = True
-            self.style_errors = content.count('SPS-ERROR')
             self.annoted = content
+            dtd_is_valid, dtd_errors = self.xml_validator.validate()
+            sps_is_valid, sps_errors = self.xml_validator.validate_style()
+            self.is_valid = bool(dtd_is_valid and sps_is_valid)
+            self.style_errors = len(dtd_errors) + len(sps_errors)
 
     def dtd_validation(self, report_filename):
         msg = 'Validates fine'
@@ -155,7 +165,6 @@ class XMLValidator(object):
     def __init__(self, dtd_files, sps_version=None, preference=None):
         self.logger = None
         validator = 'java'
-        print('DTD', dtd_files.local)
         preference = preference[0] if preference is not None and len(preference) > 0 else ''
         if dtd_files.database_name == 'scielo' and IS_PACKTOOLS_INSTALLED and preference == 'packtools':
             try:
@@ -180,6 +189,10 @@ class XMLValidator(object):
             content = fs_utils.read_file(style_report_filename)
         else:
             content = validation_status.STATUS_FATAL_ERROR + ': ' + _('Unable to load {xml}. ').format(xml=xml_filename) + '\n' + e
+            try:
+                content += e
+            except:
+                pass
             fs_utils.write_file(style_report_filename, content)
         f, e, w = style_checker_statistics(content)
         return (xml, is_valid_dtd, (f, e, w))
