@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=7.01
-  Title=SciELO XML Package Maker Installation
+  Title=SciELO XPM
   Title Portuguese=SciELO Installation
   Title Spanish=SciELO Installation
   Flags=00010100
@@ -1029,6 +1029,11 @@ item: Install File
   Flags=0000000010000010
 end
 item: Install File
+  Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\settings\requirements-w64.txt
+  Destination=%PROGDIR%\xml\app_modules\settings\requirements-w64.txt
+  Flags=0000000010000010
+end
+item: Install File
   Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\settings\requirements.txt
   Destination=%PROGDIR%\xml\app_modules\settings\requirements.txt
   Flags=0000000010000010
@@ -1524,6 +1529,11 @@ item: Install File
   Flags=0000000010000010
 end
 item: Install File
+  Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\requirements_checker.bat
+  Destination=%PROGDIR%\xml\requirements_checker.bat
+  Flags=0000000010000010
+end
+item: Install File
   Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\run_app.py
   Destination=%PROGDIR%\xml\run_app.py
   Flags=0000000010000010
@@ -1766,6 +1776,16 @@ end
 item: Install File
   Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\app\data\aff_normalization.py
   Destination=%PROGDIR%\xml\app_modules\app\data\aff_normalization.py
+  Flags=0000000010000010
+end
+item: Install File
+  Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\app\validations\article_disp_formula.py
+  Destination=%PROGDIR%\xml\app_modules\app\validations\article_disp_formula.py
+  Flags=0000000010000010
+end
+item: Install File
+  Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\app\validations\article_tablewrap.py
+  Destination=%PROGDIR%\xml\app_modules\app\validations\article_tablewrap.py
   Flags=0000000010000010
 end
 item: Install File
@@ -3111,7 +3131,12 @@ end
 item: Execute Program
   Pathname=python
   Command Line=%PROGDIR%\xml\run_app.py install
-  Flags=00000010
+  Flags=00000011
+end
+remarked item: Execute Program
+  Command Line=%PROGDIR%\xml\install_requirements.bat
+  Default Directory=%PROGDIR%\xml
+  Flags=00000011
 end
 remarked item: Add to AUTOEXEC.BAT
   New Text=SET BAP=OS23470a

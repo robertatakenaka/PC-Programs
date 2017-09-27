@@ -2134,28 +2134,14 @@ class ArticleFormula(object):
     def codes(self):
         _codes = []
         if self.node is not None:
-            for tag in ['math', '{http://www.w3.org/1998/Math/MathML}math']:
-                nodes = self.node.findall(tag)
-                if nodes is not None:
-                    _codes.extend([xml_utils.node_xml(item) for item in nodes])
-            for tag in ['tex-math']:
-                nodes = self.node.findall(tag)
-                if nodes is not None:
-                    _codes.extend([xml_utils.node_text(item) for item in nodes])
+            _codes = codes(self.node)
         return _codes
 
     @property
     def graphics(self):
         _graphics = []
         if self.node is not None:
-            for tag in ['inline-graphic', 'graphic']:
-                nodes = self.node.findall(tag)
-                if nodes is not None:
-                    for node in nodes:
-                        href = node.get(
-                                'href',
-                                node.get('{http://www.w3.org/1999/xlink}href'))
-                        _graphics.append(href)
+            _graphics = graphics(self.node)
         return _graphics
 
 
@@ -2194,3 +2180,57 @@ class ArticleTableWrap(object):
                                 node.get('{http://www.w3.org/1999/xlink}href'))
                         _graphics.append(href)
         return _graphics
+
+
+def codes(main_node):
+    _codes = []
+    if main_node is not None:
+        for tag in ['alternatives']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                for item in nodes:
+                    _codes.extend(codes(item))
+        for tag in ['math', '{http://www.w3.org/1998/Math/MathML}math']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                _codes.extend([xml_utils.node_xml(item).replace('mml:', '') for item in nodes])
+        for tag in ['tex-math']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                _codes.extend([xml_utils.node_text(item) for item in nodes])
+    return _codes
+
+
+def graphics(main_node):
+    _graphics = []
+    if main_node is not None:
+        for tag in ['alternatives']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                for item in nodes:
+                    _graphics.extend(graphics(item))
+        for tag in ['inline-graphic', 'graphic']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                for node in nodes:
+                    href = node.get(
+                            'href',
+                            node.get('{http://www.w3.org/1999/xlink}href'))
+                    _graphics.append(href)
+    return _graphics
+
+
+def table(main_node):
+    _table = []
+    if main_node is not None:
+        for tag in ['alternatives']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                for item in nodes:
+                    _table.extend(table(item))
+        for tag in ['table']:
+            nodes = main_node.findall(tag)
+            if nodes is not None:
+                for node in nodes:
+                    _table.append(xml_utils.node_xml(node))
+    return _table

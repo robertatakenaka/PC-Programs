@@ -35,6 +35,7 @@ class PackToolsValidator(object):
         self.xml_validator = None
         self.dtd_name = dtd_name
         self.dtd = packtools.etree.DTD(dtd_name)
+        print('PackToolsValidator.dtd', self.dtd)
         self.version = packtools.__version__
         self.is_valid = False
         self.style_errors = 0
@@ -153,11 +154,18 @@ class XMLValidator(object):
 
     def __init__(self, dtd_files, sps_version=None, preference=None):
         self.logger = None
+        validator = 'java'
+        print('DTD', dtd_files.local)
         preference = preference[0] if preference is not None and len(preference) > 0 else ''
         if dtd_files.database_name == 'scielo' and IS_PACKTOOLS_INSTALLED and preference == 'packtools':
-            self.validator = PackToolsValidator(dtd_files.local, sps_version)
-            encoding.display_message('    XMLValidator: packtools')
-        else:
+            try:
+                self.validator = PackToolsValidator(
+                    dtd_files.local, sps_version)
+                encoding.display_message('    XMLValidator: packtools')
+                validator = 'packtools'
+            except Exception as e:
+                encoding.report_exception('XMLValidator.__init__', e, dtd_files.local)
+        if validator == 'java':
             self.validator = JavaXMLValidator(dtd_files.doctype_with_local_path, dtd_files.xsl_prep_report, dtd_files.xsl_report)
             encoding.display_message('    XMLValidator: java')
 

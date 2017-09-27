@@ -624,6 +624,8 @@ def display_article_metadata(_article, sep='<br/>'):
             r += html_reports.display_label_value(_('date') + ' (' + l + ')', utils.display_datetime(d), 'p')
     r += html_reports.tag('p', html_reports.tag('strong', _article.title), 'article-title')
     r += html_reports.tag('p', display_authors(_article.article_contrib_items, sep))
+    if _article.marked_to_delete:
+        r = html_reports.tag('p', _('MARKED TO DELETE'), 'warning') + html_reports.tag('div', r, 'delete')
     return r
 
 
