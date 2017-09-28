@@ -77,8 +77,17 @@ class PackToolsValidator(object):
                 xml_declaration=True)
             content = encoding.decode(content)
             self.annoted = content
-            dtd_is_valid, dtd_errors = self.xml_validator.validate()
-            sps_is_valid, sps_errors = self.xml_validator.validate_style()
+            encoding.debugging('XML_CATALOG_FILES', os.environ['XML_CATALOG_FILES'])
+            dtd_is_valid, dtd_errors = True, []
+            try:
+                dtd_is_valid, dtd_errors = self.xml_validator.validate()
+            except Exception as e:
+                encoding.report_exception('PackToolsValidator.annotate_errors', e, 'validate()')
+            sps_is_valid, sps_errors = True, []
+            try:
+                sps_is_valid, sps_errors = self.xml_validator.validate_style()
+            except Exception as e:
+                encoding.report_exception('PackToolsValidator.annotate_errors', e, 'validate_style()')
             self.is_valid = bool(dtd_is_valid and sps_is_valid)
             self.style_errors = len(dtd_errors) + len(sps_errors)
 

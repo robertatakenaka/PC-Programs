@@ -122,7 +122,7 @@ class ReportsMaker(object):
         r.append(self.articles_validations_reports.merged_articles_reports.report_articles_data_conflicts)
         r.append(self.articles_validations_reports.merged_articles_reports.report_articles_data_changes)
         r.append(self.conversion.aop_status_report)
-        r.append(self.conversion.articles_conversion_validations.report(True))
+        r.append(self.conversion.articles_conversion_validations.report())
         r.append(self.conversion.conversion_report)
         return ''.join(r)
 

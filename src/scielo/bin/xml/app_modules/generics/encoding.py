@@ -87,9 +87,12 @@ def encode(content, encoding='utf-8', error_handler=None):
 
 def report_exception(function_name, e, data):
     try:
-        app_logger.exception('Exception at {}'.format(function_name), exc_info=True)
+        app_logger.exception(
+            'Exception at {}'.format(function_name), exc_info=True)
+        app_logger.info(data)
     except:
         app_logger.info('EXCEPTION at report_exception()')
+        app_logger.info(data)
 
 
 def debugging(function_name, data):

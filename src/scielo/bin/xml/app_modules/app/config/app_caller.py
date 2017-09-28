@@ -38,6 +38,7 @@ class AppCaller(object):
     def install_virtualenv(self):
         if self.venv_path is not None:
             if not os.path.isdir(self.venv_path):
+                system.run_command('python -m pip install --upgrade pip', True)
                 system.run_command('pip install virtualenv', True)
                 system.run_command(u'virtualenv {}'.format(self.venv_path), True)
 
@@ -55,10 +56,21 @@ class AppCaller(object):
         self.logger.info(cmd)
         system.run_command(cmd)
 
-    def install_requirements(self, requirements_file, requirements_checker):
+    def install_requirements(self, requirements_file, requirements_checker, uninstall=True):
+        if uninstall is True:
+            self.uninstall_requirements(requirements_file)
         commands = []
+        commands.append('pip freeze')
         commands.append('pip install -r {}'.format(requirements_file))
         commands.append('python {}'.format(requirements_checker))
+        commands.append('pip freeze')
+        self.execute(commands)
+
+    def uninstall_requirements(self, requirements_file):
+        commands = []
+        commands.append('pip freeze')
+        commands.append('pip uninstall -r {} -y'.format(requirements_file))
+        commands.append('pip freeze')
         self.execute(commands)
 
     def install_special_requirements(self, special_requirements, tmp_dir):

@@ -23,8 +23,8 @@ if __name__ == '__main__':
         from app_modules.__init__ import TMP_DIR
         appcaller.install_virtualenv()
         appcaller.install_requirements(REQUIREMENTS_FILE, REQUIREMENTS_CHECKER)
-        if app_caller.so == 'windows' and app_caller.machine != 'x86':
-            appcaller.install_special_requirements(REQUIREMENTS_FILE_SPECIAL, TMP_DIR)
+        # if app_caller.so == 'windows' and app_caller.machine != 'x86':
+        #     appcaller.install_special_requirements(REQUIREMENTS_FILE_SPECIAL, TMP_DIR)
     elif sys.argv[1].endswith('xml_converter.py'):
         from app_modules.app import xc
         xc.call_converter(argv, '1.1')
