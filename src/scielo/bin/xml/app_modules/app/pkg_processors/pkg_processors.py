@@ -21,10 +21,10 @@ from ..validations import article_validations as article_validations_module
 from ..validations import validations as validations_module
 from ..validations import reports_maker
 from ..validations import merged_articles_validations
+from ..services import institutions_normalizer
 from ..data import package
 from ..data import merged
 from ..data import workarea
-from ..data import aff_normalization
 from ..db import registered
 from ..db import xc_models
 from . import pmc_pkgmaker
@@ -356,7 +356,7 @@ class PkgProcessor(object):
         self.ws_journals.update_journals_file()
         self.journals_list = xc_models.JournalsList(self.ws_journals.downloaded_journals_filename)
         self.app_institutions_manager = institutions_manager.InstitutionsManager(self.config.app_ws_requester)
-        self.aff_normalizer = aff_normalization.Aff(self.app_institutions_manager)
+        self.aff_normalizer = institutions_normalizer.InstitutionsNormalizer(self.app_institutions_manager)
         self.doi_validator = doi_validations.DOIValidator(self.config.app_ws_requester)
         self.registered_issues_manager = xc_models.RegisteredIssuesManager(self.db_manager, self.journals_list)
 
@@ -385,18 +385,20 @@ class PkgProcessor(object):
         workarea_path = os.path.dirname(pkgfiles[0].path)
         return package.Package(pkgfiles, outputs, workarea_path)
 
+    def normalize_pkg_affiliations(self, pkg):
+        for xml_name, a in pkg.articles.items():
+            if a is not None:
+                for aff_xml in a.affiliations:
+                    if aff_xml is not None and aff_xml.id is not None:
+                        normalized, variations = self.aff_normalizer.normalize_institution_data(aff_xml.aff)
+                        a.normalized_affiliations[aff_xml.id].normalized = normalized
+                        a.normalized_affiliations[aff_xml.id].variations = variations
+
     def evaluate_package(self, pkg):
         registered_issue_data = registered.RegisteredIssue()
         self.registered_issues_manager.get_registered_issue_data(pkg.issue_data, registered_issue_data)
-        for xml_name in sorted(pkg.articles.keys()):
-            a = pkg.articles[xml_name]
-            if a is not None:
-                institutions_results = {}
-                for aff_xml in a.affiliations:
-                    if aff_xml is not None:
-                        institutions_results[aff_xml.id] = self.aff_normalizer.query_institutions(aff_xml)
-                pkg.articles[xml_name].institutions_query_results = institutions_results
-                pkg.articles[xml_name].normalized_affiliations = {aff_id: info[0] for aff_id, info in institutions_results.items()}
+        self.normalize_pkg_affiliations(pkg)
+
         pkg_validations = self.validate_pkg_articles(pkg, registered_issue_data)
 
         articles_mergence = self.validate_merged_articles(pkg, registered_issue_data)

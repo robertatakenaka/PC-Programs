@@ -42,11 +42,11 @@ def confirm_missing_xref_items(missing_xref_items, any_xref_ranges_items):
 
 class AffValidator(object):
 
-    def __init__(self, aff_xml, institutions_query_results, xref_items):
+    def __init__(self, aff_xml, normalized, xref_items):
         self.aff_xml = aff_xml
+        self.aff_normalized = normalized
         self.aff = aff_xml.aff
         self.xref_items = xref_items
-        self.institutions_query_results = institutions_query_results
         self.norm_aff = None
         self._validations = None
 
@@ -98,8 +98,9 @@ class AffValidator(object):
     @property
     def normalized(self):
         r = []
-        if self.institutions_query_results is not None:
-            norm_aff, found_institutions = self.institutions_query_results
+        if self.aff_normalized is not None:
+            norm_aff = self.aff_normalized.normalized
+            found_institutions = self.aff_normalized.variations
             if norm_aff is None:
                 msg = _('Unable to confirm/find the normalized institution name for ') + join_not_None_items(list(set([self.aff.orgname, self.aff.norgname])), ' or ')
 
@@ -667,10 +668,9 @@ class ArticleContentValidation(object):
         for item in self.article.contrib_names:
             xref_items.extend(item.xref)
         for aff_xml in self.article.affiliations:
-            normalized = None
-            if self.article.institutions_query_results is not None:
-                normalized = self.article.institutions_query_results.get(aff_xml.id)
-            aff_validator = AffValidator(aff_xml, normalized, xref_items)
+            normalized = self.article.normalized_affiliations.get(aff_xml.id)
+            if normalized is not None:
+                aff_validator = AffValidator(aff_xml, normalized, xref_items)
             r.extend(aff_validator.validations)
         return r
 

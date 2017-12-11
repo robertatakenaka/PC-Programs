@@ -31,6 +31,14 @@ def element_which_requires_permissions(node, node_graphic=None):
     return missing_permissions
 
 
+class NormalizedAff(object):
+
+    def __init__(self, aff_xml):
+        self.aff_xml = aff_xml
+        self.normalized = None
+        self.variations = None
+
+
 class AffiliationXML(object):
 
     def __init__(self, node):
@@ -1539,10 +1547,9 @@ class Article(ArticleXML):
         self.article_records = None
         self.is_ex_aop = False
         self.section_code = None
-        self.normalized_affiliations = {}
-        self.institutions_query_results = {}
         self._issue_pub_date = None
         self.xml = None if self.tree is None else xml_utils.node_xml(self.tree.find('.'))
+        self.normalized_affiliations = {aff_xml.id: NormalizedAff(aff_xml) for aff_xml in self.affiliations if aff_xml.id is not None}
 
     def count_words(self, word):
         return self.xml.count(word)
