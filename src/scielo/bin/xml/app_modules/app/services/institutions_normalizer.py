@@ -1,15 +1,14 @@
 # coding=utf-8
 
-from . import article
+from ..data import article
 
 
-class Aff(object):
+class InstitutionsNormalizer(object):
 
     def __init__(self, app_institutions_manager):
         self.app_institutions_manager = app_institutions_manager
 
-    def query_institutions(self, aff_xml):
-        aff = aff_xml.aff
+    def normalize_institution_data(self, aff):
         norm_aff = None
         found_institutions = None
         orgnames = [item.upper() for item in [aff.orgname, aff.norgname] if item is not None]
