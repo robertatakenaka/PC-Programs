@@ -10,6 +10,21 @@ from . import files_extractor
 from . import encoding
 
 
+class File(object):
+
+    def __init__(self, filename, _encoding='utf-8'):
+        self._encoding = _encoding
+        self.filename = filename
+        self.path = os.path.dirname(self.filename)
+        self.parent_path = os.path.dirname(self.path)
+        self.basename = os.path.basename(self.filename)
+        self.name, ext = os.path.splitext(self.basename)
+        self.content = read_file(self.filename, _encoding) or ''
+
+    def write(self, _encoding=None):
+        write_file(self.filename, self.content, _encoding or self._encoding)
+
+
 def read_file(filename, encode='utf-8'):
     if os.path.isfile(filename):
         try:

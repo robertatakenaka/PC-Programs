@@ -28,10 +28,11 @@ PREFIXES['fig'] = 'figgrp'
 SORTED_PREFIXES = sorted(tuple(PREFIXES), reversed=True)
 
 
-def classify_graphic_file(name, main_name):
+def classify_mkp_pkg_components_by_elem_name_and_id(name, main_name):
     done = False
     elem = None
     number = None
+    posfix = name
     if name.startswith(main_name):
         posfix = name[len(main_name):]
     for k, v in SORTED_PREFIXES:
@@ -43,66 +44,38 @@ def classify_graphic_file(name, main_name):
                 done = True
         if done:
             break
-    return elem, number
+    if done is False:
+        numbers = ''
+        notnumbers = ''
+        for c in posfix:
+            if c.isdigit():
+                numbers += c
+            elif c.upper() != c.lower():
+                notnumbers += c
+        elem = notnumbers
+        number = int(numbers) if numbers != '' else None
+    return elem, number, posfix
 
 
-class File(object):
+class PkgFiles(object):
 
-    def __init__(self, filename):
-        self.filename = filename
-        self.path = os.path.dirname(filename)
-        self.basename = os.path.basename(filename)
-        self.name, self.ext = os.path.splitext(self.basename)
-
-
-class Workarea(object):
-
-    def __init__(self, output_path):
-        self.output_path = output_path
-
-        for p in [self.output_path, self.reports_path, self.scielo_package_path, self.pmc_package_path]:
-            if not os.path.isdir(p):
-                os.makedirs(p)
-
-    @property
-    def reports_path(self):
-        return self.output_path + '/errors'
-
-    @property
-    def scielo_package_path(self):
-        return self.output_path + '/scielo_package'
-
-    @property
-    def pmc_package_path(self):
-        return self.output_path+'/pmc_package'
-
-    @property
-    def src_path(self):
-        return self.output_path+'/src'
-
-
-class PkgArticleFiles(object):
-
-    def __init__(self, filename):
+    def __init__(self, file):
         self._prefixes = None
-        self.filename = filename
-        self.path = os.path.dirname(filename)
-        self.basename = os.path.basename(filename)
-        self.name, self.ext = os.path.splitext(self.basename)
+        self.file = file
 
-        if not os.path.isdir(self.path):
-            os.makedirs(self.path)
-        self.folder = os.path.basename(self.path)
-        if self.filename.endswith('.sgm.xml'):
-            self.name, ign = os.path.splitext(self.name)
+        if not os.path.isdir(self.file.path):
+            os.makedirs(self.file.path)
+        self.folder = os.path.basename(self.file.path)
+        if self.file.filename.endswith('.sgm.xml'):
+            self.file.name, ign = os.path.splitext(self.file.name)
 
-        self.previous_name = self.name
+        self.previous_name = self.file.name
         self.listdir = []
         self._load()
 
     def location(self, name):
-        if os.path.isfile(self.path + '/' + name):
-            return self.path + '/' + name
+        if os.path.isfile(self.file.path + '/' + name):
+            return self.file.path + '/' + name
 
     def add_extension(self, new_href):
         if '.' not in new_href:
@@ -119,11 +92,11 @@ class PkgArticleFiles(object):
         if self._prefixes is None:
             r = []
             SUFFIXES = XML_SUFFIXES
-            if self.filename.endswith('.sgm.xml'):
+            if self.file.filename.endswith('.sgm.xml'):
                 SUFFIXES = MARKUP_SUFFIXES
-                if self.basename.startswith('a') and self.basename[3:4] == 'v':
-                    r.extend([self.basename[:3] + suffix for suffix in SUFFIXES])
-            r.extend([self.name + suffix for suffix in SUFFIXES])
+                if self.file.basename.startswith('a') and self.file.basename[3:4] == 'v':
+                    r.extend([self.file.basename[:3] + suffix for suffix in SUFFIXES])
+            r.extend([self.file.name + suffix for suffix in SUFFIXES])
             self._prefixes = list(set(r))
         return self._prefixes
 
@@ -136,7 +109,7 @@ class PkgArticleFiles(object):
         return list(set(r))
 
     def is_listdir_changed(self):
-        listdir = os.listdir(self.path)
+        listdir = os.listdir(self.file.path)
         if set(listdir) != set(self.listdir):
             self.listdir = listdir
             return True
@@ -148,7 +121,7 @@ class PkgArticleFiles(object):
 
     def _load(self):
         self._files = self.select_files()
-        self._related_files = [f for f in self.files if f != self.basename and not f.endswith('.ctrl.txt')]
+        self._related_files = [f for f in self.files if f != self.file.basename and not f.endswith('.ctrl.txt')]
         self._related_files_by_name = {}
         self._related_files_by_extension = {}
         for f in self._related_files:
@@ -161,11 +134,13 @@ class PkgArticleFiles(object):
                 self._related_files_by_name[name].append(extension)
             if name not in self._related_files_by_extension[extension]:
                 self._related_files_by_extension[extension].append(name)
-        self._graphic_items = {}
-        for name, extensions in self._related_files_by_name:
-            elem, number = classify_graphic_file(name, self.name)
-            if all([elem, number]):
-                self._graphic_items[(elem, number)] = (name, extensions)
+
+        self._mkp_components_classified_by_elem_name_and_id = {}
+        if self.file.filename.endswith('.sgm.xml'):
+            for name, extensions in self._related_files_by_name:
+                elem, number, alt = classify_mkp_pkg_components_by_elem_name_and_id(name, self.file.name)
+                if elem is not None:
+                    self._mkp_components_classified_by_elem_name_and_id[(elem, number)] = (name, extensions)
 
     @property
     def files(self):
@@ -183,9 +158,9 @@ class PkgArticleFiles(object):
         return self._related_files_by_name
 
     @property
-    def graphic_items(self):
+    def mkp_components_classified_by_elem_name_and_id(self):
         self._update()
-        return self._graphic_items
+        return self._mkp_components_classified_by_elem_name_and_id
 
     @property
     def related_files_by_extension(self):
@@ -224,7 +199,7 @@ class PkgArticleFiles(object):
 
     def clean(self):
         for f in self.related_files:
-            fs_utils.delete_file_or_folder(self.path + '/' + f)
+            fs_utils.delete_file_or_folder(self.file.path + '/' + f)
         self._update()
 
     def tiff2jpg(self):
@@ -233,35 +208,35 @@ class PkgArticleFiles(object):
                 source_fname = item + '.tif'
                 if source_fname not in self.related_files:
                     source_fname = item + '.tiff'
-                img_utils.hdimg_to_jpg(self.path + '/' + source_fname, self.path + '/' + item + '.jpg')
+                img_utils.hdimg_to_jpg(self.file.path + '/' + source_fname, self.file.path + '/' + item + '.jpg')
         self._update()
 
     def delete_files(self, files):
         for f in files:
-            fs_utils.delete_file_or_folder(self.path + '/' + f)
+            fs_utils.delete_file_or_folder(self.file.path + '/' + f)
         self._update()
 
     def svg2tiff(self):
         sgv_items = self.files_by_ext(['.svg'])
         if len(self.tiff_items) == 0 and len(sgv_items) > 0:
-            img_utils.svg2png(self.path)
+            img_utils.svg2png(self.file.path)
             self._update()
-            img_utils.png2tiff(self.path)
+            img_utils.png2tiff(self.file.path)
             self._update()
 
     def evaluate_tiff_images(self):
         errors = []
         for f in self.tiff_items:
-            errors.append(img_utils.validate_tiff_image_file(self.path+'/'+f))
+            errors.append(img_utils.validate_tiff_image_file(self.file.path+'/'+f))
         return [e for e in errors if e is not None]
 
     def zip(self, dest_path=None):
         if dest_path is None:
-            dest_path = os.path.dirname(self.path)
+            dest_path = os.path.dirname(self.file.path)
         if not os.path.isdir(dest_path):
             os.makedirs(dest_path)
-        filename = dest_path + '/' + self.name + '.zip'
-        fs_utils.zip(filename, [self.path + '/' + f for f in self.files])
+        filename = dest_path + '/' + self.file.name + '.zip'
+        fs_utils.zip(filename, [self.file.path + '/' + f for f in self.files])
         return filename
 
     def copy_related_files(self, dest_path):
@@ -269,20 +244,22 @@ class PkgArticleFiles(object):
             if not os.path.isdir(dest_path):
                 os.makedirs(dest_path)
             for f in self.related_files:
-                shutil.copyfile(self.path + '/' + f, dest_path + '/' + f)
+                shutil.copyfile(self.file.path + '/' + f, dest_path + '/' + f)
 
     def copy_xml(self, dest_path):
         if dest_path is not None:
             if not os.path.isdir(dest_path):
                 os.makedirs(dest_path)
-            shutil.copyfile(self.filename, dest_path + '/' + self.basename)
+            shutil.copyfile(self.file.filename, dest_path + '/' + self.file.basename)
 
+
+####################
 
 class PackageFolder(object):
 
     def __init__(self, path, pkgfiles_items=None):
-        self.path = path
-        self.name = os.path.basename(path)
+        self.file.path = path
+        self.file.name = os.path.basename(path)
         if pkgfiles_items is None:
             self.pkgfiles_items = {}
             for item in os.listdir(path):
@@ -308,19 +285,19 @@ class PackageFolder(object):
     def orphans(self):
         items = []
         if self.INFORM_ORPHANS is True:
-            for f in os.listdir(self.path):
+            for f in os.listdir(self.file.path):
                 if f not in self.package_filenames:
                     items.append(f)
         return items
 
     def zip(self, dest_path=None):
         if dest_path is None:
-            dest_path = os.path.dirname(self.path)
+            dest_path = os.path.dirname(self.file.path)
         if not os.path.isdir(dest_path):
             os.makedirs(dest_path)
-        _name = os.path.basename(self.path)
+        _name = os.path.basename(self.file.path)
         filename = dest_path + '/' + _name + '.zip'
-        fs_utils.zip(filename, [self.path + '/' + f for f in self.package_filenames])
+        fs_utils.zip(filename, [self.file.path + '/' + f for f in self.package_filenames])
         return filename
 
 

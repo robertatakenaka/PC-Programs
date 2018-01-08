@@ -14,14 +14,16 @@ messages = []
 mime = MimeTypes()
 
 
-class SPSXMLContent(xml_utils.XMLContent):
+class SPSXMLContent(object):
 
-    def __init__(self, content):
-        xml_utils.XMLContent.__init__(self, content)
+    def __init__(self, content, pkg_path):
+        self.content = content
+        self.pkg_path = pkg_path
 
     def normalize(self):
         self.insert_mml_namespace()
-        if self.xml is not None:
+        self.xmlcontent = xml_utils.XMLContent(self.content)
+        if self.xmlcontent.xml is not None:
             if 'contrib-id-type="' in self.content:
                 for contrib_id, url in attributes.CONTRIB_ID_URLS.items():
                     self.content = self.content.replace(' contrib-id-type="' + contrib_id + '">' + url, ' contrib-id-type="' + contrib_id + '">')
@@ -45,6 +47,7 @@ class SPSXMLContent(xml_utils.XMLContent):
                 self.remove_styles_from_tagged_content(tag)
             self.content = self.content.replace('<institution content-type="normalized"/>', '')
             self.content = self.content.replace('<institution content-type="normalized"></institution>', '')
+            self.replace_mimetypes()
             self.content = xml_utils.pretty_print(self.content)
 
     def doctype(self, dtd_location_type):
@@ -115,11 +118,40 @@ class SPSXMLContent(xml_utils.XMLContent):
                 if href.src != new:
                     self.content = self.content.replace('href="' + href.src + '"', 'href="' + new + '"')
 
+    def replace_mimetypes(self):
+        r = self.content
+        if 'mimetype="replace' in self.content:
+            self.content = self.content.replace('mimetype="replace', '_~BREAK~MIME_MIME:')
+            self.content = self.content.replace('mime-subtype="replace"', '_~BREAK~MIME_')
+            r = ''
+            for item in self.content.split('_~BREAK~MIME_'):
+                if item.startswith('MIME:'):
+                    f = item[5:]
+                    f = f[0:f.rfind('"')]
+                    result = ''
+                    if os.path.isfile(self.pkg_path + '/' + f):
+                        result = mime.guess_type(self.pkg_path + '/' + f)
+                    else:
+                        url = ws_requester.pathname2url(f)
+                        result = mime.guess_type(url)
+                    try:
+                        result = result[0]
+                        if '/' in result:
+                            m, ms = result.split('/')
+                            r += 'mimetype="{}" mime-subtype="{}"'.format(m, ms)
+                        else:
+                            pass
+                    except:
+                        pass
+                else:
+                    r += item
+        self.content = r
+
 
 class SPSRefXMLContent(xml_utils.XMLContent):
 
     def __init__(self, content):
-        xml_utils.XMLContent.__init__(self, content)
+        self.content = content
 
     def normalize(self):
         if self.content.startswith('<ref') and self.content.endswith('</ref>'):
@@ -197,31 +229,3 @@ class SPSRefXMLContent(xml_utils.XMLContent):
                     if source not in mixed_citation and s in mixed_citation:
                         self.content = self.content.replace(source, s)
 
-    def replace_mimetypes(self):
-        r = self.content
-        if 'mimetype="replace' in self.content:
-            self.content = self.content.replace('mimetype="replace', '_~BREAK~MIME_MIME:')
-            self.content = self.content.replace('mime-subtype="replace"', '_~BREAK~MIME_')
-            r = ''
-            for item in self.content.split('_~BREAK~MIME_'):
-                if item.startswith('MIME:'):
-                    f = item[5:]
-                    f = f[0:f.rfind('"')]
-                    result = ''
-                    if os.path.isfile(self.src_path + '/' + f):
-                        result = mime.guess_type(self.src_path + '/' + f)
-                    else:
-                        url = ws_requester.pathname2url(f)
-                        result = mime.guess_type(url)
-                    try:
-                        result = result[0]
-                        if '/' in result:
-                            m, ms = result.split('/')
-                            r += 'mimetype="' + m + '" mime-subtype="' + ms + '"'
-                        else:
-                            pass
-                    except:
-                        pass
-                else:
-                    r += item
-        self.content = r
