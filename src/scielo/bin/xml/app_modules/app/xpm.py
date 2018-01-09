@@ -5,8 +5,11 @@ import os
 from ..__init__ import _
 from . import interface
 from ..generics import encoding
+from ..generics import fs_utils
 from .data import package
-from .pkg_processors import sci_pkgmaker
+from .data import pkg
+from .data import workarea
+from .pkg_processors import mkp_pkg
 from .pkg_processors import pkg_processors
 from .config import config
 
@@ -75,13 +78,18 @@ class Request(object):
         if any([self.xml_path, self.acron]):
             if self.validate():
                 if self.sgm_xml is not None:
-                    scielo_pm = sci_pkgmaker.SciPackageMaker(self.sgm_xml, self.acron)
+                    scielo_pm = mkp_pkg.MarkupPackage(self.sgm_xml, self.acron)
                     scielo_pm.make()
                     self.outputs = {scielo_pm.xml_pkgfiles.name: scielo_pm.sgmxml_outputs}
                     self.normalized_pkgfiles = [scielo_pm.xml_pkgfiles]
                     self.stage = 'xml'
                 else:
-                    self.normalized_pkgfiles, self.outputs = pkg_processors.normalize_xml_packages(self.xml_list, 'remote', self.stage)
+                    file = fs_utils.File(self.xml_list[0])
+                    wk = workarea.Workarea(file.path + '_' + self.stage)
+                    received_pkg = pkg.ReceivedPackage(self.xml_list, wk)
+                    received_pkg.normalize('remote')
+                    self.normalized_pkgfiles = received_pkg.pkgfiles
+                    self.outputs = received_pkg.outputs
 
     def evaluate_xml_path(self):
         errors = []
@@ -112,20 +120,27 @@ class Requester(object):
 
     def __init__(self, stage, INTERATIVE=True):
         configuration = config.Configuration()
+        self.stage = stage
         self.proc = pkg_processors.PkgProcessor(configuration, INTERATIVE, stage)
 
     def call_make_package_from_gui(self, xml_path, GENERATE_PMC=False):
         encoding.display_message(_('Making package') + '...')
         xml_list = [xml_path + '/' + item for item in os.listdir(xml_path) if item.endswith('.xml')]
+
+        file = fs_utils.File(xml_list[0])
+        wk = workarea.Workarea(file.path + '_' + self.stage)
+
         encoding.display_message('...'*2)
-        normalized_pkgfiles, outputs = pkg_processors.normalize_xml_packages(xml_list, 'remote', self.proc.stage)
+        received_pkg = pkg.ReceivedPackage(xml_list, wk)
+        received_pkg.normalize('remote')
+
         encoding.display_message('...'*3)
-        self.execute(normalized_pkgfiles, outputs, GENERATE_PMC)
+        self.execute(received_pkg.pkgfiles, received_pkg.outputs, wk, GENERATE_PMC)
+
         encoding.display_message('...'*4)
         return 'done', 'blue'
 
-    def execute(self, normalized_pkgfiles, outputs, GENERATE_PMC=False):
+    def execute(self, normalized_pkgfiles, outputs, wk, GENERATE_PMC=False):
         if len(normalized_pkgfiles) > 0:
-            workarea_path = os.path.dirname(normalized_pkgfiles[0].path)
-            pkg = package.Package(normalized_pkgfiles, outputs, workarea_path)
-            self.proc.make_package(normalized_pkgfiles, GENERATE_PMC)
+            pkg = package.Package(normalized_pkgfiles, outputs, wk.path)
+            self.proc.make_package(pkg, GENERATE_PMC)

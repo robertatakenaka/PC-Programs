@@ -3,8 +3,8 @@
 from ...generics import fs_utils
 from ...generics import xml_utils
 from . import article
+from . import sps_document
 from . import workarea
-from . import pkg_files
 
 
 class ArticlePkgFiles(pkg_files.PkgFiles):
@@ -54,7 +54,27 @@ class ArticlePkgFiles(pkg_files.PkgFiles):
         return files
 
 
-#################
+class ReceivedPackage(object):
+
+    def __init__(self, xml_list, wk):
+        self.input_pkgfiles_items = [ArticlePkgFiles(fs_utils.File(item)) for item in xml_list]
+        self.wk = wk
+        dest_path = self.wk.scielo_package_path
+        self.pkgfiles = [ArticlePkgFiles(fs_utils.File(dest_path + '/' + item.file.basename)) for item in self.input_pkgfiles_items]
+
+    def normalize(self, dtd_location_type):
+        self.outputs = {}
+        for src, dest in zip(self.input_pkgfiles_items, self.pkgfiles):
+            src.tiff2jpg()
+            xmlcontent = sps_document.SPSXMLContent(src.file.content, src.file.path)
+            xmlcontent.normalize()
+            xmlcontent.doctype(dtd_location_type)
+            dest.file.content = xmlcontent.content
+            dest.file.write()
+            src.copy_related_files(dest.file.path)
+            self.outputs[dest.name] = workarea.OutputFiles(dest.file.name, self.wk.reports_path, None)
+
+
 class Package(object):
 
     def __init__(self, pkgfiles_items, outputs, workarea_path):
