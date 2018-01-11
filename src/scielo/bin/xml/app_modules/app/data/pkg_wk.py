@@ -59,9 +59,9 @@ def classify_mkp_pkg_components_by_elem_name_and_id(name, main_name):
 
 class PkgFiles(object):
 
-    def __init__(self, file):
+    def __init__(self, filename):
         self._prefixes = None
-        self.file = file
+        self.file = fs_utils.File(filename)
 
         if not os.path.isdir(self.file.path):
             os.makedirs(self.file.path)
@@ -253,26 +253,12 @@ class PkgFiles(object):
             shutil.copyfile(self.file.filename, dest_path + '/' + self.file.basename)
 
 
-####################
+class PkgFolder(object):
 
-class PackageFolder(object):
-
-    def __init__(self, path, pkgfiles_items=None):
-        self.file.path = path
-        self.file.name = os.path.basename(path)
-        if pkgfiles_items is None:
-            self.pkgfiles_items = {}
-            for item in os.listdir(path):
-                if item.endswith('.xml'):
-                    article_files = PkgArticleFiles(path+'/'+item)
-                    self.pkgfiles_items[article_files.name] = article_files
-        else:
-            self.pkgfiles_items = {item.name: item for item in pkgfiles_items}
+    def __init__(self, xml_path, pkgfiles_items):
+        self.xml_path = xml_path
+        self.pkgfiles_items = pkgfiles_items
         self.INFORM_ORPHANS = len(self.pkgfiles_items) > 1
-
-    @property
-    def xml_list(self):
-        return [item.filename for item in self.pkgfiles_items.values()]
 
     @property
     def package_filenames(self):
@@ -285,19 +271,17 @@ class PackageFolder(object):
     def orphans(self):
         items = []
         if self.INFORM_ORPHANS is True:
-            for f in os.listdir(self.file.path):
-                if f not in self.package_filenames:
-                    items.append(f)
+            items = [f for f in os.listdir(self.xml_path) if f not in self.package_filenames]
         return items
 
     def zip(self, dest_path=None):
         if dest_path is None:
-            dest_path = os.path.dirname(self.file.path)
+            dest_path = os.path.dirname(self.xml_path)
         if not os.path.isdir(dest_path):
             os.makedirs(dest_path)
-        _name = os.path.basename(self.file.path)
+        _name = os.path.basename(self.xml_path)
         filename = dest_path + '/' + _name + '.zip'
-        fs_utils.zip(filename, [self.file.path + '/' + f for f in self.package_filenames])
+        fs_utils.zip(filename, [self.xml_path + '/' + f for f in self.package_filenames])
         return filename
 
 

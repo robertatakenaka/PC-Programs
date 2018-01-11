@@ -2,7 +2,6 @@ Document Type: WSE
 item: Global
   Version=7.01
   Title=SciELO XPM
-  Title Portuguese=SciELO XPM
   Title Spanish=SciELO XPM
   Flags=00010100
   Languages=65 0 0 0 0 67 66 0 0 0 0 0 0 0 0 0
@@ -1026,11 +1025,6 @@ end
 item: Install File
   Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\tools\requirements_checker.py
   Destination=%PROGDIR%\xml\app_modules\tools\requirements_checker.py
-  Flags=0000000010000010
-end
-item: Install File
-  Source=e:\github.com\scieloorg\PC-Programs\src\scielo\bin\xml\app_modules\settings\requirements-w64.txt
-  Destination=%PROGDIR%\xml\app_modules\settings\requirements-w64.txt
   Flags=0000000010000010
 end
 item: Install File

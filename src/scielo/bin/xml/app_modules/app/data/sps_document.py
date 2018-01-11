@@ -228,4 +228,3 @@ class SPSRefXMLContent(xml_utils.XMLContent):
                     s = source.replace(':', ': ')
                     if source not in mixed_citation and s in mixed_citation:
                         self.content = self.content.replace(source, s)
-

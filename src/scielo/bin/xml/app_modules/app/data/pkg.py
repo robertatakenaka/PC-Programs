@@ -1,17 +1,16 @@
 # coding=utf-8
 
-from ...generics import fs_utils
 from ...generics import xml_utils
 from . import article
 from . import sps_document
-from . import workarea
+from . import pkg_wk
 
 
-class ArticlePkgFiles(pkg_files.PkgFiles):
+class ArticlePkgFiles(pkg_wk.PkgFiles):
 
-    def __init__(self, file):
-        pkg_files.PkgFiles.__init__(self, file)
-        self.xmlcontent = xml_utils.XMLContent(file.filename)
+    def __init__(self, filename):
+        pkg_wk.PkgFiles.__init__(self, filename)
+        self.xmlcontent = xml_utils.XMLContent(filename)
 
     @property
     def article(self):
@@ -56,57 +55,42 @@ class ArticlePkgFiles(pkg_files.PkgFiles):
 
 class ReceivedPackage(object):
 
-    def __init__(self, xml_list, wk):
-        self.input_pkgfiles_items = [ArticlePkgFiles(fs_utils.File(item)) for item in xml_list]
-        self.wk = wk
-        dest_path = self.wk.scielo_package_path
-        self.pkgfiles = [ArticlePkgFiles(fs_utils.File(dest_path + '/' + item.file.basename)) for item in self.input_pkgfiles_items]
+    def __init__(self, xml_list):
+        self.xml_list = xml_list
 
-    def normalize(self, dtd_location_type):
-        self.outputs = {}
-        for src, dest in zip(self.input_pkgfiles_items, self.pkgfiles):
-            src.tiff2jpg()
-            xmlcontent = sps_document.SPSXMLContent(src.file.content, src.file.path)
+    def normalize(self, dtd_location_type, dest_path):
+        self.pkgfiles = {}
+        for item in self.xml_list:
+            input_pkg = ArticlePkgFiles(item)
+            input_pkg.tiff2jpg()
+
+            xmlcontent = sps_document.SPSXMLContent(
+                input_pkg.file.content, input_pkg.file.path)
             xmlcontent.normalize()
             xmlcontent.doctype(dtd_location_type)
-            dest.file.content = xmlcontent.content
-            dest.file.write()
-            src.copy_related_files(dest.file.path)
-            self.outputs[dest.name] = workarea.OutputFiles(dest.file.name, self.wk.reports_path, None)
+
+            dest_filename = dest_path + '/' + input_pkg.file.basename
+            pkg = ArticlePkgFiles(dest_filename)
+            pkg.file.content = xmlcontent.content
+            pkg.file.write()
+            input_pkg.copy_related_files(dest_path)
+            self.pkgfiles[input_pkg.file.name] = pkg
 
 
-class Package(object):
+class PkgInfo(object):
 
-    def __init__(self, pkgfiles_items, outputs, workarea_path):
-        self.pkgfiles_items = pkgfiles_items
-        self.package_folder = workarea.PackageFolder(pkgfiles_items[0].path, pkgfiles_items)
-        self.outputs = outputs
-        self.wk = workarea.Workarea(workarea_path)
-        self._articles = None
-        self._articles_xml_content = None
-        self.issue_data = PackageIssueData()
-        self.issue_data.setup(self.articles)
-
-    @property
-    def articles_xml_content(self):
-        if self._articles_xml_content is None:
-            self._articles_xml_content = {item.name: article.ArticleXMLContent(fs_utils.read_file(item.filename), item.previous_name, item.name) for item in self.pkgfiles_items}
-        return self._articles_xml_content
-
-    @property
-    def articles(self):
-        if self._articles is None:
-            self._articles = {name: item.doc for name, item in self.articles_xml_content.items()}
-        return self._articles
-
-    @property
-    def is_pmc_journal(self):
-        return any([doc.journal_id_nlm_ta is not None for name, doc in self.articles.items()])
+    def __init__(self, pkgfiles, wk):
+        self.pkgfiles = pkgfiles
+        self.wk = wk
+        self.pkgfolder = pkg_wk.PkgFolder(self.pkgfiles)
+        self.articles = {k: v.article for k, v in self.pkgfiles.items()}
+        self.pkg_issue_data = PkgIssueData(self.articles)
+        self.outputs = {k: workarea.OutputFiles(k, wk.reports_path, None) for k, v in self.pkgfiles.items()}
 
 
-class PackageIssueData(object):
+class PkgIssueData(object):
 
-    def __init__(self):
+    def __init__(self, articles):
         self.pkg_journal_title = None
         self.pkg_p_issn = None
         self.pkg_e_issn = None
@@ -114,8 +98,8 @@ class PackageIssueData(object):
         self.journal = None
         self.journal_data = None
         self._issue_label = None
+        self.is_pmc_journal = any([doc.journal_id_nlm_ta is not None for name, doc in self.articles.items()])
 
-    def setup(self, articles):
         data = [(a.journal_title, a.print_issn, a.e_issn, a.issue_label) for a in articles.values() if a.tree is not None]
         if len(data) > 0:
             self.pkg_journal_title, self.pkg_p_issn, self.pkg_e_issn, self.pkg_issue_label = self.select(data)

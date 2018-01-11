@@ -6,11 +6,10 @@ from ..__init__ import _
 from . import interface
 from ..generics import encoding
 from ..generics import fs_utils
-from .data import package
 from .data import pkg
 from .data import workarea
 from .pkg_processors import mkp_pkg
-from .pkg_processors import pkg_processors
+from .data import checked_pkg
 from .config import config
 
 
@@ -23,7 +22,7 @@ def call_make_packages(args, version):
         if request.INTERATIVE is True:
             interface.display_form(False, None, requester.call_make_package_from_gui)
     else:
-        requester.execute(request.normalized_pkgfiles, request.outputs, request.GENERATE_PMC)
+        requester.execute(request.normalized_pkgfiles, request.wk, request.GENERATE_PMC)
 
 
 class Request(object):
@@ -85,8 +84,8 @@ class Request(object):
                     self.stage = 'xml'
                 else:
                     file = fs_utils.File(self.xml_list[0])
-                    wk = workarea.Workarea(file.path + '_' + self.stage)
-                    received_pkg = pkg.ReceivedPackage(self.xml_list, wk)
+                    self.wk = workarea.Workarea(file.path + '_' + self.stage)
+                    received_pkg = pkg.ReceivedPackage(self.xml_list)
                     received_pkg.normalize('remote')
                     self.normalized_pkgfiles = received_pkg.pkgfiles
                     self.outputs = received_pkg.outputs
@@ -121,7 +120,7 @@ class Requester(object):
     def __init__(self, stage, INTERATIVE=True):
         configuration = config.Configuration()
         self.stage = stage
-        self.proc = pkg_processors.PkgProcessor(configuration, INTERATIVE, stage)
+        self.parameters = checked_pkg.ValidationsParameters(configuration, INTERATIVE, stage)
 
     def call_make_package_from_gui(self, xml_path, GENERATE_PMC=False):
         encoding.display_message(_('Making package') + '...')
@@ -131,16 +130,17 @@ class Requester(object):
         wk = workarea.Workarea(file.path + '_' + self.stage)
 
         encoding.display_message('...'*2)
-        received_pkg = pkg.ReceivedPackage(xml_list, wk)
+        received_pkg = pkg.ReceivedPackage(xml_list)
         received_pkg.normalize('remote')
 
         encoding.display_message('...'*3)
-        self.execute(received_pkg.pkgfiles, received_pkg.outputs, wk, GENERATE_PMC)
+        self.execute(received_pkg.pkgfiles, wk, GENERATE_PMC)
 
         encoding.display_message('...'*4)
         return 'done', 'blue'
 
-    def execute(self, normalized_pkgfiles, outputs, wk, GENERATE_PMC=False):
+    def execute(self, normalized_pkgfiles, wk, GENERATE_PMC=False):
         if len(normalized_pkgfiles) > 0:
-            pkg = package.Package(normalized_pkgfiles, outputs, wk.path)
-            self.proc.make_package(pkg, GENERATE_PMC)
+            pkg_info = pkg.PkgInfo(normalized_pkgfiles, wk)
+            checked_pkg = checked_pkg.CheckedPackage(self.parameters, pkg_info)
+            checked_pkg.make_package(GENERATE_PMC)

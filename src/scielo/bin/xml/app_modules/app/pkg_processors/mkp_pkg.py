@@ -393,8 +393,7 @@ class PackageRenamed(object):
         self.new_name = PackageName(self.src_pkgfiles.article).generate(acron)
 
         xml_filename = dest_path + '/' + self.new_name + '.xml'
-        xmlfile = fs_utils.File(xml_filename)
-        self.dest_pkgfiles = pkg_files.ArticlePkgFiles(xmlfile)
+        self.dest_pkgfiles = pkg_files.ArticlePkgFiles(xml_filename)
         self.dest_pkgfiles.clean()
 
         self._rename_xml_href_values()
