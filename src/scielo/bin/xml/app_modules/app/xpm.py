@@ -142,5 +142,33 @@ class Requester(object):
     def execute(self, normalized_pkgfiles, wk, GENERATE_PMC=False):
         if len(normalized_pkgfiles) > 0:
             pkg_info = pkg_reception.PkgInfo(normalized_pkgfiles, wk)
-            pkg_checked = pkg_checking.CheckedPackage(self.parameters, pkg_info)
-            pkg_checked.make(GENERATE_PMC)
+
+            pkg_checker = pkg_checking.PackageChecker(
+                self.parameters, pkg_info)
+            pkg_checker.check()
+            files_location = workarea.AssetsDestinations(
+                                pkg_info.wk.scielo_package_path,
+                                pkg_info.issue_data.acron)
+
+            pkg_checker.report(files_location)
+
+            # pmc package
+            if not self.parameters.is_db_generation:
+                pmc_package_maker = pmc_pkgmaker.PMCPackageMaker(
+                    pkg_info.wk,
+                    pkg_info.articles,
+                    pkg_info.outputs)
+                if self.parameters.is_xml_generation:
+                    pmc_package_maker.make_report()
+                if pkg_info.pkg_issue_data.is_pmc_journal:
+                    if GENERATE_PMC:
+                        pmc_package_maker.make_package()
+                    else:
+                        encoding.display_message(
+                            _('To generate PMC package, add -pmc as parameter'))
+
+            # zip packages
+            if not self.parameters.is_xml_generation and not self.parameters.is_db_generation:
+                pkg_info.pkgfolder.zip()
+                for name, pkgfiles in pkg_info.pkgfiles.items():
+                    pkgfiles.zip(pkg_info.pkgfolder.path + '_zips')

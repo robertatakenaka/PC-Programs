@@ -1,35 +1,7 @@
 # coding=utf-8
 
-import os
-import shutil
-
-from ...__init__ import _
-from ...__init__ import BIN_PATH
-from ...__init__ import FST_PATH
-
-from ...generics.dbm import dbm_isis
-from ...generics import encoding
-from ...generics import fs_utils
-from ...generics import doi_validations
-from ...generics.reports import html_reports
-from ...generics.reports import validation_status
-from ..ws import institutions_manager
 from ..ws import ws_journals
-from ..validations import article_data_reports
-from ..validations import pkg_articles_validations
-from ..validations import article_validations as article_validations_module
-from ..validations import validations as validations_module
-from ..validations import reports_maker
-from ..validations import merged_articles_validations
-from ..services import institutions_normalizer
-from ..data import package
-from ..data import merged
-from ..data import pkg_wk
-from ..data import workarea
-from ..db import registered
 from ..db import xc_models
-from . import pmc_pkgmaker
-from . import sps_pkgmaker
 
 
 class Manager(object):
@@ -53,7 +25,7 @@ class Manager(object):
             ign, pkgissuedata._issue_label = registered.acron_issue_label.split(' ')
             if registered.issue_error_msg is None:
                 registered.issue_files = self.db_manager.get_issue_files(registered.issue_models)
-                registered.articles_db_manager = ArticlesManager(self.db_manager.db_isis, registered.issue_files)
+                registered.articles_db_manager = xc_models.ArticlesManager(self.db_manager.db_isis, registered.issue_files)
         return registered
 
 
