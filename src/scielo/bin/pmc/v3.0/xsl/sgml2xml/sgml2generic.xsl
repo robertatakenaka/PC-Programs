@@ -1047,16 +1047,18 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 				<xsl:when test="institid">
 					<institution-wrap>
 						<xsl:apply-templates select="institid"></xsl:apply-templates>
-						<xsl:apply-templates select="." mode="common"></xsl:apply-templates>
+						<xsl:apply-templates select="." mode="institution"></xsl:apply-templates>
 					</institution-wrap>
+					<xsl:apply-templates select="." mode="address"></xsl:apply-templates>
 				</xsl:when>
 				<xsl:otherwise>
-					<xsl:apply-templates select="." mode="common"></xsl:apply-templates>
+					<xsl:apply-templates select="." mode="institution"></xsl:apply-templates>
+					<xsl:apply-templates select="." mode="address"></xsl:apply-templates>
 				</xsl:otherwise>
 			</xsl:choose>
 		</aff>
 	</xsl:template>
-	<xsl:template match="*" mode="common">
+	<xsl:template match="*" mode="institution">
 		<institution content-type="original"><xsl:apply-templates select="*[name()!='label']|text()" mode="original"/></institution>
 		<xsl:choose>
 			<xsl:when test="@norgname">
@@ -1064,21 +1066,18 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 					<institution content-type="normalized"><xsl:value-of select="@norgname"/></institution>	
 				</xsl:if>
 				<xsl:apply-templates select="*[contains(name(),'org')]"/>
-				<xsl:if test="city or state or zipcode">
-					<addr-line>
-						<xsl:apply-templates select="city|state|zipcode"/>
-					</addr-line>
-				</xsl:if>
 			</xsl:when>				
 			<xsl:when test="@orgname">
 				<xsl:apply-templates select="@*[name()!='id']"/>
-				<xsl:if test="city or state or zipcode">
-					<addr-line>
-						<xsl:apply-templates select="city|state|zipcode"/>
-					</addr-line>
-				</xsl:if>
 			</xsl:when>				
 		</xsl:choose>
+	</xsl:template>
+	<xsl:template match="*" mode="address">
+		<xsl:if test="city or state or zipcode">
+			<addr-line>
+				<xsl:apply-templates select="city|state|zipcode"/>
+			</addr-line>
+		</xsl:if>
 		<xsl:choose>
 			<xsl:when test="@ncountry and @ncountry!='Not normalized'">
 				<xsl:apply-templates select="@ncountry"></xsl:apply-templates>
@@ -1705,31 +1704,37 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 		</xsl:if>
 	</xsl:template>
 
-	<xsl:template match="fn|fngrp[@id]" mode="has-no-xref">
+	<xsl:template match="fngrp/fn" mode="has-no-xref">
 		<xsl:if test="@id">
 			<xsl:variable name="id" select="@id"></xsl:variable>
 			<xsl:if test="not($xref_rid[@rid=$id])">
-					<xsl:variable name="fna"><xsl:apply-templates select="." mode="authorfn"/></xsl:variable>
-					<xsl:if test="normalize-space($fna)=''">
-						<xsl:choose>
-							<xsl:when test="name()='fn'">
-								<fn-group>
-									<xsl:apply-templates select="."></xsl:apply-templates>
-								</fn-group>
-							</xsl:when>
-							<xsl:otherwise>
-								<xsl:apply-templates select="."></xsl:apply-templates>
-							</xsl:otherwise>
-						</xsl:choose>
-					</xsl:if>
+				<xsl:variable name="fna"><xsl:apply-templates select="." mode="authorfn"/></xsl:variable>
+				<xsl:if test="normalize-space($fna)=''">
+					<xsl:apply-templates select="."></xsl:apply-templates>
+				</xsl:if>
 			</xsl:if>
 		</xsl:if>
 	</xsl:template>
 	
+	<xsl:template match="fngrp[@id]" mode="has-no-xref">
+		<xsl:if test="@id">
+			<xsl:variable name="id" select="@id"></xsl:variable>
+			<xsl:if test="not($xref_rid[@rid=$id])">
+				<xsl:variable name="fna"><xsl:apply-templates select="." mode="authorfn"/></xsl:variable>
+				<xsl:if test="normalize-space($fna)=''">
+					<fn-group>
+						<xsl:apply-templates select="."></xsl:apply-templates>
+					</fn-group>
+				</xsl:if>
+			</xsl:if>
+		</xsl:if>
+	</xsl:template>
+
 	<xsl:template match="fngrp[fn]" mode="has-no-xref">
 		<xsl:variable name="test"><xsl:apply-templates select="fn" mode="has-no-xref"/></xsl:variable>
 		<xsl:if test="normalize-space($test)!=''">
 			<fn-group>
+				<xsl:apply-templates select="sectitle"/>
 				<xsl:apply-templates select="fn" mode="has-no-xref"></xsl:apply-templates>
 			</fn-group>
 		</xsl:if>
