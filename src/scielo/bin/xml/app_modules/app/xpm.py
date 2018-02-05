@@ -133,7 +133,6 @@ class Requester(object):
     def __init__(self, stage, INTERATIVE=True):
         self.configuration = config.Configuration()
         self.stage = stage
-        self.parameters = pkg_checking.ValidationsParameters(self.configuration, INTERATIVE, stage)
         self.reception = pkg_reception.Reception(manager.Manager(self.configuration))
 
     def call_make_package_from_gui(self, xml_path, GENERATE_PMC=False):
@@ -156,23 +155,24 @@ class Requester(object):
     def execute(self, rcvd_pkg, GENERATE_PMC=False):
         if rcvd_pkg is not None and len(rcvd_pkg.normalized_pkgfiles) > 0:
 
-            pkg_checker = pkg_checking.PackageChecker(
-                self.parameters, rcvd_pkg)
-            pkg_checker.check()
+            pkg_checker = pkg_checking.PkgChecker(
+                self.configuration, self.stage)
+            checking = pkg_checking.PkgChecking(pkg_checker, rcvd_pkg)
+            checking.check()
 
             files_location = workarea.AssetsDestinations(
                                 rcvd_pkg.wk.scielo_package_path,
                                 rcvd_pkg.issue_data.acron)
 
-            pkg_checker.report(files_location)
+            checking.report(files_location)
 
             # pmc package
-            if not self.parameters.is_db_generation:
+            if not pkg_checker.is_db_generation:
                 pmc_package_maker = pmc_pkgmaker.PMCPackageMaker(
                     rcvd_pkg.wk,
                     rcvd_pkg.articles,
                     rcvd_pkg.outputs)
-                if self.parameters.is_xml_generation:
+                if pkg_checker.is_xml_generation:
                     pmc_package_maker.make_report()
                 if rcvd_pkg.pkg_issue_data.is_pmc_journal:
                     if GENERATE_PMC:
@@ -182,7 +182,7 @@ class Requester(object):
                             _('To generate PMC package, add -pmc as parameter'))
 
             # zip packages
-            if not self.parameters.is_xml_generation and not self.parameters.is_db_generation:
+            if not pkg_checker.is_xml_generation and not pkg_checker.is_db_generation:
                 rcvd_pkg.pkgfolder.zip()
                 for name, pkgfiles in rcvd_pkg.pkgfiles.items():
                     pkgfiles.zip(rcvd_pkg.pkgfolder.path + '_zips')

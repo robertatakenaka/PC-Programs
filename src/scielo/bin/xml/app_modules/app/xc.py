@@ -11,6 +11,8 @@ from ..generics import fs_utils
 from ..generics import xml_utils
 from .data import pkg_reception
 from .data import workarea
+from .pkg_processors import pkg_checking
+from .pkg_processors import pkg_conversion
 from .db import manager
 from .config import config
 from .server import mailer
@@ -56,12 +58,12 @@ class XC_Reception(object):
         self.manager = manager.Manager(self.configuration)
         self.mailer = mailer.Mailer(configuration)
         self.transfer = filestransfer.FilesTransfer(configuration)
-        self.parameters = pkg_checking.ValidationsParameters(configuration, INTERATIVE=configuration.interative_mode, stage='xc')
+        self.stage = 'xc'
 
     def display_form(self):
         if self.configuration.interative_mode is True:
             from . import interface
-            interface.display_form(self.parameters.stage == 'xc', None, self.call_convert_package)
+            interface.display_form(self.stage == 'xc', None, self.call_convert_package)
 
     def call_convert_package(self, package_path):
         self.convert_package(package_path)
@@ -94,12 +96,16 @@ class XC_Reception(object):
                                 self.configuration.local_web_app_path,
                                 self.configuration.web_app_site)
 
+                pkg_checker = pkg_checking.PkgChecker(
+                    self.configuration, self.stage)
+                checking = pkg_checking.PkgChecking(pkg_checker, rcvd_pkg)
+                checking.check()
+
                 pkg_checker = pkg_checking.PackageChecker(
                     self.parameters, rcvd_pkg)
                 pkg_checker.check()
 
                 pkg_converter = pkg_conversion.PkgConverter(
-                    pkg_checker.registered,
                     rcvd_pkg,
                     pkg_checker.validations_reports,
                     not self.configuration.interative_mode,

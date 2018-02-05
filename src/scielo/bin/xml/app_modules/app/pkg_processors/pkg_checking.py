@@ -18,7 +18,6 @@ from ..validations import merged_articles_validations
 
 from ..services import institutions_normalizer
 from ..data import merged
-from ..db import manager
 
 
 def xpm_version():
@@ -37,65 +36,6 @@ def xpm_version():
     encoding.debugging('version', version)
     major_version, minor_version = version.split('|')
     return major_version, minor_version
-
-
-class PackageChecker(object):
-
-    def __init__(self, validations_parameters, rcvd_pkg):
-        self.rcvd_pkg = rcvd_pkg
-        self.parameters = validations_parameters
-
-    def check(self):
-        self.normalize_pkg_affiliations()
-        self.validate_package()
-        self.validate_merged_articles()
-
-    def report(self, files_location, pkg_converter=None):
-        self.generate_reports()
-        self.generate_main_report(files_location, pkg_converter)
-
-    def normalize_pkg_affiliations(self):
-        for xml_name, a in self.rcvd_pkg.articles.items():
-            if a is not None:
-                for aff_xml in a.affiliations:
-                    if aff_xml is not None and aff_xml.id is not None:
-                        normalized, variations = self.paramters.validators.aff_normalizer.normalize_institution_data(aff_xml.aff)
-                        a.normalized_affiliations[aff_xml.id].normalized = normalized
-                        a.normalized_affiliations[aff_xml.id].variations = variations
-
-    def validate_package(self):
-        article_validator = self.validator.article_validator(self.rcvd_pkg, self.parameters.is_xml_generation)
-        encoding.display_message(_('Validate package ({n} files)').format(n=len(self.rcvd_pkg.articles)))
-        self.pkg_validations = {}
-        for name in sorted(self.rcvd_pkg.pkgfiles.keys()):
-            pkgfiles = self.rcvd_pkg.pkgfiles[name]
-            encoding.display_message(_('Validate {name}').format(name=name))
-            self.pkg_validations[name] = article_validator.validate(pkgfiles.article, self.rcvd_pkg.outputs[name], pkgfiles)
-
-    def validate_merged_articles(self):
-        if len(self.rcvd_pkg.registered.registered_articles) > 0:
-            encoding.display_message(_('Previously registered: ({n} files)').format(n=len(self.rcvd_pkg.registered.registered_articles)))
-        self.articles_mergence = merged.ArticlesMergence(
-            self.rcvd_pkg.registered.registered_articles,
-            self.rcvd_pkg.articles,
-            self.parameters.is_db_generation)
-
-    def generate_reports(self):
-        pkg_reports = pkg_articles_validations.PkgArticlesValidationsReports(self.pkg_validations, self.rcvd_pkg.registered.articles_db_manager is not None)
-        mergence_reports = merged_articles_validations.MergedArticlesReports(self.articles_mergence, self.rcvd_pkg.registered)
-        self.validations_reports = merged_articles_validations.IssueArticlesValidationsReports(pkg_reports, mergence_reports, self.parameters.is_xml_generation)
-
-    def generate_main_report(self, files_location, pkg_converter=None):
-        self.files_location = files_location
-        self.main_report = reports_maker.ReportsMaker(
-                    self.rcvd_pkg,
-                    self.validations_reports,
-                    files_location,
-                    self.parameters.stage,
-                    self.parameters.xpm_version,
-                    pkg_converter)
-        if not self.parameters.is_xml_generation:
-            self.main_report.save_report(self.parameters.INTERATIVE)
 
 
 class PkgChecking(object):
@@ -161,7 +101,7 @@ class PkgChecking(object):
                     self.pkg_checker.xpm_version,
                     pkg_converter)
         if not self.pkg_checker.is_xml_generation:
-            self.main_report.save_report(self.parameters.INTERATIVE)
+            self.main_report.save_report(self.pkg_checker.INTERATIVE)
 
 
 class PkgChecker(object):
@@ -175,6 +115,7 @@ class PkgChecker(object):
         self.is_xml_generation = stage == 'xml'
         self.is_db_generation = stage == 'xc'
         self.xpm_version = xpm_version() if stage == 'xpm' else None
+        self.INTERATIVE = config.interative_mode and stage in ['xc', 'xpm']
 
     def get_article_validator(self, rcvd_pkg):
         xml_journal_data_validator = article_validations_module.XMLJournalDataValidator(rcvd_pkg.issue_data.journal_data)
