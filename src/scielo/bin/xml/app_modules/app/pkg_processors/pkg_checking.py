@@ -47,10 +47,10 @@ class Validators(object):
         self.aff_normalizer = institutions_normalizer.InstitutionsNormalizer(self.app_institutions_manager)
         self.doi_validator = doi_validations.DOIValidator(self.config.app_ws_requester)
 
-    def article_validator(self, pkg, _registered, is_xml_generation):
-        xml_journal_data_validator = article_validations_module.XMLJournalDataValidator(pkg.issue_data.journal_data)
-        xml_issue_data_validator = article_validations_module.XMLIssueDataValidator(_registered)
-        xml_content_validator = article_validations_module.XMLContentValidator(pkg.issue_data, _registered, is_xml_generation, self.app_institutions_manager, self.doi_validator, self.config)
+    def article_validator(self, rcvd_pkg, is_xml_generation):
+        xml_journal_data_validator = article_validations_module.XMLJournalDataValidator(rcvd_pkg.issue_data.journal_data)
+        xml_issue_data_validator = article_validations_module.XMLIssueDataValidator(rcvd_pkg.registered)
+        xml_content_validator = article_validations_module.XMLContentValidator(rcvd_pkg.issue_data, rcvd_pkg.registered, is_xml_generation, self.app_institutions_manager, self.doi_validator, self.config)
         return article_validations_module.ArticleValidator(xml_journal_data_validator, xml_issue_data_validator, xml_content_validator, self.config.xml_structure_validator_preference)
 
 
@@ -69,10 +69,9 @@ class ValidationsParameters(object):
 
 class PackageChecker(object):
 
-    def __init__(self, validations_parameters, pkg_info):
-        self.pkg_info = pkg_info
+    def __init__(self, validations_parameters, rcvd_pkg):
+        self.rcvd_pkg = rcvd_pkg
         self.parameters = validations_parameters
-        self.registered = self.parameters.manager.get_registered(pkg_info.pkg_issue_data)
 
     def check(self):
         self.normalize_pkg_affiliations()
@@ -84,7 +83,7 @@ class PackageChecker(object):
         self.generate_main_report(files_location, pkg_converter)
 
     def normalize_pkg_affiliations(self):
-        for xml_name, a in self.pkg_info.articles.items():
+        for xml_name, a in self.rcvd_pkg.articles.items():
             if a is not None:
                 for aff_xml in a.affiliations:
                     if aff_xml is not None and aff_xml.id is not None:
@@ -93,31 +92,31 @@ class PackageChecker(object):
                         a.normalized_affiliations[aff_xml.id].variations = variations
 
     def validate_package(self):
-        article_validator = self.validator.article_validator(self.pkg_info, self.registered, self.parameters.is_xml_generation)
-        encoding.display_message(_('Validate package ({n} files)').format(n=len(self.pkg_info.articles)))
+        article_validator = self.validator.article_validator(self.rcvd_pkg, self.parameters.is_xml_generation)
+        encoding.display_message(_('Validate package ({n} files)').format(n=len(self.rcvd_pkg.articles)))
         self.pkg_validations = {}
-        for name in sorted(self.pkg_info.pkgfiles.keys()):
-            pkgfiles = self.pkg_info.pkgfiles[name]
+        for name in sorted(self.rcvd_pkg.pkgfiles.keys()):
+            pkgfiles = self.rcvd_pkg.pkgfiles[name]
             encoding.display_message(_('Validate {name}').format(name=name))
-            self.pkg_validations[name] = article_validator.validate(pkgfiles.article, self.pkg_info.outputs[name], pkgfiles)
+            self.pkg_validations[name] = article_validator.validate(pkgfiles.article, self.rcvd_pkg.outputs[name], pkgfiles)
 
     def validate_merged_articles(self):
-        if len(self.registered.registered_articles) > 0:
-            encoding.display_message(_('Previously registered: ({n} files)').format(n=len(self.registered.registered_articles)))
+        if len(self.rcvd_pkg.registered.registered_articles) > 0:
+            encoding.display_message(_('Previously registered: ({n} files)').format(n=len(self.rcvd_pkg.registered.registered_articles)))
         self.articles_mergence = merged.ArticlesMergence(
-            self.registered.registered_articles,
-            self.pkg_info.articles,
+            self.rcvd_pkg.registered.registered_articles,
+            self.rcvd_pkg.articles,
             self.parameters.is_db_generation)
 
     def generate_reports(self):
-        pkg_reports = pkg_articles_validations.PkgArticlesValidationsReports(self.pkg_validations, self.registered.articles_db_manager is not None)
-        mergence_reports = merged_articles_validations.MergedArticlesReports(self.articles_mergence, self.registered)
+        pkg_reports = pkg_articles_validations.PkgArticlesValidationsReports(self.pkg_validations, self.rcvd_pkg.registered.articles_db_manager is not None)
+        mergence_reports = merged_articles_validations.MergedArticlesReports(self.articles_mergence, self.rcvd_pkg.registered)
         self.validations_reports = merged_articles_validations.IssueArticlesValidationsReports(pkg_reports, mergence_reports, self.parameters.is_xml_generation)
 
     def generate_main_report(self, files_location, pkg_converter=None):
         self.files_location = files_location
         self.main_report = reports_maker.ReportsMaker(
-                    self.pkg_info,
+                    self.rcvd_pkg,
                     self.validations_reports,
                     files_location,
                     self.parameters.stage,

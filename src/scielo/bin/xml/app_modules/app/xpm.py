@@ -9,20 +9,26 @@ from ..generics import fs_utils
 from .data import pkg_reception
 from .data import pkg_checking
 from .data import workarea
+from .db import manager
 from .pkg_processors import mkp_pkg
+from .pkg_processors import pmc_pkgmaker
+
 from .config import config
 
 
 def call_make_packages(args, version):
+    reception = pkg_reception.Reception(manager.Manager(config.Configuration()))
+
     request = Request(args)
     request.read()
-    request.get_pkg_data()
+    request.get_pkg_data(reception)
+
     requester = Requester(request.stage, request.INTERATIVE)
     if request.normalized_pkgfiles is None:
         if request.INTERATIVE is True:
             interface.display_form(False, None, requester.call_make_package_from_gui)
     else:
-        requester.execute(request.normalized_pkgfiles, request.wk, request.GENERATE_PMC)
+        requester.execute(request.rcvd_pkg, request.GENERATE_PMC)
 
 
 class Request(object):
@@ -70,7 +76,7 @@ class Request(object):
             return False
         return True
 
-    def get_pkg_data(self):
+    def get_pkg_data(self, reception):
         self.stage = 'xpm'
         self.normalized_pkgfiles = None
         self.outputs = {}
@@ -79,16 +85,23 @@ class Request(object):
                 if self.sgm_xml is not None:
                     scielo_pm = mkp_pkg.MarkupPackage(self.sgm_xml, self.acron)
                     scielo_pm.make()
+                    self.wk = scielo_pm.wk_area
                     self.outputs = {scielo_pm.xml_pkgfiles.name: scielo_pm.sgmxml_outputs}
                     self.normalized_pkgfiles = [scielo_pm.xml_pkgfiles]
+                    self.rcvd_pkg = reception.receive(
+                        self.normalized_pkgfiles,
+                        self.wk,
+                        self.outputs)
                     self.stage = 'xml'
                 else:
                     file = fs_utils.File(self.xml_list[0])
                     self.wk = workarea.Workarea(file.path + '_' + self.stage)
-                    pkg_received = pkg_reception.ReceivedPackage(self.xml_list)
-                    pkg_received.normalize('remote')
-                    self.normalized_pkgfiles = pkg_received.pkgfiles
-                    self.outputs = pkg_received.outputs
+                    self.normalized_pkgfiles = reception.normalize(
+                        self.xml_list, 'remote', self.wk.scielo_package_path)
+                    self.rcvd_pkg = reception.receive(
+                        self.normalized_pkgfiles,
+                        self.wk,
+                        None)
 
     def evaluate_xml_path(self):
         errors = []
@@ -118,9 +131,10 @@ class Request(object):
 class Requester(object):
 
     def __init__(self, stage, INTERATIVE=True):
-        configuration = config.Configuration()
+        self.configuration = config.Configuration()
         self.stage = stage
-        self.parameters = pkg_checking.ValidationsParameters(configuration, INTERATIVE, stage)
+        self.parameters = pkg_checking.ValidationsParameters(self.configuration, INTERATIVE, stage)
+        self.reception = pkg_reception.Reception(manager.Manager(self.configuration))
 
     def call_make_package_from_gui(self, xml_path, GENERATE_PMC=False):
         encoding.display_message(_('Making package') + '...')
@@ -129,38 +143,38 @@ class Requester(object):
         file = fs_utils.File(xml_list[0])
         wk = workarea.Workarea(file.path + '_' + self.stage)
 
-        encoding.display_message('...'*2)
-        pkg_received = pkg_reception.ReceivedPackage(xml_list)
-        pkg_received.normalize('remote')
+        normalized_pkgfiles = self.reception.normalize(
+            xml_list, 'remote', self.wk.scielo_package_path)
+        rcvd_pkg = self.reception.receive(normalized_pkgfiles, wk, None)
 
         encoding.display_message('...'*3)
-        self.execute(pkg_received.pkgfiles, wk, GENERATE_PMC)
+        self.execute(rcvd_pkg, GENERATE_PMC)
 
         encoding.display_message('...'*4)
         return 'done', 'blue'
 
-    def execute(self, normalized_pkgfiles, wk, GENERATE_PMC=False):
-        if len(normalized_pkgfiles) > 0:
-            pkg_info = pkg_reception.PkgInfo(normalized_pkgfiles, wk)
+    def execute(self, rcvd_pkg, GENERATE_PMC=False):
+        if rcvd_pkg is not None and len(rcvd_pkg.normalized_pkgfiles) > 0:
 
             pkg_checker = pkg_checking.PackageChecker(
-                self.parameters, pkg_info)
+                self.parameters, rcvd_pkg)
             pkg_checker.check()
+
             files_location = workarea.AssetsDestinations(
-                                pkg_info.wk.scielo_package_path,
-                                pkg_info.issue_data.acron)
+                                rcvd_pkg.wk.scielo_package_path,
+                                rcvd_pkg.issue_data.acron)
 
             pkg_checker.report(files_location)
 
             # pmc package
             if not self.parameters.is_db_generation:
                 pmc_package_maker = pmc_pkgmaker.PMCPackageMaker(
-                    pkg_info.wk,
-                    pkg_info.articles,
-                    pkg_info.outputs)
+                    rcvd_pkg.wk,
+                    rcvd_pkg.articles,
+                    rcvd_pkg.outputs)
                 if self.parameters.is_xml_generation:
                     pmc_package_maker.make_report()
-                if pkg_info.pkg_issue_data.is_pmc_journal:
+                if rcvd_pkg.pkg_issue_data.is_pmc_journal:
                     if GENERATE_PMC:
                         pmc_package_maker.make_package()
                     else:
@@ -169,6 +183,6 @@ class Requester(object):
 
             # zip packages
             if not self.parameters.is_xml_generation and not self.parameters.is_db_generation:
-                pkg_info.pkgfolder.zip()
-                for name, pkgfiles in pkg_info.pkgfiles.items():
-                    pkgfiles.zip(pkg_info.pkgfolder.path + '_zips')
+                rcvd_pkg.pkgfolder.zip()
+                for name, pkgfiles in rcvd_pkg.pkgfiles.items():
+                    pkgfiles.zip(rcvd_pkg.pkgfolder.path + '_zips')

@@ -53,13 +53,13 @@ class ArticlePkgFiles(pkg_wk.PkgFiles):
         return files
 
 
-class ReceivedPackage(object):
+class Reception(object):
 
-    def __init__(self, xml_list):
-        self.xml_list = xml_list
+    def __init__(self, manager):
+        self.manager = manager
 
-    def normalize(self, dtd_location_type, dest_path):
-        self.pkgfiles = {}
+    def normalize(self, xml_list, dtd_location_type, dest_path):
+        pkgfiles = {}
         for item in self.xml_list:
             input_pkg = ArticlePkgFiles(item)
             input_pkg.tiff2jpg()
@@ -74,18 +74,28 @@ class ReceivedPackage(object):
             pkg.file.content = xmlcontent.content
             pkg.file.write()
             input_pkg.copy_related_files(dest_path)
-            self.pkgfiles[input_pkg.file.name] = pkg
+            pkgfiles[input_pkg.file.name] = pkg
+        return pkgfiles
+
+    def receive(self, pkgfiles, wk, outputs):
+        received = ReceivedPackage(pkgfiles, wk, outputs)
+        received.registered = self.manager.get_registered(
+            received.pkg_issue_data)
+        return received
 
 
-class PkgInfo(object):
+class ReceivedPackage(object):
 
-    def __init__(self, pkgfiles, wk):
+    def __init__(self, pkgfiles, wk, outputs):
         self.pkgfiles = pkgfiles
         self.wk = wk
         self.pkgfolder = pkg_wk.PkgFolder(self.pkgfiles)
         self.articles = {k: v.article for k, v in self.pkgfiles.items()}
         self.pkg_issue_data = PkgIssueData(self.articles)
-        self.outputs = {k: workarea.OutputFiles(k, wk.reports_path, None) for k, v in self.pkgfiles.items()}
+        self.outputs = outputs
+        if outputs is None:
+            self.outputs = {k: workarea.OutputFiles(k, wk.reports_path, None) for k, v in self.pkgfiles.items()}
+        self.registered = None
 
 
 class PkgIssueData(object):

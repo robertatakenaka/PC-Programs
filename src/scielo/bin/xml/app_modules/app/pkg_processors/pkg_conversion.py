@@ -41,13 +41,12 @@ categories_messages = {
 
 class PkgConverter(object):
 
-    def __init__(self, registered, pkg, validations_reports, create_windows_base, web_app_path, web_app_site):
+    def __init__(self, rcvd_pkg, validations_reports, create_windows_base, web_app_path, web_app_site):
+        self.rcvd_pkg = rcvd_pkg
         self.create_windows_base = create_windows_base
-        self.registered = registered
-        self.db = self.registered.articles_db_manager
+        self.db = self.rcv_pkg.registered.articles_db_manager
         self.local_web_app_path = web_app_path
         self.web_app_site = web_app_site
-        self.pkg = pkg
         self.validations_reports = validations_reports
         self.articles_mergence = validations_reports.merged_articles_reports.articles_mergence
         self.error_messages = []
@@ -55,11 +54,11 @@ class PkgConverter(object):
 
     def convert(self):
         self.articles_conversion_validations = validations_module.ValidationsResultItems()
-        scilista_items = [self.pkg.issue_data.acron_issue_label]
-        if self.validations_reports.blocking_errors == 0 and (self.accepted_articles == len(self.pkg.articles) or len(self.articles_mergence.excluded_orders) > 0):
+        scilista_items = [self.rcvd_pkg.issue_data.acron_issue_label]
+        if self.validations_reports.blocking_errors == 0 and (self.accepted_articles == len(self.rcvd_pkg.articles) or len(self.articles_mergence.excluded_orders) > 0):
             self.error_messages = self.db.exclude_articles(self.articles_mergence.excluded_orders)
 
-            _scilista_items = self.db.convert_articles(self.pkg.issue_data.acron_issue_label, self.articles_mergence.accepted_articles, self.registered.issue_models.record, self.create_windows_base)
+            _scilista_items = self.db.convert_articles(self.rcvd_pkg.issue_data.acron_issue_label, self.articles_mergence.accepted_articles, self.rcv_pkg.registered.issue_models.record, self.create_windows_base)
             scilista_items.extend(_scilista_items)
             self.conversion_status.update(self.db.db_conversion_status)
 
@@ -69,8 +68,8 @@ class PkgConverter(object):
 
             if len(_scilista_items) > 0:
                 # IMPROVEME
-                self.registered.issue_files.copy_files_to_local_web_app(self.pkg.package_folder.path, self.local_web_app_path)
-                self.registered.issue_files.save_source_files(self.pkg.package_folder.path)
+                self.rcv_pkg.registered.issue_files.copy_files_to_local_web_app(self.rcvd_pkg.pkgfolder.path, self.local_web_app_path)
+                self.rcv_pkg.registered.issue_files.save_source_files(self.rcvd_pkg.pkgfolder.path)
                 self.replace_ex_aop_pdf_files()
 
         return scilista_items
@@ -90,7 +89,7 @@ class PkgConverter(object):
             aop_pdf_path = self.local_web_app_path + '/bases/pdf/' + folder
             if not os.path.isdir(aop_pdf_path):
                 os.makedirs(aop_pdf_path)
-            issue_pdf_path = self.local_web_app_path + '/bases/pdf/' + self.pkg.issue_data.acron_issue_label.replace(' ', '/')
+            issue_pdf_path = self.local_web_app_path + '/bases/pdf/' + self.rcvd_pkg.issue_data.acron_issue_label.replace(' ', '/')
 
             issue_pdf_files = [f for f in os.listdir(issue_pdf_path) if f.startswith(xml_name) or f[2:].startswith('_'+xml_name)]
 
@@ -144,7 +143,7 @@ class PkgConverter(object):
 
     @property
     def acron_issue_label(self):
-        return self.pkg.issue_data.acron_issue_label
+        return self.rcvd_pkg.issue_data.acron_issue_label
 
     @property
     def accepted_articles(self):

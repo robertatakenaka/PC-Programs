@@ -11,6 +11,7 @@ from ..generics import fs_utils
 from ..generics import xml_utils
 from .data import pkg_reception
 from .data import workarea
+from .db import manager
 from .config import config
 from .server import mailer
 from .server import filestransfer
@@ -52,7 +53,7 @@ class XC_Reception(object):
 
     def __init__(self, configuration):
         self.configuration = configuration
-
+        self.manager = manager.Manager(self.configuration)
         self.mailer = mailer.Mailer(configuration)
         self.transfer = filestransfer.FilesTransfer(configuration)
         self.parameters = pkg_checking.ValidationsParameters(configuration, INTERATIVE=configuration.interative_mode, stage='xc')
@@ -73,9 +74,10 @@ class XC_Reception(object):
         wk = workarea.Workarea(package_path + '_xc')
 
         items = [item for item in os.listdir(package_path) if item.endswith('.xml')]
-        received = pkg_reception.ReceivedPackage(items)
-        received.normalize('local')
-        pkg_info = pkg_reception.PkgInfo(received.pkgfiles, wk)
+
+        reception = pkg_reception.Reception(self.manager)
+        pkgfiles = reception.normalize(items, 'local', wk.scielo_package_path)
+        rcvd_pkg = reception.receive(pkgfiles, wk, None)
 
         encoding.display_message(package_path)
         xc_status = 'interrupted'
@@ -83,22 +85,22 @@ class XC_Reception(object):
         scilista_items = []
 
         try:
-            if len(pkg_info.articles) > 0:
+            if len(rcvd_pkg.articles) > 0:
                 files_location = workarea.AssetsDestinations(
-                                pkg_info.wk.scielo_package_path,
-                                pkg_info.issue_data.acron,
-                                pkg_info.issue_data.issue_label,
+                                rcvd_pkg.wk.scielo_package_path,
+                                rcvd_pkg.issue_data.acron,
+                                rcvd_pkg.issue_data.issue_label,
                                 self.configuration.serial_path,
                                 self.configuration.local_web_app_path,
                                 self.configuration.web_app_site)
 
                 pkg_checker = pkg_checking.PackageChecker(
-                    self.parameters, pkg_info)
+                    self.parameters, rcvd_pkg)
                 pkg_checker.check()
 
                 pkg_converter = pkg_conversion.PkgConverter(
                     pkg_checker.registered,
-                    pkg_info,
+                    rcvd_pkg,
                     pkg_checker.validations_reports,
                     not self.configuration.interative_mode,
                     self.configuration.local_web_app_path,
@@ -111,7 +113,7 @@ class XC_Reception(object):
                 if pkg_checker.registered.issue_files is not None:
                     pkg_checker.registered.issue_files.save_reports(files_location.report_path)
                 if self.configuration.web_app_site is not None:
-                    for article_files in pkg_info.pkgfiles.values():
+                    for article_files in rcvd_pkg.pkgfiles.values():
                         # copia os xml para report path
                         article_files.copy_xml(files_location.report_path)
 
@@ -125,8 +127,8 @@ class XC_Reception(object):
 
             if self.configuration.queue_path is not None:
                 fs_utils.delete_file_or_folder(package_path)
-            self.mailer.mail_step1_failure(pkg_info.pkgfolder.name, e)
-            encoding.report_exception('convert_package', e, pkg_info.pkgfolder.name)
+            self.mailer.mail_step1_failure(rcvd_pkg.pkgfolder.name, e)
+            encoding.report_exception('convert_package', e, rcvd_pkg.pkgfolder.name)
             raise
         if len(scilista_items) > 0:
             acron, issue_id = scilista_items[0].split(' ')
@@ -136,16 +138,16 @@ class XC_Reception(object):
                         fs_utils.append_file(self.configuration.collection_scilista, '\n'.join(scilista_items) + '\n')
                     self.transfer.transfer_website_files(acron, issue_id)
             except Exception as e:
-                self.mailer.mail_step2_failure(pkg_info.pkgfolder.name, e)
+                self.mailer.mail_step2_failure(rcvd_pkg.pkgfolder.name, e)
                 raise
             try:
                 if mail_info is not None and self.configuration.email_subject_package_evaluation is not None:
                     mail_subject, mail_content = mail_info
-                    self.mailer.mail_results(pkg_info.pkgfolder.name, mail_subject, mail_content)
+                    self.mailer.mail_results(rcvd_pkg.pkgfolder.name, mail_subject, mail_content)
                 self.transfer.transfer_report_files(acron, issue_id)
 
             except Exception as e:
-                self.mailer.mail_step3_failure(pkg_info.pkgfolder.name, e)
+                self.mailer.mail_step3_failure(rcvd_pkg.pkgfolder.name, e)
                 if len(package_path) == 1:
                     encoding.report_exception('convert_package()', e, 'exception as step 3')
         encoding.display_message(_('finished'))

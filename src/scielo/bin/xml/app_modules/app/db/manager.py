@@ -2,6 +2,7 @@
 
 from ..ws import ws_journals
 from ..db import xc_models
+from ..data import registered as registered_module
 
 
 class Manager(object):
@@ -15,7 +16,7 @@ class Manager(object):
         self.registered_issues_manager = xc_models.RegisteredIssuesManager(self.db_manager, self.journals_list)
 
     def get_registered(self, pkgissuedata):
-        registered = Registered()
+        registered = registered_module.Registered()
         if self.db_manager is None:
             journals_list = self.journals_list
             pkgissuedata.journal = self.journals_list.get_journal(pkgissuedata.pkg_p_issn, pkgissuedata.pkg_e_issn, pkgissuedata.pkg_journal_title)
@@ -27,18 +28,3 @@ class Manager(object):
                 registered.issue_files = self.db_manager.get_issue_files(registered.issue_models)
                 registered.articles_db_manager = xc_models.ArticlesManager(self.db_manager.db_isis, registered.issue_files)
         return registered
-
-
-class Registered(object):
-
-    def __init__(self):
-        self.issue_error_msg = None
-        self.issue_models = None
-        self.issue_files = None
-        self.articles_db_manager = None
-
-    @property
-    def registered_articles(self):
-        if self.articles_db_manager is not None:
-            return self.articles_db_manager.registered_articles
-        return {}
