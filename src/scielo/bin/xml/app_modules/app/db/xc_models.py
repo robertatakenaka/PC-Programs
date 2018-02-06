@@ -16,9 +16,10 @@ from ..data.article import Issue, Article, Journal
 from ..data.article import PersonAuthor, CorpAuthor, AnonymousAuthor
 from ..data import attr_doctopics
 from ..data import attr_contribs
-from ..db import serial
+# FIXME
 from ..validations import article_data_reports
 from .. import article_utils
+from . import serial
 
 
 ISSN_TYPE_CONVERSION = {

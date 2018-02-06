@@ -5,8 +5,6 @@ from app_modules.generics import system
 from app_modules.__init__ import appcaller
 from app_modules.__init__ import BIN_XML_PATH
 
-from app_modules.app.config import app_caller
-
 
 def execute(parameters):
     appcaller.execute(

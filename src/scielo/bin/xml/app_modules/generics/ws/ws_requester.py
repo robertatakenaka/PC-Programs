@@ -4,26 +4,13 @@ import json
 import socket
 
 try:
-    import urllib.request as urllib_request
     from urllib.parse import urlencode as urllib_parse_urlencode
-    from urllib.parse import urlparse, urlencode
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError, URLError
 except ImportError:
-    import urllib as urllib_request
     from urllib import urlencode as urllib_parse_urlencode
-
-    from urlparse import urlparse
-    from urllib import urlencode
     from urllib2 import urlopen, Request, HTTPError, URLError
 
-try:
-    import tkinter as tk
-except ImportError:
-    try:
-        import Tkinter as tk
-    except:
-        print('no Tkinter')
 
 from .. import encoding
 from . import ws_proxy
@@ -129,7 +116,10 @@ class WebServicesRequester(object):
         if url is not None:
             r = self.request(url, timeout, debug)
             if r is not None:
-                result = json.loads(encoding.encode(r))
+                try:
+                    result = json.loads(encoding.encode(r))
+                except:
+                    result = None
         return result
 
     def is_valid_url(self, url, timeout=30):
