@@ -2,7 +2,7 @@
 
 from ..data import registered
 from ...generics.reports import validation_status
-from ..validations import article_data_reports
+from ..validations import article_diffs
 
 
 ACTION_DELETE = 'delete'
@@ -29,7 +29,7 @@ HISTORY_NAME_CHANGED = 'name changed'
 HISTORY_REPLACED_BY = 'replaced by'
 
 
-class MergedArticlesData(object):
+class Merged(object):
 
     def __init__(self, merged_articles, is_db_generation):
         self.merged_articles = merged_articles
@@ -240,7 +240,7 @@ class ArticlesMergence(object):
         for k, a_name in self.pkg_articles_by_order_and_name.items():
             registered_name = self.registered_articles_by_order_and_name.get(k)
             if registered_name is not None:
-                article_comparison = article_data_reports.ArticlesComparison(
+                article_comparison = article_diffs.ArticlesComparison(
                     self.registered_articles.get(a_name),
                     self.articles.get(a_name))
                 if not article_comparison.are_similar:
@@ -325,7 +325,7 @@ class ArticlesMergence(object):
         return solved
 
     def are_similar(self, registered_name, pkg_name, ign_name, ign_order):
-        article_comparison = article_data_reports.ArticlesComparison(
+        article_comparison = article_diffs.ArticlesComparison(
                 self.registered_articles.get(registered_name),
                 self.articles.get(pkg_name),
                 ign_name,

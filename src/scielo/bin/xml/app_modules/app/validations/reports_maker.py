@@ -7,15 +7,15 @@ from ...generics import utils
 from ...generics import encoding
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
-from . import article_data_reports
-from . import pkg_articles_validations
+from . import article_data_reports 
+from . import pkg_articles_validations # FIXME
 from . import validations as validations_module
 
 
 class ReportsMaker(object):
 
-    def __init__(self, pkg, articles_validations_reports, files_location, stage, xpm_version=None, conversion=None):
-        self.articles_validations_reports = articles_validations_reports
+    def __init__(self, rcvd_pkg, checking_reports, files_location, stage, xpm_version=None, conversion=None):
+        self.checking_reports = checking_reports
         self.conversion = conversion
         self.xpm_version = xpm_version
         self.stage = stage
@@ -24,9 +24,10 @@ class ReportsMaker(object):
         if self.stage == 'xc':
             self.report_version = '_' + datetime.now().isoformat()[0:19].replace(':', '').replace('T', '_')
         self.files_location = files_location
-        self.pkg = pkg
-        self.pkg_reports = pkg_articles_validations.PackageReports(pkg.package_folder)
-        self.pkg_articles_data_report = pkg_articles_validations.PkgArticlesDataReports(pkg.articles)
+        self.rcvd_pkg = rcvd_pkg
+        # FIXME
+        self.pkg_reports = pkg_articles_validations.PackageReports(rcvd_pkg.pkgfolder)
+        self.pkg_articles_data_report = pkg_articles_validations.PkgArticlesDataReports(rcvd_pkg.articles)
 
         self.tab = 'summary-report'
         if self.stage == 'xpm':
@@ -86,16 +87,16 @@ class ReportsMaker(object):
     @property
     def group_validations_report(self):
         r = self.pkg_reports.orphan_files_report + self.pkg_articles_data_report.invalid_xml_report
-        if not self.articles_validations_reports.is_xml_generation:
-            r += self.articles_validations_reports.journal_and_issue_report
+        if not self.checking_reports.is_xml_generation:
+            r += self.checking_reports.journal_and_issue_report
         if self.conversion is not None:
-            if self.articles_validations_reports.merged_articles_reports.registered_issue_data.issue_error_msg is not None:
-                r += self.articles_validations_reports.merged_articles_reports.registered_issue_data.issue_error_msg
+            if self.checking_reports.merged_articles_reports.registered.issue_error_msg is not None:
+                r += self.checking_reports.merged_articles_reports.registered.issue_error_msg
         return r
 
     @property
     def individual_validations_report(self):
-        return self.articles_validations_reports.pkg_validations_reports.detailed_report
+        return self.checking_reports.pkg_validations_reports.detailed_report
 
     @property
     def aff_report(self):
@@ -119,8 +120,8 @@ class ReportsMaker(object):
     def xc_validations(self):
         r = [html_reports.tag('h3', _('Conversion Result'))]
         r.append(self.conversion.conclusion_message)
-        r.append(self.articles_validations_reports.merged_articles_reports.report_articles_data_conflicts)
-        r.append(self.articles_validations_reports.merged_articles_reports.report_articles_data_changes)
+        r.append(self.checking_reports.merged_articles_reports.mergence_reports.report_articles_data_conflicts)
+        r.append(self.checking_reports.merged_articles_reports.mergence_reports.report_articles_data_changes)
         r.append(self.conversion.aop_status_report)
         r.append(self.conversion.articles_conversion_validations.report())
         r.append(self.conversion.conversion_report)

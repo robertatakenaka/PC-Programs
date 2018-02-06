@@ -9,6 +9,7 @@ from ...generics import encoding
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
 from ..validations import article_data_reports
+from ..validations import article_diffs
 from ..validations import validations as validations_module
 
 
@@ -41,24 +42,24 @@ categories_messages = {
 
 class PkgConverter(object):
 
-    def __init__(self, rcvd_pkg, validations_reports, create_windows_base, web_app_path, web_app_site):
+    def __init__(self, rcvd_pkg, checking_reports, create_windows_base, web_app_path, web_app_site):
         self.rcvd_pkg = rcvd_pkg
         self.create_windows_base = create_windows_base
         self.db = self.rcv_pkg.registered.articles_db_manager
         self.local_web_app_path = web_app_path
         self.web_app_site = web_app_site
-        self.validations_reports = validations_reports
-        self.articles_mergence = validations_reports.merged_articles_reports.articles_mergence
+        self.checking_reports = checking_reports
+        self.mergence = checking_reports.merged_articles_reports.mergence_reports.mergence
         self.error_messages = []
         self.conversion_status = {}
 
     def convert(self):
         self.articles_conversion_validations = validations_module.ValidationsResultItems()
         scilista_items = [self.rcvd_pkg.issue_data.acron_issue_label]
-        if self.validations_reports.blocking_errors == 0 and (self.accepted_articles == len(self.rcvd_pkg.articles) or len(self.articles_mergence.excluded_orders) > 0):
-            self.error_messages = self.db.exclude_articles(self.articles_mergence.excluded_orders)
+        if self.checking_reports.blocking_errors == 0 and (self.accepted_articles == len(self.rcvd_pkg.articles) or len(self.mergence.excluded_orders) > 0):
+            self.error_messages = self.db.exclude_articles(self.mergence.excluded_orders)
 
-            _scilista_items = self.db.convert_articles(self.rcvd_pkg.issue_data.acron_issue_label, self.articles_mergence.accepted_articles, self.rcv_pkg.registered.issue_models.record, self.create_windows_base)
+            _scilista_items = self.db.convert_articles(self.rcvd_pkg.issue_data.acron_issue_label, self.mergence.accepted_articles, self.rcv_pkg.registered.issue_models.record, self.create_windows_base)
             scilista_items.extend(_scilista_items)
             self.conversion_status.update(self.db.db_conversion_status)
 
@@ -108,21 +109,21 @@ class PkgConverter(object):
             for status_data in status_items:
                 if status != 'aop':
                     name = status_data
-                    self.articles_mergence.history_items[name].append(status)
+                    self.mergence.history_items[name].append(status)
         for status, names in self.conversion_status.items():
             for name in names:
-                self.articles_mergence.history_items[name].append(status)
+                self.mergence.history_items[name].append(status)
 
         items = []
         db_articles = self.registered_articles or {}
-        for xml_name in sorted(self.articles_mergence.history_items.keys()):
-            pkg = self.articles_mergence.articles.get(xml_name)
-            registered = self.articles_mergence.registered_articles.get(xml_name)
+        for xml_name in sorted(self.mergence.history_items.keys()):
+            pkg = self.mergence.articles.get(xml_name)
+            registered = self.mergence.registered_articles.get(xml_name)
             merged = db_articles.get(xml_name)
 
             diff = ''
             if registered is not None and pkg is not None:
-                comparison = article_data_reports.ArticlesComparison(registered, pkg)
+                comparison = article_diffs.ArticlesComparison(registered, pkg)
                 diff = comparison.display_articles_differences()
                 if diff != '':
                     diff += '<hr/>'
@@ -130,7 +131,7 @@ class PkgConverter(object):
             values = []
             values.append(article_data_reports.display_article_data_to_compare(registered) if registered is not None else '')
             values.append(article_data_reports.display_article_data_to_compare(pkg) if pkg is not None else '')
-            values.append(article_data_reports.article_history(self.articles_mergence.history_items[xml_name]))
+            values.append(article_data_reports.article_history(self.mergence.history_items[xml_name]))
             values.append(diff + article_data_reports.display_article_data_to_compare(merged) if merged is not None else '')
 
             items.append(html_reports.label_values(labels, values))
@@ -147,7 +148,7 @@ class PkgConverter(object):
 
     @property
     def accepted_articles(self):
-        return len(self.articles_mergence.accepted_articles)
+        return len(self.mergence.accepted_articles)
 
     @property
     def total_converted(self):
@@ -159,9 +160,9 @@ class PkgConverter(object):
 
     @property
     def xc_status(self):
-        if self.validations_reports.blocking_errors > 0:
+        if self.checking_reports.blocking_errors > 0:
             result = 'rejected'
-        elif self.accepted_articles == 0 and len(self.articles_mergence.excluded_orders) == 0:
+        elif self.accepted_articles == 0 and len(self.mergence.excluded_orders) == 0:
             result = 'ignored'
         elif self.articles_conversion_validations.blocking_errors > 0:
             result = 'rejected'
@@ -228,7 +229,7 @@ class PkgConverter(object):
                     issueid, name, article = item
                 else:
                     name = item
-                    article = self.articles_mergence.merged_articles.get(name)
+                    article = self.mergence.merged_articles.get(name)
                 if article is not None:
                     if not article.is_ex_aop:
                         values = []

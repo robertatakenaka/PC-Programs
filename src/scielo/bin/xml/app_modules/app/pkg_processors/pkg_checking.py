@@ -74,7 +74,7 @@ class PkgChecking(object):
     def validate_merged_articles(self):
         if len(self.rcvd_pkg.registered.registered_articles) > 0:
             encoding.display_message(_('Previously registered: ({n} files)').format(n=len(self.rcvd_pkg.registered.registered_articles)))
-        self.articles_mergence = merged.ArticlesMergence(
+        self.mergence = merged.ArticlesMergence(
             self.rcvd_pkg.registered.registered_articles,
             self.rcvd_pkg.articles,
             self.pkg_checker.is_db_generation)
@@ -84,9 +84,9 @@ class PkgChecking(object):
             self.pkg_validations,
             self.rcvd_pkg.registered.articles_db_manager is not None)
         mergence_reports = merged_articles_validations.MergedArticlesReports(
-            self.articles_mergence,
+            self.mergence,
             self.rcvd_pkg.registered)
-        self.validations_reports = merged_articles_validations.IssueArticlesValidationsReports(
+        self.checking_reports = CheckingReports(
             pkg_reports,
             mergence_reports,
             self.pkg_checker.is_xml_generation)
@@ -95,7 +95,7 @@ class PkgChecking(object):
         self.files_location = files_location
         self.main_report = reports_maker.ReportsMaker(
                     self.rcvd_pkg,
-                    self.validations_reports,
+                    self.checking_reports,
                     files_location,
                     self.pkg_checker.stage,
                     self.pkg_checker.xpm_version,
@@ -122,3 +122,23 @@ class PkgChecker(object):
         xml_issue_data_validator = article_validations_module.XMLIssueDataValidator(rcvd_pkg.registered)
         xml_content_validator = article_validations_module.XMLContentValidator(rcvd_pkg.issue_data, rcvd_pkg.registered, self.is_xml_generation, self.app_institutions_manager, self.doi_validator, self.config)
         return article_validations_module.ArticleValidator(xml_journal_data_validator, xml_issue_data_validator, xml_content_validator, self.config.xml_structure_validator_preference)
+
+
+class CheckingReports(object):
+
+    def __init__(self, pkg_validations_reports, merged_articles_reports, is_xml_generation=False):
+        self.pkg_validations_reports = pkg_validations_reports
+        self.merged_articles_reports = merged_articles_reports
+        self.is_xml_generation = is_xml_generation
+        self.blocking_errors = sum([self.merged_articles_reports.validations.blocking_errors,
+            self.pkg_validations_reports.pkg_issue_validations.blocking_errors])
+
+    @property
+    def journal_and_issue_report(self):
+        report = []
+        report.append(self.merged_articles_reports.mgd_reports.journal_issue_header_report)
+        errors_only = not self.is_xml_generation
+        report.append(self.pkg_validations_reports.pkg_journal_validations.report(errors_only))
+        report.append(self.pkg_validations_reports.pkg_issue_validations.report(errors_only))
+        report.append(self.merged_articles_reports.content)
+        return ''.join(report)

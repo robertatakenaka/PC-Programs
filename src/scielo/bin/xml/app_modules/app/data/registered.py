@@ -2,8 +2,7 @@
 
 from ...__init__ import _
 
-# FIXME
-from ..validations import article_data_reports
+from ..validations import article_diffs
 
 
 class Registered(object):
@@ -30,7 +29,7 @@ class RegisteredArticles(dict):
         found = None
         registered = self.get(name)
         if registered is not None:
-            comparison = article_data_reports.ArticlesComparison(registered, article)
+            comparison = article_diffs.ArticlesComparison(registered, article)
             if registered.order == article.order and comparison.are_similar:
                 found = registered
         return found
@@ -41,7 +40,7 @@ class RegisteredArticles(dict):
     def registered_titles_and_authors(self, article):
         similar_items = {}
         for name, registered in self.items():
-            comparison = article_data_reports.ArticlesComparison(registered, article)
+            comparison = article_diffs.ArticlesComparison(registered, article)
             if comparison.are_similar:
                 similar_items.update({name: registered})
         return similar_items
