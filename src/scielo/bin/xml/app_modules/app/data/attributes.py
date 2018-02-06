@@ -5,13 +5,14 @@ from datetime import datetime
 from ...__init__ import _
 from ...__init__ import TABLES_PATH
 
-from .. import article_utils
+from ...generics import date_utils
 from ...generics.fs_utils import read_file
 from ...generics.reports import validation_status
 from ...generics.reports import html_reports
 
 
 SPS_expiration_dates = [
+    ('sps-1.8', ['20180401', '20190401']),
     ('sps-1.7', ['20171001', '20181001']),
     ('sps-1.6', ['20170401', '20180401']),
     ('sps-1.5', ['20161001', '20171001']),
@@ -561,7 +562,7 @@ def sps_version_expiration_days(sps_version):
     days = None
     sps_dates = dict_SPS_expiration_dates.get(sps_version)
     if sps_dates is not None:
-        sps_dates = article_utils.dateiso2datetime(sps_dates[1])
+        sps_dates = date_utils.dateiso2datetime(sps_dates[1])
         now = datetime.now()
         diff = sps_dates - now
         days = diff.days

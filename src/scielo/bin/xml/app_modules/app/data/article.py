@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 
 from .. import article_utils
+from ...generics import date_utils
 from ...generics import xml_utils
 from ...generics import img_utils
 from . import attributes
@@ -1715,7 +1716,7 @@ class Article(ArticleXML):
 
     @property
     def ahpdate_dateiso(self):
-        return article_utils.format_dateiso(self.ahpdate)
+        return date_utils.format_dateiso(self.ahpdate)
 
     @property
     def is_text(self):
@@ -1743,15 +1744,15 @@ class Article(ArticleXML):
 
     @property
     def collection_dateiso(self):
-        return article_utils.format_dateiso(self.collection_date)
+        return date_utils.format_dateiso(self.collection_date)
 
     @property
     def epub_dateiso(self):
-        return article_utils.format_dateiso(self.epub_date)
+        return date_utils.format_dateiso(self.epub_date)
 
     @property
     def epub_ppub_dateiso(self):
-        return article_utils.format_dateiso(self.epub_ppub_date)
+        return date_utils.format_dateiso(self.epub_ppub_date)
 
     @property
     def issue_label(self):
@@ -1760,7 +1761,7 @@ class Article(ArticleXML):
 
     @property
     def issue_pub_dateiso(self):
-        return article_utils.format_dateiso(self.issue_pub_date)
+        return date_utils.format_dateiso(self.issue_pub_date)
 
     @property
     def issue_pub_date(self):
@@ -1780,7 +1781,7 @@ class Article(ArticleXML):
 
     @property
     def article_pub_dateiso(self):
-        return article_utils.format_dateiso(self.article_pub_date)
+        return date_utils.format_dateiso(self.article_pub_date)
 
     @property
     def pub_date(self):
@@ -1793,7 +1794,7 @@ class Article(ArticleXML):
 
     @property
     def pub_dateiso(self):
-        return article_utils.format_dateiso(self.pub_date)
+        return date_utils.format_dateiso(self.pub_date)
 
     @property
     def pub_date_year(self):
@@ -1807,28 +1808,28 @@ class Article(ArticleXML):
 
     @property
     def received_dateiso(self):
-        return article_utils.format_dateiso(self.received)
+        return date_utils.format_dateiso(self.received)
 
     @property
     def accepted_dateiso(self):
-        return article_utils.format_dateiso(self.accepted)
+        return date_utils.format_dateiso(self.accepted)
 
     @property
     def history_days(self):
         if self.received is not None and self.accepted is not None:
-            return article_utils.days('received date', self.received_dateiso, 'accepted date', self.accepted_dateiso)
+            return date_utils.days('received date', self.received_dateiso, 'accepted date', self.accepted_dateiso)
 
     @property
     def publication_days(self):
         d1 = self.accepted_dateiso
         d2 = self.article_pub_dateiso if self.article_pub_dateiso else self.issue_pub_dateiso
         if d1 is not None and d2 is not None:
-            return article_utils.days('accepted date', d1, 'pub-date', d2)
+            return date_utils.days('accepted date', d1, 'pub-date', d2)
 
     @property
     def registration_days(self):
         if self.accepted is not None:
-            return article_utils.days('accepted date', self.accepted_dateiso, 'current date', datetime.now().isoformat())
+            return date_utils.days('accepted date', self.accepted_dateiso, 'current date', datetime.now().isoformat())
 
     @property
     def expected_pdf_files(self):
@@ -1883,7 +1884,7 @@ class Reference(object):
 
     @property
     def formatted_year(self):
-        return article_utils.four_digits_year(self.year)
+        return date_utils.four_digits_year(self.year)
 
     @property
     def fpage_number(self):

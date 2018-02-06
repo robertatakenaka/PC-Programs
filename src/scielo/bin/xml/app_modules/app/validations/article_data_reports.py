@@ -5,9 +5,9 @@ from datetime import datetime
 from ...__init__ import _
 from ...generics import utils
 from ...generics import xml_utils
+from ...generics import date_utils
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
-from .. import article_utils
 from ..data import attributes
 from ..data.article import PersonAuthor, CorpAuthor
 
@@ -143,7 +143,7 @@ class ArticleDisplayReport(object):
 
     @property
     def article_dates(self):
-        return self.display_labeled_value('date(epub-ppub)', article_utils.format_date(self.article.epub_ppub_date)) + self.display_labeled_value('date(epub)', article_utils.format_date(self.article.epub_date)) + self.display_labeled_value('date(collection)', article_utils.format_date(self.article.collection_date))
+        return self.display_labeled_value('date(epub-ppub)', date_utils.format_date(self.article.epub_ppub_date)) + self.display_labeled_value('date(epub)', date_utils.format_date(self.article.epub_date)) + self.display_labeled_value('date(collection)', date_utils.format_date(self.article.collection_date))
 
     @property
     def contrib_names(self):
@@ -238,7 +238,7 @@ class ArticleDisplayReport(object):
     @property
     def issue_header(self):
         if self.article.tree is not None:
-            r = [self.article.journal_title, self.article.journal_id_nlm_ta, self.article.issue_label, article_utils.format_date(self.article.issue_pub_date)]
+            r = [self.article.journal_title, self.article.journal_id_nlm_ta, self.article.issue_label, date_utils.format_date(self.article.issue_pub_date)]
             return html_reports.tag('div', '\n'.join([html_reports.tag('h5', item) for item in r if item is not None]), 'issue-data')
         else:
             return ''

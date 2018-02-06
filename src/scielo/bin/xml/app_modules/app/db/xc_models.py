@@ -7,6 +7,7 @@ from ...__init__ import _
 
 from ...generics import utils
 from ...generics import xml_utils
+from ...generics import date_utils
 from ...generics import fs_utils
 from ...generics import encoding
 from ...generics.reports import html_reports
@@ -295,8 +296,8 @@ class ArticleRecords(object):
         for item in self.article.abstracts:
             self._metadata['83'].append({'l': item.language, 'a': item.text})
 
-        self._metadata['112'] = article_utils.format_dateiso(self.article.received)
-        self._metadata['114'] = article_utils.format_dateiso(self.article.accepted)
+        self._metadata['112'] = date_utils.format_dateiso(self.article.received)
+        self._metadata['114'] = date_utils.format_dateiso(self.article.accepted)
 
     @property
     def references(self):

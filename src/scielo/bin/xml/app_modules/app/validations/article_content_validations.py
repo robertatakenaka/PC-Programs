@@ -7,12 +7,12 @@ from ...__init__ import _
 from ...generics import img_utils
 from ...generics import utils
 from ...generics import encoding
+from ...generics import date_utils
 from ...generics.reports import html_reports
 from ...generics.reports import text_report
 from ...generics.reports import validation_status
 from ..config import xml_versions
 from ..data import attributes
-from .. import article_utils
 from . import ref_validations
 from . import data_validations
 from . import article_disp_formula
@@ -342,7 +342,7 @@ class ArticleContentValidation(object):
             error = False
             if '-' in value:
                 months = value.split('-')
-                month_names = article_utils.MONTHS_ABBREV
+                month_names = date_utils.MONTHS_ABBREV
                 if len(months) == 2:
                     for m in months:
                         if '|' + m + '|' in month_names:
@@ -351,10 +351,10 @@ class ArticleContentValidation(object):
                             error = True
                 else:
                     error = True
-            elif '|' + value + '|' in article_utils.MONTHS_ABBREV:
+            elif '|' + value + '|' in date_utils.MONTHS_ABBREV:
                 error = True
             if error:
-                expected = _('initial month and final month must be separated by hyphen. E.g.: Jan-Feb. Expected values for the months: {months}. ').format(months=article_utils.MONTHS_ABBREV.replace('|', ' '))
+                expected = _('initial month and final month must be separated by hyphen. E.g.: Jan-Feb. Expected values for the months: {months}. ').format(months=date_utils.MONTHS_ABBREV.replace('|', ' '))
                 msg = data_validations.invalid_value_message('season', value, expected)
                 r.append(('{parent} ({parent_id}'.format(parent=parent, parent_id=parent_id), validation_status.STATUS_FATAL_ERROR, msg))
         return r
@@ -856,8 +856,8 @@ class ArticleContentValidation(object):
         error_level = validation_status.STATUS_FATAL_ERROR if self.article.article_type in attributes.HISTORY_REQUIRED_FOR_DOCTOPIC else validation_status.STATUS_INFO
         if received is not None and accepted is not None:
             errors = []
-            errors.extend(article_utils.is_fulldate('received', received))
-            errors.extend(article_utils.is_fulldate('accepted', accepted))
+            errors.extend(date_utils.is_fulldate('received', received))
+            errors.extend(date_utils.is_fulldate('accepted', accepted))
             if len(errors) > 0:
                 r.append(('history', validation_status.STATUS_FATAL_ERROR, '\n'.join(errors)))
             else:
