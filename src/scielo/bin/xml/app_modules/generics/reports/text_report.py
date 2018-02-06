@@ -13,3 +13,7 @@ def display_pairs_list(pairs_list):
 
 def display_key_value_list(pairs_list):
     return [k + ' => ' + v for k, v in pairs_list.items()]
+
+
+def display_values(label, values):
+    return label + ': ' + '\n'.join(values) + '\n'

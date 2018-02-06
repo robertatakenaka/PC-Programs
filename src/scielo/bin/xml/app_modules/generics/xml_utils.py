@@ -29,22 +29,6 @@ for namespace_id, namespace_link in namespaces.items():
     etree.register_namespace(namespace_id, namespace_link)
 
 
-def date_element(date_node):
-    d = None
-    if date_node is not None:
-        d = {}
-        d['season'] = node_findtext(date_node, 'season')
-        d['month'] = node_findtext(date_node, 'month')
-        d['year'] = node_findtext(date_node, 'year')
-        d['day'] = node_findtext(date_node, 'day')
-    return d
-
-
-def element_lang(node):
-    if node is not None:
-        return node.attrib.get('{http://www.w3.org/XML/1998/namespace}lang')
-
-
 def load_entities_table():
     table = {}
     entities_filename = TABLES_PATH + '/entities.csv'

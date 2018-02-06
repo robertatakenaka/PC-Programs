@@ -8,6 +8,7 @@ from ...generics import img_utils
 from ...generics import utils
 from ...generics import encoding
 from ...generics.reports import html_reports
+from ...generics.reports import text_report
 from ...generics.reports import validation_status
 from ..config import xml_versions
 from ..data import attributes
@@ -509,7 +510,7 @@ class ArticleContentValidation(object):
 
     @property
     def trans_languages(self):
-        return article_utils.display_values('trans languages', self.article.trans_languages)
+        return text_report.display_values('trans languages', self.article.trans_languages)
 
     @property
     def article_id(self):
@@ -596,15 +597,15 @@ class ArticleContentValidation(object):
 
     @property
     def funding_source(self):
-        return article_utils.display_values('funding_source', self.article.funding_source)
+        return text_report.display_values('funding_source', self.article.funding_source)
 
     @property
     def principal_award_recipient(self):
-        return article_utils.display_values('principal_award_recipient', self.article.principal_award_recipient)
+        return text_report.display_values('principal_award_recipient', self.article.principal_award_recipient)
 
     @property
     def principal_investigator(self):
-        return article_utils.display_values('principal_investigator', self.article.principal_investigator)
+        return text_report.display_values('principal_investigator', self.article.principal_investigator)
 
     @property
     def funding(self):
@@ -642,11 +643,11 @@ class ArticleContentValidation(object):
 
     @property
     def award_id(self):
-        return article_utils.display_values('award-id', self.article.award_id)
+        return text_report.display_values('award-id', self.article.award_id)
 
     @property
     def funding_statement(self):
-        return article_utils.display_values('funding statement', self.article.funding_statement)
+        return text_report.display_values('funding statement', self.article.funding_statement)
 
     @property
     def ack_xml(self):
@@ -979,7 +980,7 @@ class ArticleContentValidation(object):
 
     @property
     def illustrative_materials(self):
-        return article_utils.display_values(_('illustrative materials'), self.article.illustrative_materials)
+        return text_report.display_values(_('illustrative materials'), self.article.illustrative_materials)
 
     @property
     def is_text(self):
