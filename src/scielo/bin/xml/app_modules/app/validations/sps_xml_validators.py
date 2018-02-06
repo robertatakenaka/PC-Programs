@@ -10,7 +10,7 @@ from ...generics import xml_utils
 
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
-from ..pkg_processors import xml_versions
+from ..config import xml_versions
 from . import data_validations
 
 

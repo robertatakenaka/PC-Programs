@@ -5,19 +5,22 @@ import shutil
 import Tkinter
 
 from ...__init__ import _
-import utils
-import xml_utils
-import fs_utils
-import java_xml_utils
-import article
-import dbm_isis
-import xc_config
+from ..generics import utils
+from ..generics import xml_utils
+from ..generics import fs_utils
+from ..generics import java_xml_utils
+from ..generics.dbm import dbm_isis
+from ..app.config import config as app_config
+from ..app.data import article
 
 
 global ucisis
 
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')
+FST_ARTICLE = CURRENT_PATH + '/../../settings/fst/articles.fst'
+XSL = CURRENT_PATH + '/../../../../pmc/v3.0/xsl/xml2pubmed/xml2pubmed.xsl'
+START = CURRENT_PATH + '/../../../../../'
 
 
 def find_xml_files_folders(path, folders=[]):
@@ -45,7 +48,7 @@ def find_xml_files_in_alternative(filenames, main_path, found_files={}):
     for item in os.listdir(main_path):
         if os.path.isfile(main_path + '/' + item):
             if item in filenames:
-                if not item in found_files.keys():
+                if item not in found_files.keys():
                     found_files[item] = main_path + '/' + item
 
         elif os.path.isdir(main_path + '/' + item):
@@ -80,7 +83,7 @@ class InputForm(object):
         self.selected_issue_folder = None
 
         if default_path is None:
-            self.default_path = CURRENT_PATH
+            self.default_path = START
 
         self.tkFrame.label_frame_xml_folder = Tkinter.LabelFrame(self.tkFrame, bd=0, padx=10, pady=10)
         self.tkFrame.label_frame_xml_folder.pack(fill="both", expand="yes")
@@ -205,7 +208,7 @@ class ArticlesDB(object):
 
         self.isis_db = None
         if os.path.isfile(db_filename + '.mst'):
-            self.isis_db = dbm_isis.IsisDB(ucisis, db_filename, CURRENT_PATH + '/articles.fst')
+            self.isis_db = dbm_isis.IsisDB(ucisis, db_filename, FST_ARTICLE)
             self.isis_db.update_indexes()
         else:
             print('Not found: ' + db_filename)
@@ -369,13 +372,13 @@ def call_execute_pubmed_procedures(args):
         errors.append(_('issue path is not a folder'))
 
     if len(errors) == 0:
-        config = xc_config.XMLConverterConfiguration(CURRENT_PATH + '/../../scielo_paths.ini')
+        config = app_config.Configuration()
         ucisis = dbm_isis.UCISIS(dbm_isis.CISIS(config.cisis1030), dbm_isis.CISIS(config.cisis1660))
 
         if ucisis.is_available:
             issue_stuff = IssueStuff(ucisis, issue_path, from_date, final_date)
 
-            pubmed_xml_maker = PubMedXMLMaker(issue_stuff, CURRENT_PATH + '/../../pmc/v3.0/xsl/xml2pubmed/xml2pubmed.xsl')
+            pubmed_xml_maker = PubMedXMLMaker(issue_stuff, XSL)
             pubmed_xml_maker.debug = debug
             pubmed_xml_maker.execute_procedures()
         else:
@@ -416,4 +419,3 @@ def read_form_inputs(default_path=None):
     tk_root.mainloop()
     tk_root.focus_set()
     return (form.issue_path, form.from_date)
-

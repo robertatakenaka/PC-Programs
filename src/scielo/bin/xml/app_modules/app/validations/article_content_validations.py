@@ -9,11 +9,11 @@ from ...generics import utils
 from ...generics import encoding
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
+from ..config import xml_versions
 from ..data import attributes
 from .. import article_utils
 from . import ref_validations
 from . import data_validations
-from ..pkg_processors import xml_versions
 from . import article_disp_formula
 from . import article_tablewrap
 

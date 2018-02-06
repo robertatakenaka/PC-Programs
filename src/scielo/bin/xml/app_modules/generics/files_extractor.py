@@ -1,5 +1,5 @@
 # coding=utf-8
-## {{{ http://code.activestate.com/recipes/576714/ (r2)
+
 import os
 import tarfile
 import zipfile

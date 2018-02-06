@@ -16,7 +16,7 @@ from ..data import pkg_wk
 from ..data import sps_document
 from ..data import xhtml_document
 from . import symbols
-from . import xml_versions
+from ..config import xml_versions
 
 
 class SGMLHTMLDocment(object):

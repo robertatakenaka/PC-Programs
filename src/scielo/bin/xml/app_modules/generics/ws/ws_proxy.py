@@ -1,8 +1,5 @@
 # code: utf-8
 
-import json
-import socket
-
 try:
     import urllib.request as urllib_request
     from urllib.parse import urlencode as urllib_parse_urlencode

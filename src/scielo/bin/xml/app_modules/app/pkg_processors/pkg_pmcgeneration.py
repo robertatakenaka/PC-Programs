@@ -9,7 +9,7 @@ from ...generics import fs_utils
 from ...generics import java_xml_utils
 from ...generics.reports import html_reports
 from ..validations import sps_xml_validators
-from . import xml_versions
+from ..config import xml_versions
 from ..data import pkg_wk
 
 
@@ -43,7 +43,6 @@ class PMCPackageMaker(object):
                 pmc_filename).make_package()
 
         if doit:
-            # FIXME
             pkg_wk.ArticlePkgFolder(self.wk.pmc_package_path, None).zip()
 
     def make_report(self):

@@ -7,7 +7,7 @@ from ...generics import encoding
 from ...generics import xml_utils
 from ...generics.ws import ws_requester
 from ..data import attributes
-from ..pkg_processors import xml_versions
+from ..config import xml_versions
 
 
 messages = []

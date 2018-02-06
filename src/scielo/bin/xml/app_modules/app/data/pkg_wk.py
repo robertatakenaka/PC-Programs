@@ -332,7 +332,10 @@ class ArticlePkgFolder(object):
         self.xml_path = xml_path
         self.pkgfiles_items = pkgfiles_items
         if pkgfiles_items is None:
-            self.pkgfiles_items = {name: Article for filename in os.listdir(xml_path)}
+            self.pkgfiles_items = {}
+            for filename in os.listdir(xml_path):
+                f = fs_utils.File(filename)
+                self.pkgfiles_items[f.name] = ArticlePkgFiles(filename)
         self.INFORM_ORPHANS = len(self.pkgfiles_items) > 1
 
     @property
