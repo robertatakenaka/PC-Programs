@@ -9,8 +9,8 @@ from ..__init__ import _
 from ..generics import encoding
 from ..generics import fs_utils
 from ..generics import xml_utils
-from .data import pkg_reception
-from .data import workarea
+from .data import pkg_wk
+from .pkg_processors import pkg_reception
 from .pkg_processors import pkg_checking
 from .pkg_processors import pkg_conversion
 from .db import manager
@@ -73,7 +73,7 @@ class XC_Reception(object):
         if package_path is None:
             return False
 
-        wk = workarea.Workarea(package_path + '_xc')
+        wk = pkg_wk.Workarea(package_path + '_xc')
 
         items = [item for item in os.listdir(package_path) if item.endswith('.xml')]
 
@@ -88,7 +88,7 @@ class XC_Reception(object):
 
         try:
             if len(rcvd_pkg.articles) > 0:
-                files_location = workarea.AssetsDestinations(
+                files_location = pkg_wk.AssetsDestinations(
                                 rcvd_pkg.wk.scielo_package_path,
                                 rcvd_pkg.issue_data.acron,
                                 rcvd_pkg.issue_data.issue_label,

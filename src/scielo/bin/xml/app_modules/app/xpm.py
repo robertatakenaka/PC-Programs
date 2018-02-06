@@ -6,12 +6,12 @@ from ..__init__ import _
 from . import interface
 from ..generics import encoding
 from ..generics import fs_utils
-from .data import pkg_reception
-from .data import pkg_checking
-from .data import workarea
+from .data import pkg_wk
 from .db import manager
-from .pkg_processors import mkp_pkg
-from .pkg_processors import pmc_pkgmaker
+from .pkg_processors import pkg_reception
+from .pkg_processors import pkg_checking
+from .pkg_processors import pkg_spsgeneration
+from .pkg_processors import pkg_pmcgeneration
 
 from .config import config
 
@@ -83,7 +83,7 @@ class Request(object):
         if any([self.xml_path, self.acron]):
             if self.validate():
                 if self.sgm_xml is not None:
-                    scielo_pm = mkp_pkg.MarkupPackage(self.sgm_xml, self.acron)
+                    scielo_pm = pkg_spsgeneration.MarkupPackage(self.sgm_xml, self.acron)
                     scielo_pm.make()
                     self.wk = scielo_pm.wk_area
                     self.outputs = {scielo_pm.xml_pkgfiles.name: scielo_pm.sgmxml_outputs}
@@ -95,7 +95,7 @@ class Request(object):
                     self.stage = 'xml'
                 else:
                     file = fs_utils.File(self.xml_list[0])
-                    self.wk = workarea.Workarea(file.path + '_' + self.stage)
+                    self.wk = pkg_wk.Workarea(file.path + '_' + self.stage)
                     self.normalized_pkgfiles = reception.normalize(
                         self.xml_list, 'remote', self.wk.scielo_package_path)
                     self.rcvd_pkg = reception.receive(
@@ -140,7 +140,7 @@ class Requester(object):
         xml_list = [xml_path + '/' + item for item in os.listdir(xml_path) if item.endswith('.xml')]
 
         file = fs_utils.File(xml_list[0])
-        wk = workarea.Workarea(file.path + '_' + self.stage)
+        wk = pkg_wk.Workarea(file.path + '_' + self.stage)
 
         normalized_pkgfiles = self.reception.normalize(
             xml_list, 'remote', self.wk.scielo_package_path)
@@ -160,7 +160,7 @@ class Requester(object):
             checking = pkg_checking.PkgChecking(pkg_checker, rcvd_pkg)
             checking.check()
 
-            files_location = workarea.AssetsDestinations(
+            files_location = pkg_wk.AssetsDestinations(
                                 rcvd_pkg.wk.scielo_package_path,
                                 rcvd_pkg.issue_data.acron)
 
@@ -168,7 +168,7 @@ class Requester(object):
 
             # pmc package
             if not pkg_checker.is_db_generation:
-                pmc_package_maker = pmc_pkgmaker.PMCPackageMaker(
+                pmc_package_maker = pkg_pmcgeneration.PMCPackageMaker(
                     rcvd_pkg.wk,
                     rcvd_pkg.articles,
                     rcvd_pkg.outputs)

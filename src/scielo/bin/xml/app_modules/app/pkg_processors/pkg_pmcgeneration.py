@@ -10,8 +10,7 @@ from ...generics import java_xml_utils
 from ...generics.reports import html_reports
 from ..validations import sps_xml_validators
 from . import xml_versions
-from ..data import workarea
-from ..data import package
+from ..data import pkg_wk
 
 
 class PMCPackageMaker(object):
@@ -35,7 +34,7 @@ class PMCPackageMaker(object):
             item_label = str(index) + n + ': ' + xml_name
             encoding.display_message(item_label)
 
-            scielo_pkgfiles = package.ArticlePkg(self.wk.scielo_package_path + '/' + xml_name + '.xml')
+            scielo_pkgfiles = pkg_wk.ArticlePkgFiles(self.wk.scielo_package_path + '/' + xml_name + '.xml')
             pmc_filename = self.wk.pmc_package_path + '/' + xml_name + '.xml'
 
             doit = PMCPackageItemMaker(
@@ -44,7 +43,8 @@ class PMCPackageMaker(object):
                 pmc_filename).make_package()
 
         if doit:
-            workarea.PackageFolder(self.wk.pmc_package_path).zip()
+            # FIXME
+            pkg_wk.ArticlePkgFolder(self.wk.pmc_package_path, None).zip()
 
     def make_report(self):
         for xml_name, doc in self.article_items.items():
@@ -72,7 +72,7 @@ class PMCPackageItemMaker(object):
             html_reports.save(self.outputs.pmc_style_report_filename, 'PMC Style Checker', _('{label} is a mandatory data, and it was not informed. ').format(label='journal-id (nlm-ta)'))
         else:
             self.make_xml(scielo_dtd_files, pmc_dtd_files)
-            self.pmc_pkgfiles = package.ArticlePkg(self.pmc_xml_filename)
+            self.pmc_pkgfiles = pkg_wk.ArticlePkgFiles(self.pmc_xml_filename)
             self.insert_math_id()
             self.replace_img_ext_to_tiff()
             self.add_files_to_pmc_package()

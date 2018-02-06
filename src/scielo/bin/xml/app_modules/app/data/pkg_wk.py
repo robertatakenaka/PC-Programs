@@ -57,6 +57,32 @@ def classify_mkp_pkg_components_by_elem_name_and_id(name, main_name):
     return elem, number, posfix
 
 
+class Workarea(object):
+
+    def __init__(self, output_path):
+        self.output_path = output_path
+
+        for p in [self.output_path, self.reports_path, self.scielo_package_path, self.pmc_package_path]:
+            if not os.path.isdir(p):
+                os.makedirs(p)
+
+    @property
+    def reports_path(self):
+        return self.output_path + '/errors'
+
+    @property
+    def scielo_package_path(self):
+        return self.output_path + '/scielo_package'
+
+    @property
+    def pmc_package_path(self):
+        return self.output_path+'/pmc_package'
+
+    @property
+    def src_path(self):
+        return self.output_path+'/src'
+
+
 class PkgFiles(object):
 
     def __init__(self, filename):
@@ -253,11 +279,60 @@ class PkgFiles(object):
             shutil.copyfile(self.file.filename, dest_path + '/' + self.file.basename)
 
 
-class PkgFolder(object):
+class ArticlePkgFiles(pkg_wk.PkgFiles):
+
+    def __init__(self, filename):
+        pkg_wk.PkgFiles.__init__(self, filename)
+        self.xmlcontent = xml_utils.XMLContent(filename)
+
+    @property
+    def article(self):
+        return article.Article(self.xmlcontent.xml, self.file.basename)
+
+    @article.setter
+    def article(self, content):
+        self.xmlcontent = xml_utils.XMLContent(content)
+
+    def get_pdf_files(self):
+        expected_pdf_files = self.article.expected_pdf_files.values()
+        return [f for f in expected_pdf_files if f in self.related_files]
+
+    def get_package_href_files(self):
+        files = []
+        for href_name in self.get_package_href_names():
+            extensions = self.related_files_by_name.get(href_name, [])
+            names = [href_name+ext for ext in extensions]
+            files.extend(names)
+        return files
+
+    def get_package_href_names(self):
+        href_names = []
+        for href in self.article.href_files:
+            if href.name_without_extension in self.related_files_by_name.keys():
+                href_names.append(href.name_without_extension)
+        return list(set(href_names))
+
+    def select_pmc_files(self):
+        files = []
+        for item in self.get_package_href_names():
+            if item in self.tiff_names:
+                if item+'.tif' in self.tiff_items:
+                    files.append(item+'.tif')
+                elif item+'.tiff' in self.tiff_items:
+                    files.append(item+'.tiff')
+            else:
+                files.extend([item + ext for ext in self.related_files_by_name.get(item, [])])
+        files.extend(self.get_pdf_files())
+        return files
+
+
+class ArticlePkgFolder(object):
 
     def __init__(self, xml_path, pkgfiles_items):
         self.xml_path = xml_path
         self.pkgfiles_items = pkgfiles_items
+        if pkgfiles_items is None:
+            self.pkgfiles_items = {name: Article for filename in os.listdir(xml_path)}
         self.INFORM_ORPHANS = len(self.pkgfiles_items) > 1
 
     @property

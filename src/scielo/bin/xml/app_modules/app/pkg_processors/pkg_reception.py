@@ -1,56 +1,7 @@
 # coding=utf-8
 
-from ...generics import xml_utils
-from . import article
-from . import sps_document
-from . import pkg_wk
-
-
-class ArticlePkgFiles(pkg_wk.PkgFiles):
-
-    def __init__(self, filename):
-        pkg_wk.PkgFiles.__init__(self, filename)
-        self.xmlcontent = xml_utils.XMLContent(filename)
-
-    @property
-    def article(self):
-        return article.Article(self.xmlcontent.xml, self.file.basename)
-
-    @article.setter
-    def article(self, content):
-        self.xmlcontent = xml_utils.XMLContent(content)
-
-    def get_pdf_files(self):
-        expected_pdf_files = self.article.expected_pdf_files.values()
-        return [f for f in expected_pdf_files if f in self.related_files]
-
-    def get_package_href_files(self):
-        files = []
-        for href_name in self.get_package_href_names():
-            extensions = self.related_files_by_name.get(href_name, [])
-            names = [href_name+ext for ext in extensions]
-            files.extend(names)
-        return files
-
-    def get_package_href_names(self):
-        href_names = []
-        for href in self.article.href_files:
-            if href.name_without_extension in self.related_files_by_name.keys():
-                href_names.append(href.name_without_extension)
-        return list(set(href_names))
-
-    def select_pmc_files(self):
-        files = []
-        for item in self.get_package_href_names():
-            if item in self.tiff_names:
-                if item+'.tif' in self.tiff_items:
-                    files.append(item+'.tif')
-                elif item+'.tiff' in self.tiff_items:
-                    files.append(item+'.tiff')
-            else:
-                files.extend([item + ext for ext in self.related_files_by_name.get(item, [])])
-        files.extend(self.get_pdf_files())
-        return files
+from ..data import sps_document
+from ..data import pkg_wk
 
 
 class Reception(object):
@@ -61,7 +12,7 @@ class Reception(object):
     def normalize(self, xml_list, dtd_location_type, dest_path):
         pkgfiles = {}
         for item in self.xml_list:
-            input_pkg = ArticlePkgFiles(item)
+            input_pkg = pkg_wk.ArticlePkgFiles(item)
             input_pkg.tiff2jpg()
 
             xmlcontent = sps_document.SPSXMLContent(
@@ -70,7 +21,7 @@ class Reception(object):
             xmlcontent.doctype(dtd_location_type)
 
             dest_filename = dest_path + '/' + input_pkg.file.basename
-            pkg = ArticlePkgFiles(dest_filename)
+            pkg = pkg_wk.ArticlePkgFiles(dest_filename)
             pkg.file.content = xmlcontent.content
             pkg.file.write()
             input_pkg.copy_related_files(dest_path)
@@ -89,7 +40,8 @@ class ReceivedPackage(object):
     def __init__(self, pkgfiles, wk, outputs):
         self.pkgfiles = pkgfiles
         self.wk = wk
-        self.pkgfolder = pkg_wk.PkgFolder(self.pkgfiles)
+        # FIXME path
+        self.pkgfolder = pkg_wk.ArticlePkgFolder(path, self.pkgfiles)
         self.articles = {k: v.article for k, v in self.pkgfiles.items()}
         self.pkg_issue_data = PkgIssueData(self.articles)
         self.outputs = outputs

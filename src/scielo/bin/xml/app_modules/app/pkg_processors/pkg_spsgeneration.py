@@ -12,7 +12,7 @@ from ...__init__ import _
 from ...generics.reports import text_report
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
-from ..data import pkg_files
+from ..data import pkg_wk
 from ..data import sps_document
 from ..data import xhtml_document
 from . import symbols
@@ -393,7 +393,7 @@ class PackageRenamed(object):
         self.new_name = PackageName(self.src_pkgfiles.article).generate(acron)
 
         xml_filename = dest_path + '/' + self.new_name + '.xml'
-        self.dest_pkgfiles = pkg_files.ArticlePkgFiles(xml_filename)
+        self.dest_pkgfiles = pkg_wk.ArticlePkgFiles(xml_filename)
         self.dest_pkgfiles.clean()
 
         self._rename_xml_href_values()
@@ -474,7 +474,7 @@ class MarkupPackage(object):
         self.wk_area = workarea.Workarea(os.path.dirname(self.sgmlfile.parent_path))
         self.sgmxml_outputs = workarea.OutputFiles(sgmlfile.name, self.wk_area.reports_path, sgmlfile.path)
         srcxmlfile = fs_utils.File(self.wk_area.src_path + '/' + self.sgmlfile.name + '.xml')
-        self.src_pkgfiles = pkg_files.ArticlePkgFiles(srcxmlfile)
+        self.src_pkgfiles = pkg_wk.ArticlePkgFiles(srcxmlfile)
         self.src_pkgfiles.tiff2jpg()
 
     def _generate_xml(self, xmlfile):
