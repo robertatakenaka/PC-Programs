@@ -6,7 +6,7 @@ from mimetypes import MimeTypes
 from ...generics import encoding
 from ...generics import xml_utils
 from ...generics.ws import ws_requester
-from ..data import attributes
+from ..data import attr_contribs
 from ..config import xml_versions
 
 
@@ -25,7 +25,7 @@ class SPSXMLContent(object):
         self.xmlcontent = xml_utils.XMLContent(self.content)
         if self.xmlcontent.xml is not None:
             if 'contrib-id-type="' in self.content:
-                for contrib_id, url in attributes.CONTRIB_ID_URLS.items():
+                for contrib_id, url in attr_contribs.CONTRIB_ID_URLS.items():
                     self.content = self.content.replace(' contrib-id-type="' + contrib_id + '">' + url, ' contrib-id-type="' + contrib_id + '">')
             #content = remove_xmllang_off_article_title(content)
             self.content = self.content.replace('http://creativecommons.org', 'https://creativecommons.org')

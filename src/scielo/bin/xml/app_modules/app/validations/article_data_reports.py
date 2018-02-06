@@ -8,7 +8,8 @@ from ...generics import xml_utils
 from ...generics import date_utils
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
-from ..data import attributes
+from ..data import attr_languages
+from ..config import sps_versions
 from ..data.article import PersonAuthor, CorpAuthor
 
 
@@ -517,7 +518,7 @@ class ArticleDisplayReport(object):
     def table_of_contents_data_with_lang(self):
         r = ''
         for lang in sorted(self.article.title_abstract_kwd_languages):
-            label = html_reports.tag('smaller', attributes.LANGUAGES.get(lang, _('unknown')) + ' [' + lang + ']')
+            label = html_reports.tag('smaller', attr_languages.LANGUAGES.get(lang, _('unknown')) + ' [' + lang + ']')
             r += '<h4>' + label + '</h4>'
             r += '<p>' + '; '.join([k.text for k in self.article.abstracts_by_lang.get(lang, [])]) + '</p>'
             r += html_reports.tag('h5', '; '.join([k.text for k in self.article.keywords_by_lang.get(lang, [])]))
@@ -604,7 +605,7 @@ def validations_table(results):
                 result.append('')
             if len(result) == 4:
                 label, status, msg, xml = result
-                rows.append({'label': attributes.sps_help(label), 'status': status, 'message': msg, 'xml': xml, _('why it is not a valid message?'): ' '})
+                rows.append({'label': sps_versions.sps_help(label), 'status': status, 'message': msg, 'xml': xml, _('why it is not a valid message?'): ' '})
             else:
                 print('validations_table: ', result)
         r = html_reports.tag('div', html_reports.sheet(['label', 'status', 'message', 'xml', _('why it is not a valid message?')], rows, table_style='validation_sheet'))

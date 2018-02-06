@@ -6,7 +6,8 @@ from .. import article_utils
 from ...generics import date_utils
 from ...generics import xml_utils
 from ...generics import img_utils
-from . import attributes
+from . import attr_doctopics
+from . import attr_licenses
 
 
 def remove_xref(article_title):
@@ -53,7 +54,7 @@ def first_item(l):
 def element_which_requires_permissions(node, node_graphic=None):
     missing_children = []
     missing_permissions = []
-    for child in attributes.PERMISSION_ELEMENTS:
+    for child in attr_licenses.PERMISSION_ELEMENTS:
         if node.find('.//' + child) is None:
             missing_children.append(child)
     if len(missing_children) > 0:
@@ -772,7 +773,7 @@ class ArticleXML(object):
                 if item['ext-link-type'] == 'scielo-pid':
                     item['ext-link-type'] = 'pid'
                 item['id'] = rel.attrib.get('id')
-                if item['related-article-type'] not in attributes.related_articles_type:
+                if item['related-article-type'] not in attr_doctopics.related_articles_type:
                     item['id'] = ''.join([c for c in item['id'] if c.isdigit()])
                 item['xml'] = xml_utils.node_xml(rel)
                 r.append(item)
@@ -841,7 +842,7 @@ class ArticleXML(object):
 
     @property
     def normalized_toc_section(self):
-        return attributes.normalized_toc_section(self.toc_section)
+        return attr_doctopics.normalized_toc_section(self.toc_section)
 
     @property
     def keywords_by_lang(self):
@@ -1489,7 +1490,7 @@ class ArticleXML(object):
     @property
     def permissions_required(self):
         missing_permissions = []
-        for tag in attributes.REQUIRES_PERMISSIONS:
+        for tag in attr_licenses.REQUIRES_PERMISSIONS:
             xpath = './/' + tag
             if tag == 'graphic':
                 xpath = './/*[graphic]'

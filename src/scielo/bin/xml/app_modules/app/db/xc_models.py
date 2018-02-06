@@ -14,7 +14,8 @@ from ...generics.reports import html_reports
 from ...generics.reports import validation_status
 from ..data.article import Issue, Article, Journal
 from ..data.article import PersonAuthor, CorpAuthor, AnonymousAuthor
-from ..data import attributes
+from ..data import attr_doctopics
+from ..data import attr_contribs
 from ..db import serial
 from ..validations import article_data_reports
 from .. import article_utils
@@ -185,7 +186,7 @@ class ArticleRecords(object):
     def add_article_data(self):
         if self.article.dtd_version is not None:
             self._metadata['120'] = 'XML_' + self.article.dtd_version
-        self._metadata['71'] = attributes.normalize_doctopic(self.article.article_type)
+        self._metadata['71'] = attr_doctopics.normalize_doctopic(self.article.article_type)
         self._metadata['40'] = self.article.language
         self._metadata['38'] = self.article.illustrative_materials
         self._metadata['709'] = 'text' if self.article.is_text else 'article'
@@ -236,7 +237,7 @@ class ArticleRecords(object):
             new['n'] = item.fname
             new['s'] = surname_and_suffix
             new['p'] = item.prefix
-            new['r'] = attributes.normalize_role(item.role)
+            new['r'] = attr_contribs.normalize_role(item.role)
             new['1'] = ' '.join(item.xref)
             new['k'] = item.contrib_id.get('orcid')
             new['l'] = item.contrib_id.get('lattes')
@@ -343,7 +344,7 @@ class ArticleRecords(object):
                             if author.suffix != '':
                                 a['s'] += ' ' + author.suffix
                         #a['z'] = author.suffix
-                        a['r'] = attributes.normalize_role(author.role)
+                        a['r'] = attr_contribs.normalize_role(author.role)
                     elif isinstance(author, CorpAuthor):
                         # collab
                         a = author.collab
@@ -690,7 +691,7 @@ class IssueModels(object):
             # @article-type
             #_sectitle = article_section if fixed_sectitle is None else fixed_sectitle
             if article_sectitle is not None:
-                results.extend(attributes.validate_article_type_and_section(article.article_type, article_sectitle, len(article.abstracts) > 0))
+                results.extend(attr_doctopics.validate_article_type_and_section(article.article_type, article_sectitle, len(article.abstracts) > 0))
             article.section_code = article_seccode
 
         return html_reports.tag('div', article_data_reports.validations_table(results))

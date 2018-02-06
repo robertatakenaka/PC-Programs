@@ -5,7 +5,7 @@ from ...generics import utils
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
 from . import validations as validations_module
-from ..data import attributes
+from ..data import attr_ref_types
 
 
 class PkgArticlesValidationsReports(object):
@@ -219,7 +219,7 @@ class PkgArticlesDataReports(object):
                 self.reftype_and_sources[ref.publication_type][ref.source].append(xml_name + ': ' + str(ref.id))
 
                 # year
-                if ref.publication_type in attributes.BIBLIOMETRICS_USE:
+                if ref.publication_type in attr_ref_types.BIBLIOMETRICS_USE:
                     if ref.year not in self.years.keys():
                         if ref.year is None:
                             ref.year = ''

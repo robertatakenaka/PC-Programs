@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from ..db import registered
+from ..data import registered
 from ...generics.reports import validation_status
 from ..validations import article_data_reports
 

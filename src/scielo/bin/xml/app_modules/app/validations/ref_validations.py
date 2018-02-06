@@ -1,24 +1,22 @@
 # coding=utf-8
 import re
-from datetime import datetime
 
 from ...__init__ import _
 from ...generics.reports import validation_status
-from ..data import attributes
+from ..data import attr_ref_types
+from ..data import attr_contribs
 from . import data_validations
 from ...generics import xml_utils
 from ...generics import utils
-from ...generics import encoding
-from ...generics.reports import html_reports
 
 
 def validate_publication_type(publication_type):
     if len(publication_type) == 1:
-        if publication_type[0] not in attributes.PUBLICATION_TYPE:
+        if publication_type[0] not in attr_ref_types.PUBLICATION_TYPE:
             return data_validations.invalid_value_result(
                 'publication-type',
                 publication_type[0],
-                ' | '.join(attributes.PUBLICATION_TYPE),
+                ' | '.join(attr_ref_types.PUBLICATION_TYPE),
                 validation_status.STATUS_FATAL_ERROR)
     else:
         return data_validations.is_required_only_one('publication-type')
@@ -26,7 +24,7 @@ def validate_publication_type(publication_type):
 
 def is_valid_publication_type(publication_type):
     if publication_type is not None and len(publication_type) == 1:
-        if publication_type[0] in attributes.PUBLICATION_TYPE:
+        if publication_type[0] in attr_ref_types.PUBLICATION_TYPE:
             return True
     return False
 
@@ -36,8 +34,8 @@ def validate_pubtype_and_ref_data(publication_type, label, values):
     compl = ''
     items = []
 
-    required = label in attributes.REFERENCE_REQUIRED_SUBELEMENTS.get(publication_type, [])
-    not_allowed = label in attributes.REFERENCE_NOT_ALLOWED_SUBELEMENTS.get(publication_type, [])
+    required = label in attr_ref_types.REFERENCE_REQUIRED_SUBELEMENTS.get(publication_type, [])
+    not_allowed = label in attr_ref_types.REFERENCE_NOT_ALLOWED_SUBELEMENTS.get(publication_type, [])
 
     if required and len(values) == 0:
         problem = _('{requirer} requires {required}. ').format(requirer='@publication-type="' + publication_type + '"', required=label)
@@ -127,7 +125,7 @@ class PersonValidation(object):
         if status == validation_status.STATUS_OK:
             msg = self.contrib.surname
             parts = self.contrib.surname.split(' ')
-            if parts[-1] in attributes.identified_suffixes():
+            if parts[-1] in attr_contribs.identified_suffixes():
                 msg = _('{label} contains invalid {invalid_items_name}: {invalid_items}. ').format(label=u'<surname>{v}</surname>'.format(v=self.contrib.surname), invalid_items_name=_('terms'), invalid_items=parts[-1])
                 msg += _(u'{value} should be identified as {label}, if {term} is the surname, ignore this message. ').format(value=parts[-1], label=u' <suffix>' + parts[-1] + '</suffix>', term=parts[-1])
                 status = validation_status.STATUS_ERROR
@@ -155,13 +153,13 @@ class PersonValidation(object):
     def contrib_id_validation_result(self):
         r = []
         for contrib_id_type, contrib_id in self.contrib.contrib_id.items():
-            if contrib_id_type in attributes.CONTRIB_ID_URLS.keys():
-                if attributes.CONTRIB_ID_URLS.get(contrib_id_type) in contrib_id or contrib_id.startswith('http'):
+            if contrib_id_type in attr_contribs.CONTRIB_ID_URLS.keys():
+                if attr_contribs.CONTRIB_ID_URLS.get(contrib_id_type) in contrib_id or contrib_id.startswith('http'):
                     label = 'contrib-id[@contrib-id-type="' + contrib_id_type + '"]'
                     msg = data_validations.invalid_value_message(label, contrib_id)
                     r.append((label, validation_status.STATUS_ERROR, msg + _('Use only the ID')))
             else:
-                msg = data_validations.invalid_value_result('contrib-id/@contrib-id-type', contrib_id_type, ', '.join(attributes.CONTRIB_ID_URLS.keys()))
+                msg = data_validations.invalid_value_result('contrib-id/@contrib-id-type', contrib_id_type, ', '.join(attr_contribs.CONTRIB_ID_URLS.keys()))
                 r.append(msg)
 
             if contrib_id_type == 'orcid':
@@ -304,7 +302,7 @@ class ReferenceContentValidation(object):
 
     @property
     def publication_type(self):
-        return data_validations.is_expected_value('@publication-type', self.refxml.reference.publication_type, attributes.PUBLICATION_TYPE, validation_status.STATUS_FATAL_ERROR)
+        return data_validations.is_expected_value('@publication-type', self.refxml.reference.publication_type, attr_ref_types.PUBLICATION_TYPE, validation_status.STATUS_FATAL_ERROR)
 
     @property
     def publication_type_dependence(self):
@@ -329,7 +327,7 @@ class ReferenceContentValidation(object):
     @property
     def publication_type_other(self):
         if self.refxml.reference.publication_type == 'other':
-            return ('@publication-type', validation_status.STATUS_WARNING, '@publication-type=' + self.refxml.reference.publication_type + '. ' + data_validations.expected_values_message(_(' or ').join([v for v in attributes.PUBLICATION_TYPE if v != 'other'])))
+            return ('@publication-type', validation_status.STATUS_WARNING, '@publication-type=' + self.refxml.reference.publication_type + '. ' + data_validations.expected_values_message(_(' or ').join([v for v in attr_ref_types.PUBLICATION_TYPE if v != 'other'])))
 
     @property
     def xml(self):

@@ -2,7 +2,7 @@
 
 from ...__init__ import _
 from ...generics.reports import validation_status
-from ..data import attributes
+from ..data import attr_languages
 from ...generics import xml_utils
 
 
@@ -17,7 +17,7 @@ def invalid_labels_and_values(labels_and_values):
 
 
 def check_lang(elem_name, lang):
-    status, msg = attributes.check_lang(lang)
+    status, msg = attr_languages.check_lang(lang)
     if status is False:
         status = validation_status.STATUS_FATAL_ERROR
     else:

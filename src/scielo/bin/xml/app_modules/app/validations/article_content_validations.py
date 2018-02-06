@@ -12,7 +12,12 @@ from ...generics.reports import html_reports
 from ...generics.reports import text_report
 from ...generics.reports import validation_status
 from ..config import xml_versions
-from ..data import attributes
+from ..config import sps_versions
+from ..data import attr_licenses
+from ..data import attr_doctopics
+from ..data import attr_countries
+from ..data import attr_languages
+from ..data import attr_xrefs
 from . import ref_validations
 from . import data_validations
 from . import article_disp_formula
@@ -93,7 +98,7 @@ class AffValidator(object):
         r = []
         for code, text in self.aff_xml.country:
             r.extend(data_validations.required_data('aff/country', text, validation_status.STATUS_ERROR))
-            r.extend(attributes.validate_iso_country_code(code))
+            r.extend(validate_iso_country_code(code))
         return r
 
     @property
@@ -266,7 +271,7 @@ class ArticleContentValidation(object):
 
     @property
     def article_type(self):
-        results = attributes.validate_article_type_and_section(self.article.article_type, self.article.toc_section, len(self.article.abstracts) > 0)
+        results = attr_doctopics.validate_article_type_and_section(self.article.article_type, self.article.toc_section, len(self.article.abstracts) > 0)
         return results
 
     @property
@@ -276,7 +281,7 @@ class ArticleContentValidation(object):
         status = validation_status.STATUS_INFO
         msg = version
 
-        if version in attributes.sps_current_versions():
+        if version in sps_versions.sps_current_versions():
             return [(label, status, msg)]
 
         article_dateiso = self.article.article_pub_dateiso
@@ -285,7 +290,7 @@ class ArticleContentValidation(object):
         if article_dateiso is None:
             return [(label, validation_status.STATUS_ERROR, _('Unable to validate sps version because article has no publication date. '))]
 
-        expected_versions = list(set(attributes.expected_sps_versions(article_dateiso) + attributes.sps_current_versions()))
+        expected_versions = list(set(sps_versions.expected_sps_versions(article_dateiso) + sps_versions.sps_current_versions()))
         expected_versions.sort()
 
         if version in expected_versions:
@@ -299,7 +304,7 @@ class ArticleContentValidation(object):
     @property
     def expiration_sps(self):
         version = str(self.article.sps)
-        days = attributes.sps_version_expiration_days(version)
+        days = sps_versions.sps_version_expiration_days(version)
         if days is None:
             return [(_('sps expiration date'), validation_status.STATUS_WARNING, _('Unable to identify expiration date of SPS version={version}. ').format(version=version))]
         if days < 0:
@@ -373,7 +378,7 @@ class ArticleContentValidation(object):
         r = []
         for related_article in self.article.related_articles:
             value = related_article.get('related-article-type')
-            expected_values = attributes.related_articles_type
+            expected_values = attr_doctopics.related_articles_type
             msg = data_validations.is_expected_value('related-article/@related-article-type', value, expected_values, validation_status.STATUS_FATAL_ERROR)
             r.append(msg)
             if related_article.get('ext-link-type', '') == 'doi':
@@ -388,9 +393,9 @@ class ArticleContentValidation(object):
     @property
     def refstats(self):
         r = []
-        non_scholar_types = [k for k in self.article.refstats.keys() if k not in attributes.BIBLIOMETRICS_USE]
-        sch1 = sum([t for k, t in self.article.refstats.items() if k in attributes.scholars_level1])
-        sch2 = sum([t for k, t in self.article.refstats.items() if k in attributes.scholars_level2])
+        non_scholar_types = [k for k in self.article.refstats.keys() if k not in attr_ref_types.BIBLIOMETRICS_USE]
+        sch1 = sum([t for k, t in self.article.refstats.items() if k in attr_ref_types.scholars_level1])
+        sch2 = sum([t for k, t in self.article.refstats.items() if k in attr_ref_types.scholars_level2])
         total = sum(self.article.refstats.values())
         nonsch = total - sch1 - sch2
         stats = self.article.refstats
@@ -470,14 +475,14 @@ class ArticleContentValidation(object):
     @property
     def contrib(self):
         r = []
-        if self.article.article_type in attributes.AUTHORS_REQUIRED_FOR_DOCTOPIC:
+        if self.article.article_type in attr_doctopics.AUTHORS_REQUIRED_FOR_DOCTOPIC:
             if len(self.article.contrib_names) == 0 and len(self.article.contrib_collabs) == 0:
                 r.append(('contrib', validation_status.STATUS_FATAL_ERROR,  _('{requirer} requires {required}. ').format(requirer=self.article.article_type, required=_('contrib names or collabs'))))
-        elif self.article.article_type in attributes.AUTHORS_NOT_REQUIRED_FOR_DOCTOPIC:
+        elif self.article.article_type in attr_doctopics.AUTHORS_NOT_REQUIRED_FOR_DOCTOPIC:
             if len(self.article.contrib_names) + len(self.article.contrib_collabs) > 0:
                 r.append(('contrib', validation_status.STATUS_FATAL_ERROR,  _('{} must not have {}. ').format(self.article.article_type, _('contrib names or collabs'))))
         for item in self.article.article_type_and_contrib_items:
-            if item[0] in attributes.AUTHORS_REQUIRED_FOR_DOCTOPIC and len(item[1]) == 0:
+            if item[0] in attr_doctopics.AUTHORS_REQUIRED_FOR_DOCTOPIC and len(item[1]) == 0:
                 r.append(('contrib', validation_status.STATUS_FATAL_ERROR, _('{requirer} requires {required}. ').format(requirer=item[0], required=_('contrib names or collabs'))))
         return r
 
@@ -732,7 +737,7 @@ class ArticleContentValidation(object):
     def total_of_references(self):
         r = []
         r.append(self._total(self.article.total_of_references, self.article.ref_count, _('total of references'), 'ref-count'))
-        if self.article.article_type in attributes.REFS_REQUIRED_FOR_DOCTOPIC:
+        if self.article.article_type in attr_doctopics.REFS_REQUIRED_FOR_DOCTOPIC:
             if self.article.total_of_references == 0:
                 r.append((_('total of references'), validation_status.STATUS_FATAL_ERROR, _('{requirer} requires {required}. ').format(requirer=self.article.article_type, required=_('references'))))
         return r
@@ -833,10 +838,10 @@ class ArticleContentValidation(object):
             errors += _errors
 
             article_type = '"@article-type=' + self.article.article_type + '"'
-            if self.article.article_type in attributes.ABSTRACT_REQUIRED_FOR_DOCTOPIC:
+            if self.article.article_type in attr_doctopics.ABSTRACT_REQUIRED_FOR_DOCTOPIC:
                 if len(abstracts) == 0 or len(keywords) == 0:
                     errors.append(('abstract + kwd-group', validation_status.STATUS_ERROR, _('Expected {expected} for {demander}. Be sure that "{demander}" is correct. ').format(expected='abstract + kwd-group', demander=article_type)))
-            elif self.article.article_type in attributes.ABSTRACT_UNEXPECTED_FOR_DOCTOPIC:
+            elif self.article.article_type in attr_doctopics.ABSTRACT_UNEXPECTED_FOR_DOCTOPIC:
                 if len(abstracts) > 0 or len(keywords) > 0:
                     errors.append(('abstract + kwd-group', validation_status.STATUS_ERROR, _('Unexpected {unexpected} for {demander}. Be sure that {demander} is correct. ').format(unexpected='abstract + kwd-group', demander=article_type)))
 
@@ -853,7 +858,7 @@ class ArticleContentValidation(object):
         received = self.article.received_dateiso
         accepted = self.article.accepted_dateiso
         r = []
-        error_level = validation_status.STATUS_FATAL_ERROR if self.article.article_type in attributes.HISTORY_REQUIRED_FOR_DOCTOPIC else validation_status.STATUS_INFO
+        error_level = validation_status.STATUS_FATAL_ERROR if self.article.article_type in attr_doctopics.HISTORY_REQUIRED_FOR_DOCTOPIC else validation_status.STATUS_INFO
         if received is not None and accepted is not None:
             errors = []
             errors.extend(date_utils.is_fulldate('received', received))
@@ -899,7 +904,7 @@ class ArticleContentValidation(object):
         if len(self.article.permissions_required) > 0:
             l = [elem_id for elem_id, missing_children in self.article.permissions_required]
             if len(l) > 0:
-                r.append(('permissions', status, {_('It is highly recommended identifying {elem}, if applicable. ').format(elem=', '.join(attributes.PERMISSION_ELEMENTS)): l}))
+                r.append(('permissions', status, {_('It is highly recommended identifying {elem}, if applicable. ').format(elem=', '.join(attr_licenses.PERMISSION_ELEMENTS)): l}))
         return r
 
     @property
@@ -916,8 +921,8 @@ class ArticleContentValidation(object):
                 if self.check_for_sps_version_number(1.4):
                     r.append(('license/@xml:lang', validation_status.STATUS_ERROR, _('{label} is required. ').format(label='license/@xml:lang')))
             elif lang not in text_languages:
-                r.append(('license/@xml:lang', validation_status.STATUS_ERROR, _('{value} is an invalid value for {label}. ').format(value=lang, label='license/@xml:lang') + _('The license text must be written in {langs}. ').format(langs=_(' or ').join(attributes.translate_code_languages(text_languages))) + _('Expected values for {label}: {expected}. ').format(label='xml:lang', expected=_(' or ').join(text_languages)), license['xml']))
-            result = attributes.validate_license_href(license.get('href'))
+                r.append(('license/@xml:lang', validation_status.STATUS_ERROR, _('{value} is an invalid value for {label}. ').format(value=lang, label='license/@xml:lang') + _('The license text must be written in {langs}. ').format(langs=_(' or ').join(attr_languages.translate_code_languages(text_languages))) + _('Expected values for {label}: {expected}. ').format(label='xml:lang', expected=_(' or ').join(text_languages)), license['xml']))
+            result = attr_licenses.validate_license_href(license.get('href'))
             if result is not None:
                 r.append(result)
             r.append(data_validations.is_expected_value('license/@license-type', license.get('type'), ['open-access'], validation_status.STATUS_FATAL_ERROR))
@@ -1002,7 +1007,7 @@ class ArticleContentValidation(object):
             if xref['ref-type'] is None:
                 message.append(('xref/@ref-type', validation_status.STATUS_ERROR, _('{label} is required. ').format(label='@ref-type'), xref['xml']))
             if xref['rid'] is not None and xref['ref-type'] is not None:
-                elements = attributes.REFTYPE_AND_TAG_ITEMS.get(xref['ref-type'])
+                elements = attr_xrefs.XREFTYPE_AND_TAG_ITEMS.get(xref['ref-type'])
                 tag = id_and_elem_name.get(xref['rid'])
                 if tag is None:
                     message.append(('xref/@rid', validation_status.STATUS_FATAL_ERROR, _('{label} is required. ').format(label=xref['ref-type'] + '[@id=' + xref['rid'] + ']'), xref['xml']))
@@ -1012,7 +1017,7 @@ class ArticleContentValidation(object):
                 elif tag in elements:
                     valid = True
                 elif tag not in elements:
-                    reftypes = [reftype for reftype, _elements in attributes.REFTYPE_AND_TAG_ITEMS.items() if tag in _elements]
+                    reftypes = [reftype for reftype, _elements in attr_xrefs.XREFTYPE_AND_TAG_ITEMS.items() if tag in _elements]
 
                     _msg = _('Unmatched {value} and {label}: {value1} is valid for {label1}, and {value2} is valid for {label2}').format(
                         value='@ref-type (' + xref['ref-type'] + ')',
@@ -1237,7 +1242,7 @@ class ArticleContentValidation(object):
         for lang, f in self.article.expected_pdf_files.items():
             if f not in _pkg_files.keys():
                 _pkg_files[f] = []
-            msg = _('Expected PDF file which content in "{lang}". ').format(lang=_(attributes.LANGUAGES.get(lang)))
+            msg = _('Expected PDF file which content in "{lang}". ').format(lang=_(attr_languages.LANGUAGES.get(lang)))
             if f not in self.pkgfiles.related_files:
                 _pkg_files[f].append((validation_status.STATUS_ERROR, msg + _('Not found {label} in the {item}. ').format(label=f, item=_('package'))))
 
@@ -1339,3 +1344,14 @@ class HRefValidation(object):
             return html_reports.thumb_image(location.replace(self.pkgfiles.path, '{IMG_PATH}'))
         else:
             return html_reports.link(location.replace(self.pkgfiles.path, '{PDF_PATH}'), self.hrefitem.src)
+
+
+def validate_iso_country_code(iso_country_code):
+    r = []
+    if iso_country_code is None:
+        r.append(('aff/country/@country', validation_status.STATUS_FATAL_ERROR, _('{label} is required. ').format(label='aff/country/@country')))
+    else:
+        if iso_country_code not in attr_countries.COUNTRY_CODES:
+            r.append(('aff/country/@country', validation_status.STATUS_FATAL_ERROR, 
+                _('{value} is an invalid value for {label}. ').format(value=iso_country_code, label='aff/country/@country') + _('Expected values: {expected}. ').format(expected=' | '.join(COUNTRY_CODES))))
+    return r
