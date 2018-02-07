@@ -21,7 +21,6 @@ from .server import filestransfer
 
 def call_converter(args, version):
     request = Request(args)
-    request.read()
     if all([request.package_path, request.collection_acron]):
         errors = xml_utils.is_valid_xml_path(request.package_path)
         if len(errors) > 0:
@@ -55,7 +54,7 @@ class XC_Reception(object):
 
     def __init__(self, configuration):
         self.configuration = configuration
-        self.manager = manager.Manager(self.configuration)
+        self.manager = manager.Manager(self.configuration, True)
         self.mailer = mailer.Mailer(configuration)
         self.transfer = filestransfer.FilesTransfer(configuration)
         self.stage = 'xc'
@@ -90,8 +89,8 @@ class XC_Reception(object):
             if len(rcvd_pkg.articles) > 0:
                 files_location = pkg_wk.AssetsDestinations(
                                 rcvd_pkg.wk.scielo_package_path,
-                                rcvd_pkg.issue_data.acron,
-                                rcvd_pkg.issue_data.issue_label,
+                                rcvd_pkg.pkg_issue_data.acron,
+                                rcvd_pkg.pkg_issue_data.issue_label,
                                 self.configuration.serial_path,
                                 self.configuration.local_web_app_path,
                                 self.configuration.web_app_site)

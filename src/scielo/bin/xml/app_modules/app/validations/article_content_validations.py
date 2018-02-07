@@ -17,6 +17,7 @@ from ..data import attr_licenses
 from ..data import attr_doctopics
 from ..data import attr_countries
 from ..data import attr_languages
+from ..data import attr_ref_types
 from ..data import attr_xrefs
 from . import ref_validations
 from . import data_validations
@@ -278,11 +279,11 @@ class ArticleContentValidation(object):
         e referências bibliográficas
         """
         results = attr_doctopics.validate_article_type_and_section(self.article.article_type, self.article.toc_section, len(self.article.abstracts) > 0)
-        msg = _('The documents used to generate the bibliometric indicators must have:\na) @article-type ({}); b) contributors and their affiliations; c) own title, not similar to the table of contents title; d) citations; e) and references. ').format(_(', ').join(attributes.INDEXABLE))
+        msg = _('The documents used to generate the bibliometric indicators must have:\na) @article-type ({}); b) contributors and their affiliations; c) own title, not similar to the table of contents title; d) citations; e) and references. ').format(_(', ').join(attr_doctopics.INDEXABLE))
         level = validation_status.STATUS_RECOMMENDATION
 
         errors = []
-        if self.article.article_type in attributes.INDEXABLE:
+        if self.article.article_type in attr_doctopics.INDEXABLE:
             items = [
                 ('contrib', len(self.article.article_contrib_items)),
                 ('aff', len(self.article.article_affiliations)),
@@ -958,7 +959,7 @@ class ArticleContentValidation(object):
                     r.append(('license/@xml:lang', validation_status.STATUS_ERROR, _('{label} is required. ').format(label='license/@xml:lang')))
             elif lang not in text_languages:
                 r.append(('license/@xml:lang', validation_status.STATUS_ERROR, _('{value} is an invalid value for {label}. ').format(value=lang, label='license/@xml:lang') + _('The license text must be written in {langs}. ').format(langs=_(' or ').join(attr_languages.translate_code_languages(text_languages))) + _('Expected values for {label}: {expected}. ').format(label='xml:lang', expected=_(' or ').join(text_languages)), license['xml']))
-            result = attr_licenses.validate_license_href(license.get('href'))
+            result = validate_license_href(license.get('href'))
             if result is not None:
                 r.append(result)
             r.append(data_validations.is_expected_value('license/@license-type', license.get('type'), ['open-access'], validation_status.STATUS_FATAL_ERROR))
@@ -1221,7 +1222,7 @@ class ArticleContentValidation(object):
         for href in self.article.hrefs:
             if href.is_internal_file and href.src.endswith('.svg'):
                 try:
-                    if '<image' in fs_utils.read_file(os.path.join(self.pkgfiles.path, href.src)):
+                    if '<image' in fs_utils.read_file(os.path.join(self.pkgfiles.file.path, href.src)):
                         messages.append(('svg', validation_status.STATUS_ERROR, _(u'Invalid SVG file: {} contains embedded images. ').format(href.src)))
                 except:
                     pass
@@ -1229,8 +1230,8 @@ class ArticleContentValidation(object):
 
     @property
     def graphics_min_and_max_height(self):
-        min_inline, max_inline = utils.valid_formula_min_max_height(self.article.inline_graphics_heights(self.pkgfiles.path))
-        min_disp, max_disp = utils.valid_formula_min_max_height(self.article.disp_formulas_heights(self.pkgfiles.path), 0.3)
+        min_inline, max_inline = utils.valid_formula_min_max_height(self.article.inline_graphics_heights(self.pkgfiles.file.path))
+        min_disp, max_disp = utils.valid_formula_min_max_height(self.article.disp_formulas_heights(self.pkgfiles.file.path), 0.3)
         if min_disp < min_inline:
             min_disp = min_inline
         if max_disp < max_inline:
@@ -1368,18 +1369,18 @@ class HRefValidation(object):
     def validate_tiff_image(self):
         for name in [self.name+'.tif', self.name+'.tiff']:
             if name in self.pkgfiles.tiff_items:
-                return img_utils.evaluate_tiff(self.pkgfiles.path + '/' + name, self.min_height, self.max_height)
+                return img_utils.evaluate_tiff(self.pkgfiles.file.path + '/' + name, self.min_height, self.max_height)
         return []
 
     @property
     def display(self):
         location = self.hrefitem.src
         if self.hrefitem.is_internal_file:
-            location = self.hrefitem.file_location(self.pkgfiles.path)
+            location = self.hrefitem.file_location(self.pkgfiles.file.path)
         if self.hrefitem.is_image:
-            return html_reports.thumb_image(location.replace(self.pkgfiles.path, '{IMG_PATH}'))
+            return html_reports.thumb_image(location.replace(self.pkgfiles.file.path, '{IMG_PATH}'))
         else:
-            return html_reports.link(location.replace(self.pkgfiles.path, '{PDF_PATH}'), self.hrefitem.src)
+            return html_reports.link(location.replace(self.pkgfiles.file.path, '{PDF_PATH}'), self.hrefitem.src)
 
 
 def validate_iso_country_code(iso_country_code):
@@ -1396,11 +1397,20 @@ def validate_iso_country_code(iso_country_code):
 def validate_license_href(license_href):
     result = None
     if license_href is None:
-        result = ('license/@xlink:href', validation_status.STATUS_FATAL_ERROR, _('{label} is required. ').format(label='license/@href'))
-    elif license_href in LICENSES or license_href + '/' in LICENSES:
-        result = ('license/@xlink:href', validation_status.STATUS_VALID, license_href)
+        result = (
+                    'license/@xlink:href',
+                    validation_status.STATUS_FATAL_ERROR,
+                    _('{label} is required. ').format(label='license/@href'))
+    elif license_href in attr_licenses.LICENSES or license_href + '/' in attr_licenses.LICENSES:
+        result = (
+                    'license/@xlink:href',
+                    validation_status.STATUS_VALID,
+                    license_href)
     else:
-        result = ('license/@xlink:href', validation_status.STATUS_WARNING, _('{value} is an invalid value for {label}. ').format(value=license_href, label='license/@href') + _('Expected values: {expected}. ').format(expected=_(' or ').join(attr_licenses.LICENSES)))
+        result = ('license/@xlink:href',
+                  validation_status.STATUS_WARNING,
+                  _('{value} is an invalid value for {label}. ').format(
+                    value=license_href, label='license/@href') + _('Expected values: {expected}. ').format(expected=_(' or ').join(attr_licenses.LICENSES)))
         #if not ws_requester.wsr.is_valid_url(license_href):
         #    result = ('license/@xlink:href', validation_status.STATUS_FATAL_ERROR, _('{value} is an invalid value for {label}. ').format(value=license_href, label='license/@href'))
     return result

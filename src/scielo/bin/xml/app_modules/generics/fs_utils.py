@@ -24,6 +24,9 @@ class File(object):
     def write(self, _encoding=None):
         write_file(self.filename, self.content, _encoding or self._encoding)
 
+    def read(self, _encoding=None):
+        return read_file(self.filename, _encoding or self._encoding)
+
 
 def read_file(filename, encode='utf-8'):
     if os.path.isfile(filename):

@@ -471,8 +471,8 @@ class MarkupPackage(object):
     def __init__(self, sgmlxml_filename, acron):
         self.acron = acron
         self.sgmlfile = fs_utils.File(sgmlxml_filename)
-        self.wk_area = workarea.Workarea(os.path.dirname(self.sgmlfile.parent_path))
-        self.sgmxml_outputs = workarea.OutputFiles(sgmlfile.name, self.wk_area.reports_path, sgmlfile.path)
+        self.wk_area = pkg_wk.Workarea(os.path.dirname(self.sgmlfile.parent_path))
+        self.sgmxml_outputs = pkg_wk.OutputFiles(sgmlfile.name, self.wk_area.reports_path, sgmlfile.path)
         srcxmlfile = fs_utils.File(self.wk_area.src_path + '/' + self.sgmlfile.name + '.xml')
         self.src_pkgfiles = pkg_wk.ArticlePkgFiles(srcxmlfile)
         self.src_pkgfiles.tiff2jpg()

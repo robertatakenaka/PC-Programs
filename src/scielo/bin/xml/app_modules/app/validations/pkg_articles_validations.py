@@ -82,7 +82,7 @@ class PkgFolderReports(object):
     @property
     def xml_list(self):
         r = ''
-        r += u'<p>{}: {}</p>'.format(_('XML path'), self.package_folder.path)
+        r += u'<p>{}: {}</p>'.format(_('XML path'), self.package_folder.xml_path)
         r += u'<p>{}: {}</p>'.format(_('Total of XML files'), len(self.package_folder.pkgfiles_items))
 
         files = ''

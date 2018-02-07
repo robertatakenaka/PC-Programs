@@ -131,6 +131,7 @@ class ArticlesMergence(object):
         self.results_order_changes = None
         self.results_excluded_orders = None
         self.results_merged_articles = None
+        self.results_accepted_articles = {}
 
     @property
     def pkg_articles_by_order_and_name(self):

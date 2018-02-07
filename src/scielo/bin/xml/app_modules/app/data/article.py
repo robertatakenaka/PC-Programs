@@ -34,10 +34,10 @@ def element_date(date_node):
     d = None
     if date_node is not None:
         d = {}
-        d['season'] = node_findtext(date_node, 'season')
-        d['month'] = node_findtext(date_node, 'month')
-        d['year'] = node_findtext(date_node, 'year')
-        d['day'] = node_findtext(date_node, 'day')
+        d['season'] = xml_utils.node_findtext(date_node, 'season')
+        d['month'] = xml_utils.node_findtext(date_node, 'month')
+        d['year'] = xml_utils.node_findtext(date_node, 'year')
+        d['day'] = xml_utils.node_findtext(date_node, 'day')
     return d
 
 

@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from ...__init__ import _
+from ...generics.reports import validation_status
 
 
 DOCTOPIC = {
@@ -63,18 +64,30 @@ HISTORY_REQUIRED_FOR_DOCTOPIC = [
     'research-article',    
 ]
 
-AUTHORS_REQUIRED_FOR_DOCTOPIC = [
-    'article-commentary', 
-    'book-review', 
-    'brief-report', 
-    'case-report', 
-    'editorial', 
-    'letter', 
-    'rapid-communication', 
-    'research-article', 
-    'reply', 
-    'review-article', 
-    ]
+INDEXABLE = [
+    'research-article',
+    'article-commentary',
+    'rapid-communication',
+    'brief-report',
+    'case-report',
+    'correction',
+    'editorial',
+    'interview',
+    'letter',
+    'other',
+    'retraction',
+    'partial-retraction',
+    'review-article',
+    'book-review',
+    'addendum',
+    'guideline',
+    'oration',
+    'discussion',
+    'obituary',
+    'reply',
+]
+
+AUTHORS_REQUIRED_FOR_DOCTOPIC = INDEXABLE
 
 AUTHORS_NOT_REQUIRED_FOR_DOCTOPIC = [
     'correction',

@@ -12,6 +12,7 @@ from ...generics import doi_validations
 from ..ws import institutions_manager
 
 from ..validations import pkg_articles_validations
+from ..validations import validations as validations_module
 from ..validations import article_validations as article_validations_module
 from ..validations import reports_maker
 from ..validations import merged_articles_validations
@@ -63,7 +64,7 @@ class PkgChecking(object):
                         a.normalized_affiliations[aff_xml.id].variations = variations
 
     def validate_package(self):
-        article_validator = self.pkg_checker.article_validator(self.rcvd_pkg)
+        article_validator = self.pkg_checker.get_article_validator(self.rcvd_pkg)
         encoding.display_message(_('Validate package ({n} files)').format(n=len(self.rcvd_pkg.articles)))
         self.pkg_validations = {}
         for name in sorted(self.rcvd_pkg.pkgfiles.keys()):
@@ -116,9 +117,9 @@ class PkgChecker(object):
         self.INTERATIVE = config.interative_mode and stage in ['xc', 'xpm']
 
     def get_article_validator(self, rcvd_pkg):
-        xml_journal_data_validator = article_validations_module.XMLJournalDataValidator(rcvd_pkg.issue_data.journal_data)
+        xml_journal_data_validator = article_validations_module.XMLJournalDataValidator(rcvd_pkg.pkg_issue_data.journal_data)
         xml_issue_data_validator = article_validations_module.XMLIssueDataValidator(rcvd_pkg.registered)
-        xml_content_validator = article_validations_module.XMLContentValidator(rcvd_pkg.issue_data, rcvd_pkg.registered, self.is_xml_generation, self.app_institutions_manager, self.doi_validator, self.config)
+        xml_content_validator = article_validations_module.XMLContentValidator(rcvd_pkg.pkg_issue_data, rcvd_pkg.registered, self.is_xml_generation, self.app_institutions_manager, self.doi_validator, self.config)
         return article_validations_module.ArticleValidator(xml_journal_data_validator, xml_issue_data_validator, xml_content_validator, self.config.xml_structure_validator_preference)
 
 
@@ -153,7 +154,7 @@ class CheckingReports(object):
     def merged_validations(self):
         if not hasattr(self, '_validations'):
             self._validations = validations_module.ValidationsResult()
-            self._validations.message = self.content
+            self._validations.message = self.merged_content
         return self._validations
 
     @property
@@ -168,7 +169,7 @@ class CheckingReports(object):
 
     @property
     def pkg_files_report(self):
-        return self.pkg_folder_reports.orphan_files_report + self.pkg_articles_data_report.invalid_xml_report
+        return self.pkg_folder_reports.orphan_files_report + self.pkg_articles_data_reports.invalid_xml_report
 
     @property
     def group_validations_report(self):
@@ -185,12 +186,12 @@ class CheckingReports(object):
 
     @property
     def aff_report(self):
-        return self.pkg_articles_data_report.articles_affiliations_report
+        return self.pkg_articles_data_reports.articles_affiliations_report
 
     @property
     def dates_report(self):
-        return self.pkg_articles_data_report.articles_dates_report
+        return self.pkg_articles_data_reports.articles_dates_report
 
     @property
     def references(self):
-        return self.pkg_articles_data_report.references_overview_report + self.pkg_articles_data_report.sources_overview_report
+        return self.pkg_articles_data_reports.references_overview_report + self.pkg_articles_data_reports.sources_overview_report

@@ -180,7 +180,7 @@ class ArticleValidator(object):
         self.xml_struct_validator_pref = xml_struct_validator_pref
 
     def validate(self, article, outputs, pkgfiles):
-        scielo_dtd_files, pmc_dtd_files = xml_versions.identify_dtd_files(fs_utils.read_file(pkgfiles.filename))
+        scielo_dtd_files, pmc_dtd_files = xml_versions.identify_dtd_files(pkgfiles.file.read())
         xml_structure_validator = XMLStructureValidator(scielo_dtd_files, article.sps, self.xml_struct_validator_pref)
 
         fs_utils.write_file(outputs.data_report_filename, _('Processing... '))
@@ -188,7 +188,7 @@ class ArticleValidator(object):
         artval = ArticleValidations()
         artval.journal_validations = self.xml_journal_data_validator.validate(article)
         artval.issue_validations = self.xml_issue_data_validator.validate(article)
-        artval.xml_structure_validations = xml_structure_validator.validate(pkgfiles.filename, outputs)
+        artval.xml_structure_validations = xml_structure_validator.validate(pkgfiles.file.filename, outputs)
         artval.xml_content_validations, artval.article_display_report = self.xml_content_validator.validate(article, outputs, pkgfiles)
         if self.xml_content_validator.is_xml_generation:
             stats = artval.xml_content_validations.statistics_display(False)

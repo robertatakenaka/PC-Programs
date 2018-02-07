@@ -20,7 +20,6 @@ def call_make_packages(args, version):
     reception = pkg_reception.Reception(manager.Manager(config.Configuration()))
 
     request = Request(args)
-    request.read()
     request.get_pkg_data(reception)
 
     requester = Requester(request.stage, request.INTERATIVE)
@@ -153,7 +152,7 @@ class Requester(object):
         return 'done', 'blue'
 
     def execute(self, rcvd_pkg, GENERATE_PMC=False):
-        if rcvd_pkg is not None and len(rcvd_pkg.normalized_pkgfiles) > 0:
+        if rcvd_pkg is not None and len(rcvd_pkg.pkgfiles) > 0:
 
             pkg_checker = pkg_checking.PkgChecker(
                 self.configuration, self.stage)
@@ -162,7 +161,8 @@ class Requester(object):
 
             files_location = pkg_wk.AssetsDestinations(
                                 rcvd_pkg.wk.scielo_package_path,
-                                rcvd_pkg.issue_data.acron)
+                                rcvd_pkg.pkg_issue_data.acron,
+                                rcvd_pkg.pkg_issue_data.issue_label)
 
             checking.report(files_location)
 
@@ -185,4 +185,4 @@ class Requester(object):
             if not pkg_checker.is_xml_generation and not pkg_checker.is_db_generation:
                 rcvd_pkg.pkgfolder.zip()
                 for name, pkgfiles in rcvd_pkg.pkgfiles.items():
-                    pkgfiles.zip(rcvd_pkg.pkgfolder.path + '_zips')
+                    pkgfiles.zip(rcvd_pkg.pkgfolder.xml_path + '_zips')

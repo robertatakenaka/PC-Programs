@@ -4,8 +4,6 @@ from ...__init__ import _
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
 from . import article_data_reports
-from . import validations as validations_module
-from ..data import merged
 
 
 class MergedReports(object):
@@ -13,6 +11,7 @@ class MergedReports(object):
     def __init__(self, merged):
         self.mgd = merged
 
+    @property
     def consistency_report(self):
         reports = []
         reports += self.report_missing_required_issue_data
@@ -156,9 +155,9 @@ class MergenceReports(object):
     def report_articles_order_conflicts(self):
         if not hasattr(self, '_report_articles_order_conflicts'):
             r = []
-            if len(self.mergence.results_pkg_order_conflicts) > 0:
+            if len(self.mergence.pkg_order_conflicts) > 0:
                 html_reports.tag('h2', _('Order conflicts'))
-                for order, names in self.mergence.results_pkg_order_conflicts.items():
+                for order, names in self.mergence.pkg_order_conflicts.items():
                     r.append(html_reports.tag('h3', order))
                     r.append(html_reports.format_html_data(names))
             self._report_articles_order_conflicts = ''.join(r)

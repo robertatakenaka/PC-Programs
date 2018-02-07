@@ -11,7 +11,7 @@ class Reception(object):
 
     def normalize(self, xml_list, dtd_location_type, dest_path):
         pkgfiles = {}
-        for item in self.xml_list:
+        for item in xml_list:
             input_pkg = pkg_wk.ArticlePkgFiles(item)
             input_pkg.tiff2jpg()
 
@@ -41,12 +41,13 @@ class ReceivedPackage(object):
         self.pkgfiles = pkgfiles
         self.wk = wk
         # FIXME path
+        path = list(pkgfiles.values())[0].file.path
         self.pkgfolder = pkg_wk.ArticlePkgFolder(path, self.pkgfiles)
         self.articles = {k: v.article for k, v in self.pkgfiles.items()}
         self.pkg_issue_data = PkgIssueData(self.articles)
         self.outputs = outputs
         if outputs is None:
-            self.outputs = {k: workarea.OutputFiles(k, wk.reports_path, None) for k, v in self.pkgfiles.items()}
+            self.outputs = {k: pkg_wk.OutputFiles(k, wk.reports_path, None) for k, v in self.pkgfiles.items()}
         self.registered = None
 
 
@@ -60,7 +61,7 @@ class PkgIssueData(object):
         self.journal = None
         self.journal_data = None
         self._issue_label = None
-        self.is_pmc_journal = any([doc.journal_id_nlm_ta is not None for name, doc in self.articles.items()])
+        self.is_pmc_journal = any([doc.journal_id_nlm_ta is not None for name, doc in articles.items()])
 
         data = [(a.journal_title, a.print_issn, a.e_issn, a.issue_label) for a in articles.values() if a.tree is not None]
         if len(data) > 0:

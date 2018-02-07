@@ -27,7 +27,7 @@ PREFIXES['t'] = 'tabwrap'
 PREFIXES['tab'] = 'tabwrap'
 PREFIXES['f'] = 'figgrp'
 PREFIXES['fig'] = 'figgrp'
-SORTED_PREFIXES = sorted(tuple(PREFIXES), reversed=True)
+SORTED_PREFIXES = sorted(tuple(PREFIXES), reverse=True)
 
 
 def classify_mkp_pkg_components_by_elem_name_and_id(name, main_name):
@@ -331,6 +331,7 @@ class ArticlePkgFiles(PkgFiles):
 class ArticlePkgFolder(object):
 
     def __init__(self, xml_path, pkgfiles_items):
+        self.name = os.path.basename(xml_path)
         self.xml_path = xml_path
         self.pkgfiles_items = pkgfiles_items
         if pkgfiles_items is None:

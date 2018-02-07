@@ -76,7 +76,7 @@ class ReportsMaker(object):
     @property
     def website_message(self):
         if self.conversion is None:
-            return toc_extended_report(self.conversion.rcvd_pkg.articles)
+            return toc_extended_report(self.checking_reports.rcvd_pkg.articles)
         return self.conversion.conclusion_message + toc_extended_report(self.conversion.registered_articles)
 
     @property

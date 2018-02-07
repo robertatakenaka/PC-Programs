@@ -55,11 +55,11 @@ class PkgConverter(object):
 
     def convert(self):
         self.articles_conversion_validations = validations_module.ValidationsResultItems()
-        scilista_items = [self.rcvd_pkg.issue_data.acron_issue_label]
+        scilista_items = [self.rcvd_pkg.pkg_issue_data.acron_issue_label]
         if self.checking_reports.blocking_errors == 0 and (self.accepted_articles == len(self.rcvd_pkg.articles) or len(self.mergence.excluded_orders) > 0):
             self.error_messages = self.db.exclude_articles(self.mergence.excluded_orders)
 
-            _scilista_items = self.db.convert_articles(self.rcvd_pkg.issue_data.acron_issue_label, self.mergence.accepted_articles, self.rcv_pkg.registered.issue_models.record, self.create_windows_base)
+            _scilista_items = self.db.convert_articles(self.rcvd_pkg.pkg_issue_data.acron_issue_label, self.mergence.accepted_articles, self.rcv_pkg.registered.issue_models.record, self.create_windows_base)
             scilista_items.extend(_scilista_items)
             self.conversion_status.update(self.db.db_conversion_status)
 
@@ -90,7 +90,7 @@ class PkgConverter(object):
             aop_pdf_path = self.local_web_app_path + '/bases/pdf/' + folder
             if not os.path.isdir(aop_pdf_path):
                 os.makedirs(aop_pdf_path)
-            issue_pdf_path = self.local_web_app_path + '/bases/pdf/' + self.rcvd_pkg.issue_data.acron_issue_label.replace(' ', '/')
+            issue_pdf_path = self.local_web_app_path + '/bases/pdf/' + self.rcvd_pkg.pkg_issue_data.acron_issue_label.replace(' ', '/')
 
             issue_pdf_files = [f for f in os.listdir(issue_pdf_path) if f.startswith(xml_name) or f[2:].startswith('_'+xml_name)]
 
@@ -144,7 +144,7 @@ class PkgConverter(object):
 
     @property
     def acron_issue_label(self):
-        return self.rcvd_pkg.issue_data.acron_issue_label
+        return self.rcvd_pkg.pkg_issue_data.acron_issue_label
 
     @property
     def accepted_articles(self):
