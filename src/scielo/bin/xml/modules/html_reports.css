@@ -88,6 +88,7 @@ pre {
 code {
     color: #113F8C;
     background-color: white;
+    font-size: 7pt;
     font-family: Courier;
     word-wrap:break-word;
 }
@@ -157,7 +158,7 @@ h5 {
    font-size: 9pt;
    color: black;
    vertical-align: top;
-/*   width:20%;  */
+   width:20%;  
 } 
 .fatalerror .td_label {
    border: 1px solid gray;
@@ -244,22 +245,17 @@ h5 {
     color: white;
 }
 .ok {
-    background-color: #C5E0DC;
+    background-color: #959F1F;
     color: black;
     padding: 2px;
 }
 .valid {
-    background-color: #799888;
-    color: white;
-    padding: 2px;
-}
-.recommendation {
-    background-color: #E04DC0;
+    background-color: #CFF09E;
     color: white;
     padding: 2px;
 }
 .info {
-    background-color: #69D2E7;
+    background-color: #A5C8DE;
     padding: 2px;
 }
 .label {
@@ -753,26 +749,26 @@ h5 {
   color: #2F3559;
   background-color: #CAD7B2;
   border-radius: 1em;
-/*   margin: 10px; */
+   margin: 10px;
 }
 .suffix {
   text-align: left;
   color: #2F3559;
   background-color: #F56991;
   border-radius: 1em;
-/*   margin: 10px; */
+   margin: 10px;
 }
 .name {
   text-align: left;
   color: #2F3559;
   background-color: #B5D8EB;
   border-radius: 1em;
-/*   margin: 10px; */
+   margin: 10px;
 }
 .collab {
   text-align: left;
   color: #2F3559;
   background-color: #DCD2E5;
   border-radius: 1em;
-/*   margin: 10px; */
+   margin: 10px;
 }
