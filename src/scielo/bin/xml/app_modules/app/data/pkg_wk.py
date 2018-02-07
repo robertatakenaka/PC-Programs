@@ -5,6 +5,8 @@ import shutil
 
 from ...generics import fs_utils
 from ...generics import img_utils
+from ...generics import xml_utils
+from ..data import article
 
 
 MARKUP_SUFFIXES = ['t', 'f', 'e', 'img', 'image']
@@ -279,10 +281,10 @@ class PkgFiles(object):
             shutil.copyfile(self.file.filename, dest_path + '/' + self.file.basename)
 
 
-class ArticlePkgFiles(pkg_wk.PkgFiles):
+class ArticlePkgFiles(PkgFiles):
 
     def __init__(self, filename):
-        pkg_wk.PkgFiles.__init__(self, filename)
+        PkgFiles.__init__(self, filename)
         self.xmlcontent = xml_utils.XMLContent(filename)
 
     @property

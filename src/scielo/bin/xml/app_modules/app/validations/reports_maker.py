@@ -7,35 +7,19 @@ from ...generics import utils
 from ...generics import encoding
 from ...generics.reports import html_reports
 from ...generics.reports import validation_status
-from . import article_data_reports 
-from . import pkg_articles_validations # FIXME
+from . import article_data_reports
 from . import validations as validations_module
 
 
 class ReportsMaker(object):
 
-    def __init__(self, rcvd_pkg, checking_reports, files_location, stage, xpm_version=None, conversion=None):
+    def __init__(self, checking_reports, files_location, stage, xpm_version=None, conversion=None):
         self.checking_reports = checking_reports
         self.conversion = conversion
         self.xpm_version = xpm_version
         self.stage = stage
-        self.report_title = None
-        self.report_version = ''
-        if self.stage == 'xc':
-            self.report_version = '_' + datetime.now().isoformat()[0:19].replace(':', '').replace('T', '_')
+        self.setUp(stage)
         self.files_location = files_location
-        self.rcvd_pkg = rcvd_pkg
-        # FIXME
-        self.pkg_reports = pkg_articles_validations.PackageReports(rcvd_pkg.pkgfolder)
-        self.pkg_articles_data_report = pkg_articles_validations.PkgArticlesDataReports(rcvd_pkg.articles)
-
-        self.tab = 'summary-report'
-        if self.stage == 'xpm':
-            self.report_title = _('XML Package Maker Report')
-        elif self.stage == 'xc':
-            self.report_title = _('XML Conversion (XML to Database)')
-            self.tab = 'xc-validations'
-
         self.tabs = ['pkg-files', 'summary-report', 'group-validations-report', 'individual-validations-report', 'references', 'dates-report', 'aff-report', 'xc-validations', 'website']
         self.labels = {
             'pkg-files': _('Files/Folders'),
@@ -50,16 +34,25 @@ class ReportsMaker(object):
         }
         self.validations = validations_module.ValidationsResult()
 
+    def setUp(self, stage):
+        self.report_title = _('XML Package Maker Report')
+        self.tab = 'summary-report'
+        self.report_version = ''
+        if stage == 'xc':
+            self.report_version = '_' + datetime.now().isoformat()[0:19].replace(':', '').replace('T', '_')
+            self.report_title = _('XML Conversion (XML to Database)')
+            self.tab = 'xc-validations'
+
     @property
     def report_components(self):
         components = {}
         components['pkg-files'] = self.full_xpm_version + self.pkg_files
-        components['summary-report'] = self.summary_report
-        components['group-validations-report'] = self.group_validations_report
-        components['individual-validations-report'] = self.individual_validations_report
-        components['aff-report'] = self.aff_report
-        components['dates-report'] = self.dates_report
-        components['references'] = self.references
+        components['summary-report'] = self.checking_reports.pkg_files_report
+        components['group-validations-report'] = self.checking_reports.group_validations_report
+        components['individual-validations-report'] = self.checking_reports.individual_validations_report
+        components['aff-report'] = self.checking_reports.aff_report
+        components['dates-report'] = self.checking_reports.dates_report
+        components['references'] = self.checking_reports.references
         components['website'] = self.website_message
         if self.conversion is not None:
             components['xc-validations'] = self.xc_validations
@@ -75,53 +68,23 @@ class ReportsMaker(object):
 
     @property
     def pkg_files(self):
-        r = self.pkg_reports.xml_list
+        r = self.checking_reports.pkg_folder_reports.xml_list
         if self.files_location.result_path is not None:
             r += self.processing_result_location
         return r
 
     @property
-    def summary_report(self):
-        return self.pkg_reports.orphan_files_report + self.pkg_articles_data_report.invalid_xml_report
-
-    @property
-    def group_validations_report(self):
-        r = self.pkg_reports.orphan_files_report + self.pkg_articles_data_report.invalid_xml_report
-        if not self.checking_reports.is_xml_generation:
-            r += self.checking_reports.journal_and_issue_report
-        if self.conversion is not None:
-            if self.checking_reports.merged_articles_reports.registered.issue_error_msg is not None:
-                r += self.checking_reports.merged_articles_reports.registered.issue_error_msg
-        return r
-
-    @property
-    def individual_validations_report(self):
-        return self.checking_reports.pkg_validations_reports.detailed_report
-
-    @property
-    def aff_report(self):
-        return self.pkg_articles_data_report.articles_affiliations_report
-
-    @property
-    def dates_report(self):
-        return self.pkg_articles_data_report.articles_dates_report
-
-    @property
-    def references(self):
-        return self.pkg_articles_data_report.references_overview_report + self.pkg_articles_data_report.sources_overview_report
-
-    @property
     def website_message(self):
         if self.conversion is None:
-            return toc_extended_report(self.pkg.articles)
+            return toc_extended_report(self.conversion.rcvd_pkg.articles)
         return self.conversion.conclusion_message + toc_extended_report(self.conversion.registered_articles)
 
     @property
     def xc_validations(self):
         r = [html_reports.tag('h3', _('Conversion Result'))]
         r.append(self.conversion.conclusion_message)
-        r.append(self.checking_reports.merged_articles_reports.mergence_reports.report_articles_data_conflicts)
-        r.append(self.checking_reports.merged_articles_reports.mergence_reports.report_articles_data_changes)
+        r.append(self.checking_reports.mergence_reports.report_articles_data_conflicts)
+        r.append(self.checking_reports.mergence_reports.report_articles_data_changes)
         r.append(self.conversion.aop_status_report)
         r.append(self.conversion.articles_conversion_validations.report())
         r.append(self.conversion.conversion_report)
@@ -130,7 +93,7 @@ class ReportsMaker(object):
     @property
     def full_xpm_version(self):
         if self.xpm_version is not None:
-            return '<!-- XPM 2017/2 --> <!-- {} --> <!-- {} --> '.format(self.xpm_version[0], self.xpm_version[1])
+            return '<!-- XPM 2018/1 --> <!-- {} --> <!-- {} --> '.format(self.xpm_version[0], self.xpm_version[1])
         return ''
 
     @property
@@ -176,6 +139,7 @@ def error_msg_subtitle():
     msg += html_reports.tag('p', _('Fatal error - indicates errors which impact on the quality of the bibliometric indicators and other services'))
     msg += html_reports.tag('p', _('Error - indicates the other kinds of errors'))
     msg += html_reports.tag('p', _('Warning - indicates that something can be an error or something needs more attention'))
+    msg += html_reports.tag('p', _('Recommendation - indicates best practices to improve the bibliometric indicators'))
     return html_reports.tag('div', msg, 'subtitle')
 
 
@@ -187,6 +151,7 @@ def label_errors(content):
         content = label_errors_type(content, validation_status.STATUS_FATAL_ERROR, 'F')
         content = label_errors_type(content, validation_status.STATUS_ERROR, 'E')
         content = label_errors_type(content, validation_status.STATUS_WARNING, 'W')
+        content = label_errors_type(content, validation_status.STATUS_RECOMMENDATION, 'R')
     return content
 
 

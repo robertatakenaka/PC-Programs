@@ -126,9 +126,9 @@ class MergenceReports(object):
     def report_articles_merging_conflicts(self):
         if not hasattr(self, '_report_articles_merging_conflicts'):
             merging_errors = []
-            if len(self.mergence.titaut_conflicts) + len(self.mergence.name_order_conflicts) > 0:
+            if len(self.mergence.results_titaut_conflicts) + len(self.mergence.results_name_order_conflicts) > 0:
 
-                keys = list(self.mergence.titaut_conflicts.keys()) + list(self.mergence.name_order_conflicts.keys())
+                keys = list(self.mergence.results_titaut_conflicts.keys()) + list(self.mergence.results_name_order_conflicts.keys())
                 keys = sorted(list(set(keys)))
 
                 merging_errors = [html_reports.p_message(validation_status.STATUS_BLOCKING_ERROR + ': ' + _('Unable to update because the registered article data and the package article data do not match. '))]
@@ -140,12 +140,12 @@ class MergenceReports(object):
                     values = [article_data_reports.display_article_data_to_compare(articles.get(name))]
 
                     articles_in_conflict = []
-                    for reg_name, art in self.mergence.titaut_conflicts.get(name, {}).items():
+                    for reg_name, art in self.mergence.results_titaut_conflicts.get(name, {}).items():
                         articles_in_conflict.append(article_data_reports.display_article_data_to_compare(art))
                     values.append(''.join(articles_in_conflict))
 
                     articles_in_conflict = []
-                    for pkg_name, art in self.mergence.name_order_conflicts.get(name, {}).items():
+                    for pkg_name, art in self.mergence.results_name_order_conflicts.get(name, {}).items():
                         articles_in_conflict.append(article_data_reports.display_article_data_to_compare(art))
                     values.append(''.join(articles_in_conflict))
 
@@ -156,9 +156,9 @@ class MergenceReports(object):
     def report_articles_order_conflicts(self):
         if not hasattr(self, '_report_articles_order_conflicts'):
             r = []
-            if len(self.mergence.pkg_order_conflicts) > 0:
+            if len(self.mergence.results_pkg_order_conflicts) > 0:
                 html_reports.tag('h2', _('Order conflicts'))
-                for order, names in self.mergence.pkg_order_conflicts.items():
+                for order, names in self.mergence.results_pkg_order_conflicts.items():
                     r.append(html_reports.tag('h3', order))
                     r.append(html_reports.format_html_data(names))
             self._report_articles_order_conflicts = ''.join(r)
@@ -168,9 +168,9 @@ class MergenceReports(object):
     def report_articles_changed_names(self):
         if not hasattr(self, '_report_articles_changed_names'):
             r = []
-            if len(self.mergence.name_changes) > 0:
+            if len(self.mergence.results_name_changes) > 0:
                 r.append(html_reports.tag('h3', _('Names changes')))
-                for old, new in self.mergence.name_changes.items():
+                for old, new in self.mergence.results_name_changes.items():
                     r.append(html_reports.tag('p', '{old} => {new}'.format(old=old, new=new), 'info'))
             self._report_articles_changed_names = ''.join(r)
         return self._report_articles_changed_names
@@ -179,13 +179,13 @@ class MergenceReports(object):
     def report_articles_changed_orders(self):
         if not hasattr(self, '_report_articles_changed_orders'):
             r = []
-            if len(self.mergence.order_changes) > 0:
+            if len(self.mergence.results_order_changes) > 0:
                 r.append(html_reports.tag('h3', _('Orders changes')))
-                for name, changes in self.mergence.order_changes.items():
+                for name, changes in self.mergence.results_order_changes.items():
                     r.append(html_reports.tag('p', '{name}: {old} => {new}'.format(name=name, old=changes[0], new=changes[1]), 'info'))
-            if len(self.mergence.excluded_orders) > 0:
+            if len(self.mergence.results_excluded_orders) > 0:
                 r.append(html_reports.tag('h3', _('Orders exclusions')))
-                for name, order in self.mergence.excluded_items.items():
+                for name, order in self.mergence.results_excluded_items.items():
                     r.append(html_reports.tag('p', '{order} ({name})'.format(name=name, order=order), 'info'))
             self._report_articles_changed_orders = ''.join(r)
         return self._report_articles_changed_orders
@@ -194,8 +194,8 @@ class MergenceReports(object):
     def report_articles_data_changes(self):
         if not hasattr(self, '_report_articles_data_changes'):
             r = ''
-            r += self.report_articles_changed_orders # mergence
-            r += self.report_articles_changed_names # mergence
+            r += self.report_articles_changed_orders
+            r += self.report_articles_changed_names
             if len(r) > 0:
                 r = html_reports.tag('h2', _('Changes Report')) + r
             self._report_articles_data_changes = r
@@ -203,39 +203,9 @@ class MergenceReports(object):
 
     @property
     def report_articles_data_conflicts(self):
-        # mergence
         if not hasattr(self, '_report_articles_data_conflicts'):
             self._report_articles_data_conflicts = ''
             r = ''.join([self.report_articles_order_conflicts() + self.report_articles_merging_conflicts()])
             if len(r) > 0:
                 self._report_articles_data_conflicts = html_reports.tag('h2', _('Data Conflicts Report')) + r
         return self._report_articles_data_conflicts
-
-
-class MergedArticlesReports(object):
-
-    def __init__(self, mergence, registered):
-        self.registered = registered
-        mgd = merged.Merged(mergence.merged_articles, registered.articles_db_manager is not None)
-        self.mgd_reports = MergedReports(mgd)
-        self.mergence_reports = MergenceReports(mergence)
-
-    @property
-    def content(self):
-        if not hasattr(self, '_content'):
-            r = []
-            if self.registered.issue_error_msg is not None:
-                r.append(self.registered.issue_error_msg)
-            r.append(self.mgd_reports.consistency_report)
-            r.append(self.mgd_reports.report_issue_page_values)
-            r.append(self.mergence_reports.report_articles_data_conflicts)
-            r.append(self.mergence_reports.report_articles_data_changes)
-            self._content = ''.join(r)
-        return self._content
-
-    @property
-    def validations(self):
-        if not hasattr(self, '_validations'):
-            self._validations = validations_module.ValidationsResult()
-            self._validations.message = self.content
-        return self._validations

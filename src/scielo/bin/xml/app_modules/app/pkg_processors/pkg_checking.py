@@ -83,18 +83,16 @@ class PkgChecking(object):
         pkg_reports = pkg_articles_validations.PkgArticlesValidationsReports(
             self.pkg_validations,
             self.rcvd_pkg.registered.articles_db_manager is not None)
-        mergence_reports = merged_articles_validations.MergedArticlesReports(
-            self.mergence,
-            self.rcvd_pkg.registered)
+
         self.checking_reports = CheckingReports(
+            self.rcvd_pkg,
+            self.mergence,
             pkg_reports,
-            mergence_reports,
             self.pkg_checker.is_xml_generation)
 
     def generate_main_report(self, files_location, pkg_converter=None):
         self.files_location = files_location
         self.main_report = reports_maker.ReportsMaker(
-                    self.rcvd_pkg,
                     self.checking_reports,
                     files_location,
                     self.pkg_checker.stage,
@@ -126,19 +124,74 @@ class PkgChecker(object):
 
 class CheckingReports(object):
 
-    def __init__(self, pkg_validations_reports, merged_articles_reports, is_xml_generation=False):
+    def __init__(self, rcvd_pkg, mergence, pkg_validations_reports, is_xml_generation=False):
+        self.rcvd_pkg = rcvd_pkg
+        self.registered = rcvd_pkg.registered
+        mgd = merged.Merged(mergence.merged_articles, self.registered.articles_db_manager is not None)
+        self.mgd_reports = merged_articles_validations.MergedReports(mgd)
+        self.mergence_reports = merged_articles_validations.MergenceReports(mergence)
         self.pkg_validations_reports = pkg_validations_reports
-        self.merged_articles_reports = merged_articles_reports
         self.is_xml_generation = is_xml_generation
-        self.blocking_errors = sum([self.merged_articles_reports.validations.blocking_errors,
+        self.blocking_errors = sum([self.merged_validations.blocking_errors,
             self.pkg_validations_reports.pkg_issue_validations.blocking_errors])
+        self.pkg_folder_reports = pkg_articles_validations.PkgFolderReports(rcvd_pkg.pkgfolder)
+        self.pkg_articles_data_reports = pkg_articles_validations.PkgArticlesDataReports(rcvd_pkg.articles)
+
+    @property
+    def merged_content(self):
+        if not hasattr(self, '_content'):
+            r = []
+            if self.registered.issue_error_msg is not None:
+                r.append(self.registered.issue_error_msg)
+            r.append(self.mgd_reports.consistency_report)
+            r.append(self.mgd_reports.report_issue_page_values)
+            r.append(self.mergence_reports.report_articles_data_conflicts)
+            r.append(self.mergence_reports.report_articles_data_changes)
+            self._content = ''.join(r)
+        return self._content
+
+    @property
+    def merged_validations(self):
+        if not hasattr(self, '_validations'):
+            self._validations = validations_module.ValidationsResult()
+            self._validations.message = self.content
+        return self._validations
 
     @property
     def journal_and_issue_report(self):
         report = []
-        report.append(self.merged_articles_reports.mgd_reports.journal_issue_header_report)
+        report.append(self.mgd_reports.journal_issue_header_report)
         errors_only = not self.is_xml_generation
         report.append(self.pkg_validations_reports.pkg_journal_validations.report(errors_only))
         report.append(self.pkg_validations_reports.pkg_issue_validations.report(errors_only))
-        report.append(self.merged_articles_reports.content)
+        report.append(self.merged_content)
         return ''.join(report)
+
+    @property
+    def pkg_files_report(self):
+        return self.pkg_folder_reports.orphan_files_report + self.pkg_articles_data_report.invalid_xml_report
+
+    @property
+    def group_validations_report(self):
+        r = self.pkg_files_report
+        if not self.is_xml_generation:
+            r += self.journal_and_issue_report
+        if self.registered.issue_error_msg is not None:
+            r += self.registered.issue_error_msg
+        return r
+
+    @property
+    def individual_validations_report(self):
+        return self.pkg_validations_reports.detailed_report
+
+    @property
+    def aff_report(self):
+        return self.pkg_articles_data_report.articles_affiliations_report
+
+    @property
+    def dates_report(self):
+        return self.pkg_articles_data_report.articles_dates_report
+
+    @property
+    def references(self):
+        return self.pkg_articles_data_report.references_overview_report + self.pkg_articles_data_report.sources_overview_report

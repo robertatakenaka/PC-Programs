@@ -74,7 +74,7 @@ class PkgArticlesValidationsReports(object):
         return sum([v.fatal_errors for v in self.pkg_articles_validations.values()])
 
 
-class PackageReports(object):
+class PkgFolderReports(object):
 
     def __init__(self, package_folder):
         self.package_folder = package_folder
