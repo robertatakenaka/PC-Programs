@@ -126,8 +126,7 @@ class CheckingReports(object):
 
     def __init__(self, rcvd_pkg, mergence, pkg_validations_reports, is_xml_generation=False):
         self.rcvd_pkg = rcvd_pkg
-        self.registered = rcvd_pkg.registered
-        mgd = merged.Merged(mergence.merged_articles, self.registered.articles_db_manager is not None)
+        mgd = merged.Merged(mergence.merged_articles, self.rcvd_pkg.registered.articles_db_manager is not None)
         self.mgd_reports = merged_articles_validations.MergedReports(mgd)
         self.mergence_reports = merged_articles_validations.MergenceReports(mergence)
         self.pkg_validations_reports = pkg_validations_reports
@@ -141,8 +140,8 @@ class CheckingReports(object):
     def merged_content(self):
         if not hasattr(self, '_content'):
             r = []
-            if self.registered.issue_error_msg is not None:
-                r.append(self.registered.issue_error_msg)
+            if self.rcvd_pkg.registered.issue_error_msg is not None:
+                r.append(self.rcvd_pkg.registered.issue_error_msg)
             r.append(self.mgd_reports.consistency_report)
             r.append(self.mgd_reports.report_issue_page_values)
             r.append(self.mergence_reports.report_articles_data_conflicts)
@@ -176,8 +175,8 @@ class CheckingReports(object):
         r = self.pkg_files_report
         if not self.is_xml_generation:
             r += self.journal_and_issue_report
-        if self.registered.issue_error_msg is not None:
-            r += self.registered.issue_error_msg
+        if self.rcvd_pkg.registered.issue_error_msg is not None:
+            r += self.rcvd_pkg.registered.issue_error_msg
         return r
 
     @property

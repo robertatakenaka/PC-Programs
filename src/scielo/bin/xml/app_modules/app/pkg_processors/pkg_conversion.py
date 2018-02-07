@@ -49,7 +49,7 @@ class PkgConverter(object):
         self.local_web_app_path = web_app_path
         self.web_app_site = web_app_site
         self.checking_reports = checking_reports
-        self.mergence = checking_reports.merged_articles_reports.mergence_reports.mergence
+        self.mergence = checking_reports.mergence_reports.mergence
         self.error_messages = []
         self.conversion_status = {}
 
