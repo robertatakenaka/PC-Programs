@@ -1711,8 +1711,21 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			</fn-group>
 		</xsl:if>
 	</xsl:template>
-	
-	<xsl:template match="fn|fngrp[@id]" mode="elem_fn_other_with_xref">
+	<xsl:template match="fn" mode="elem_fn_other_with_xref">
+		<xsl:param name="id_list"></xsl:param>
+		<xsl:variable name="teste"><xsl:apply-templates select="." mode="exist_fn_other_with_xref">
+			<xsl:with-param name="id_list" select="$id_list"></xsl:with-param>
+		</xsl:apply-templates></xsl:variable>
+		<xsl:if test="normalize-space($teste)!=''">
+			<fn-group>
+				<xsl:apply-templates select="sectitle"/>
+				<xsl:apply-templates select="." mode="exist_fn_other_with_xref">
+					<xsl:with-param name="id_list" select="$id_list"></xsl:with-param>
+				</xsl:apply-templates>
+			</fn-group>
+		</xsl:if>
+	</xsl:template>
+	<xsl:template match="fngrp/fn|fngrp[@id]" mode="elem_fn_other_with_xref">
 		<xsl:param name="id_list"></xsl:param>
 		<xsl:apply-templates select="." mode="exist_fn_other_with_xref">
 			<xsl:with-param name="id_list" select="$id_list"></xsl:with-param>
@@ -1733,8 +1746,21 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			</fn-group>
 		</xsl:if>
 	</xsl:template>
-	
-	<xsl:template match="fn|fngrp[@id]" mode="elem_fn_other_without_xref">
+	<xsl:template match="fn" mode="elem_fn_other_without_xref">
+		<xsl:param name="id_list"></xsl:param>
+		<xsl:variable name="teste"><xsl:apply-templates select="." mode="exist_fn_other_without_xref">
+			<xsl:with-param name="id_list" select="$id_list"></xsl:with-param>
+		</xsl:apply-templates></xsl:variable>
+		<xsl:if test="normalize-space($teste)!=''">
+			<fn-group>
+				<xsl:apply-templates select="sectitle"/>
+				<xsl:apply-templates select="." mode="exist_fn_other_without_xref">
+					<xsl:with-param name="id_list" select="$id_list"></xsl:with-param>
+				</xsl:apply-templates>
+			</fn-group>
+		</xsl:if>
+	</xsl:template>
+	<xsl:template match="fngrp/fn|fngrp[@id]" mode="elem_fn_other_without_xref">
 		<xsl:param name="id_list"></xsl:param>
 		<xsl:apply-templates select="." mode="exist_fn_other_without_xref">
 			<xsl:with-param name="id_list" select="$id_list"></xsl:with-param>
