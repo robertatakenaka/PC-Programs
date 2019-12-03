@@ -430,6 +430,13 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 		</xsl:if>
 	</xsl:template>
 	
+	<xsl:template match="role">
+		<xsl:apply-templates select="." mode="copy-of"/>
+	</xsl:template>
+	<xsl:template match="role/@roletype" mode="copy-of">
+		<xsl:attribute name="content-type"><xsl:value-of select="."/></xsl:attribute>
+	</xsl:template>
+
 	<xsl:template match="sigblock">
 		<xsl:param name="id"/>
 		<sig-block>
@@ -1005,7 +1012,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:apply-templates mode="copy-of"  select="../..//normaff[@id=$author_rid]/role"/>
 		</contrib>
 	</xsl:template>
-	<xsl:template match="role"><role><xsl:apply-templates/></role></xsl:template>
+	
 	<xsl:template match="corpauth" mode="front-contrib">
 		<xsl:variable name="teste">
 			<xsl:apply-templates select="./../../authgrp//text()"/>
