@@ -1005,7 +1005,7 @@ xmlns:ie5="http://www.w3.org/TR/WD-xsl"
 			<xsl:apply-templates mode="copy-of"  select="../..//normaff[@id=$author_rid]/role"/>
 		</contrib>
 	</xsl:template>
-	<xsl:template match="role"><role><xsl:apply-templates/></role></xsl:template>
+	
 	<xsl:template match="corpauth" mode="front-contrib">
 		<xsl:variable name="teste">
 			<xsl:apply-templates select="./../../authgrp//text()"/>
@@ -4003,5 +4003,17 @@ et al.</copyright-statement>
 		<xsl:attribute name="ref-type">fn</xsl:attribute>
 	</xsl:template>
 
-	
+	<xsl:template match="author/role">
+		<xsl:apply-templates select="." mode="copy-of"/>
+	</xsl:template>
+	<xsl:template match="role" mode="copy-of">
+		<role>
+			<xsl:apply-templates select="@*|text()" mode="copy-of"/>
+		</role>
+	</xsl:template>
+	<xsl:template match="@CRediT-roles | @other-roles" mode="copy-of">
+		<xsl:if test="normalize-space(.)!='-' and normalize-space(.)!=''">
+		<xsl:attribute name="content-type"><xsl:value-of select="."/></xsl:attribute>
+		</xsl:if>
+	</xsl:template>
 </xsl:stylesheet>
