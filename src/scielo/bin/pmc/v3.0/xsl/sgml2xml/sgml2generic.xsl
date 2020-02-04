@@ -4011,7 +4011,7 @@ et al.</copyright-statement>
 			<xsl:apply-templates select="@*|text()" mode="copy-of"/>
 		</role>
 	</xsl:template>
-	<xsl:template match="@CRediT-roles | @other-roles" mode="copy-of">
+	<xsl:template match="@CRediT-role | @other-role" mode="copy-of">
 		<xsl:if test="normalize-space(.)!='-' and normalize-space(.)!=''">
 		<xsl:attribute name="content-type"><xsl:value-of select="."/></xsl:attribute>
 		</xsl:if>
