@@ -1,5 +1,5 @@
 # coding=utf-8
-from sys.version_info import major as python_version
+import sys
 import os
 import shutil
 import tempfile
@@ -10,6 +10,9 @@ import logging
 
 from . import files_extractor
 from . import encoding
+
+
+python_version = sys.version_info.major
 
 
 def read_file(filename, encode='utf-8'):
