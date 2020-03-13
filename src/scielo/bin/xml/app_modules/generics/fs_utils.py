@@ -1,22 +1,39 @@
 # coding=utf-8
+from sys.version_info import major as python_version
 import os
 import shutil
 import tempfile
 import zipfile
 from datetime import datetime
 import csv
+import logging
 
 from . import files_extractor
 from . import encoding
 
 
 def read_file(filename, encode='utf-8'):
-    if os.path.isfile(filename):
+    if python_version < 3:
         try:
-            r = open(filename, 'r').read()
-            return encoding.decode(r, encode)
-        except Exception as e:
-            encoding.report_exception('read_file', e, filename)
+            with open(filename, 'r') as fp:
+                content = fp.read()
+                r = content.decode(encode)
+        except FileNotFoundError as e:
+            logging.exception('py2_read_file "%s": %s' % (filename, e))
+        except UnicodeDecodeError as e:
+            logging.exception('py2_read_file "%s": %s' % (filename, e))
+        except OSError as e:
+            logging.exception('py2_read_file "%s": %s' % (filename, e))
+        else:
+            return r
+        return
+    try:
+        with open(filename, 'r', encoding=encode) as fp:
+            content = fp.read()
+    except (FileNotFoundError, OSError) as e:
+        logging.exception('read_file "%s": %s' % (filename, e))
+    else:
+        return content
 
 
 def read_file_lines(filename, encode='utf-8'):
