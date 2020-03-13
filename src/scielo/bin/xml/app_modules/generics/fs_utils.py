@@ -22,11 +22,17 @@ def read_file(filename, encode='utf-8'):
                 content = fp.read()
                 r = content.decode(encode)
         except FileNotFoundError as e:
-            logging.exception('py2_read_file "%s": %s' % (filename, e))
+            logging.exception(
+                'read_file "%s" (%s, %s): %s' % (
+                    filename, python_version, encode, e))
         except UnicodeDecodeError as e:
-            logging.exception('py2_read_file "%s": %s' % (filename, e))
+            logging.exception(
+                'read_file "%s" (%s, %s): %s' % (
+                    filename, python_version, encode, e))
         except OSError as e:
-            logging.exception('py2_read_file "%s": %s' % (filename, e))
+            logging.exception(
+                'read_file "%s" (%s, %s): %s' % (
+                    filename, python_version, encode, e))
         else:
             return r
         return
@@ -34,7 +40,9 @@ def read_file(filename, encode='utf-8'):
         with open(filename, 'r', encoding=encode) as fp:
             content = fp.read()
     except (FileNotFoundError, OSError) as e:
-        logging.exception('read_file "%s": %s' % (filename, e))
+        logging.exception(
+            'read_file "%s" (%s, %s): %s' % (
+                filename, python_version, encode, e))
     else:
         return content
 
@@ -44,12 +52,40 @@ def read_file_lines(filename, encode='utf-8'):
     return content.replace('\r', '').split('\n')
 
 
+def _write_file(filename, content, encode='utf-8', mode="w"):
+    if python_version < 3:
+        try:
+            with open(filename, mode) as fp:
+                fp.write(content.encode(encode))
+        except OSError as e:
+            logging.exception(
+                "_write_file %s %s (%s, %s): %s" % (
+                    mode, filename, python_version, encode, e))
+        except UnicodeEncodeError as e:
+            logging.exception(
+                "_write_file %s %s (%s, %s): %s" % (
+                    mode, filename, python_version, encode, e))
+        return
+    try:
+        with open(filename, mode, encoding=encode) as fp:
+            fp.write(content.encode(encode))
+    except OSError as e:
+        logging.exception(
+            "_write_file %s %s (%s, %s): %s" % (
+                mode, filename, python_version, encode, e))
+    except UnicodeEncodeError as e:
+        logging.exception(
+            "_write_file %s %s (%s, %s): %s" % (
+                mode, filename, python_version, encode, e))
+    return
+
+
 def write_file(filename, content, encode='utf-8'):
-    open(filename, 'w').write(encoding.encode(content, encode))
+    _write_file(filename, content, encode)
 
 
 def append_file(filename, content, encode='utf-8'):
-    open(filename, 'a+').write(encoding.encode(content, encode) + '\n')
+    _write_file(filename, content + '\n', encode, "a+")
 
 
 def read_csv_file(filename, encode='utf-8'):
