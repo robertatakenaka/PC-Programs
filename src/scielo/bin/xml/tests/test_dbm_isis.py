@@ -37,3 +37,81 @@ class TestIDFile(TestCase):
             ""
         )
 
+    def test_format_subfield_returns_subfield_and_value(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("a", u"blá"),
+                u"^ablá"
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("a", "blá"),
+            "^ablá"
+        )
+
+    def test_format_subfield_returns_only_value(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("", u"blá"),
+                u"blá"
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("", "blá"),
+            "blá"
+        )
+
+    def test_format_subfield_returns_empty_str(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("", None),
+                ""
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("", None),
+            ""
+        )
+
+    def test_format_subfield_preserve_circ(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("", "Ü ^ b"),
+                "Ü [PRESERVECIRC] b"
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("", "Ü ^ b"),
+            "Ü [PRESERVECIRC] b"
+        )
+
+    def test_format_subfield_creates_subfield_and_preserve_circ(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("1", "a ^ b"),
+                "^1a [PRESERVECIRC] b"
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("1", "a ^ b"),
+            "^1a [PRESERVECIRC] b"
+        )
+
+    def test_format_subfield_creates_subfield_and_supress_extra_spaces(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("1", "         a ^ b"),
+                "^1a [PRESERVECIRC] b"
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("1", "        a ^ b"),
+            "^1a [PRESERVECIRC] b"
+        )
+
+    def test_format_subfield_creates_subfield_and_supress_breaks(self):
+        if python_version < 3:
+            return self.assertEqual(
+                self.idfile.format_subfield("1", """
+                         a ^ b"""),
+                "^1a [PRESERVECIRC] b"
+            )
+        return self.assertEqual(
+            self.idfile.format_subfield("1", """
+                         a ^ b"""),
+            "^1a [PRESERVECIRC] b"
+        )

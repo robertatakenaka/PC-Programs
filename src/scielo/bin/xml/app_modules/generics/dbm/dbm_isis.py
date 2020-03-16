@@ -14,30 +14,22 @@ PRESERVECIRC = '[PRESERVECIRC]'
 
 
 def remove_break_lines_characters(content):
-    r = ' '.join(content.split())
-    r = r.replace(' </', '</')
-    return r
-
-
-def change_circ(content):
-    return content.replace('^', PRESERVECIRC)
+    content = content or ""
+    return ' '.join(content.split())
 
 
 def format_value(content):
-    if content is not None and len(content) > 0:
-        try:
-            content = remove_break_lines_characters(content)
-        except Exception as e:
-            encoding.report_exception('format_value() 1', e, content)
+    return remove_break_lines_characters(
+        content).strip().replace('^', PRESERVECIRC)
 
-        try:
-            if '&' in content:
-                content, replace = xml_utils.convert_entities_to_chars(content)
-        except Exception as e:
-            encoding.report_exception('format_value() 3', e, content)
 
-        content = content.strip()
-
+def format_file_content(content):
+    content = content or ""
+    try:
+        if '&' in content:
+            content, replace = xml_utils.convert_entities_to_chars(content)
+    except Exception as e:
+        encoding.report_exception('format_file_content', e, content)
     return content
 
 
@@ -98,12 +90,10 @@ class IDFile(object):
         return s
 
     def format_subfield(self, subf, subf_value):
-        res = u''
-        if subf in 'abcdefghijklmnopqrstuvwxyz123456789':
-            res = '^' + subf + change_circ(format_value(subf_value))
-        elif subf != '_':
-            encoding.debugging('format_subfield()', ('ERR0', subf, subf_value))
-        return res
+        value = format_value(subf_value)
+        if value and subf and subf in 'abcdefghijklmnopqrstuvwxyz123456789':
+            return '^' + subf + value
+        return value
 
     def format_subfields(self, subf_and_value_list):
         first = u''
