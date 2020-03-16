@@ -47,47 +47,34 @@ class IDFile(object):
         return u''.join(r)
 
     def _format_id(self, index):
-        i = '000000' + str(index)
-        return '!ID ' + i[-6:] + '\n'
+        if 0 < int(index or 0) <= 999999:
+            return '!ID ' + str(index).zfill(6) + '\n'
 
     def _format_record(self, record):
-        result = u''
-        if record is not None:
-            r = []
-            for tag_i in sorted([int(s) for s in record.keys() if s.isdigit()]):
+        if record:
+            items = []
+            for tag_i in sorted([int(s) for s in record.keys()]):
                 tag = str(tag_i)
                 data = record.get(tag)
-                if data is not None and len(data) > 0:
-                    r.append(self.tag_data(tag, data))
-                else:
-                    res = self.tag_data(tag, data)
-                    if res != u'' and res is not None:
-                        encoding.debugging('_format_record()', res)
-            result = u''.join(r)
-
-            if self.content_formatter is not None:
+                items.extend(self.tag_data(tag, data))
+            result = "".join([item for item in items if item])
+            if self.content_formatter:
                 result = self.content_formatter(result)
-        return result
+            return result
+        return ""
 
     def tag_data(self, tag, data):
-        occs = []
         if not isinstance(data, list):
             data = [data]
-        for item in data:
-            occs.append(self.tag_occ(tag, item))
-
-        return u''.join(occs)
+        return [
+            self.tag_occ(tag, item)
+            for item in data
+        ]
 
     def tag_occ(self, tag, data):
-        s = u''
-        if isinstance(data, tuple):
-            encoding.debugging('tag_occ()', tag)
-            encoding.debugging('tag_occ()', data)
-        elif isinstance(data, dict):
-            s = self.tag_content(tag, self.format_subfields(data))
-        else:
-            s = self.tag_content(tag, format_value(data))
-        return s
+        if not isinstance(data, dict):
+            data = {"_": data}
+        return self.tag_content(tag, self.format_subfields(data))
 
     def format_subfield(self, subf, subf_value):
         """
@@ -104,7 +91,8 @@ class IDFile(object):
         values = sorted(
             [self.format_subfield(k, v)
              for k, v in subf_and_value_list.items()])
-        return first + ''.join([value for value in values if value])
+        return format_value(first) + ''.join(
+            [value for value in values if value])
 
     def tag_content(self, tag, value):
         if int(tag) <= 999 and value:

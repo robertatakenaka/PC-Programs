@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from unittest import TestCase
+from unittest import TestCase, skip
 from app_modules.generics.dbm.dbm_isis import IDFile
 
 import sys
@@ -174,4 +174,113 @@ class TestIDFile(TestCase):
 
         result = self.idfile.format_subfields(dict(subf_and_values))
         self.assertEqual(result, expected)
+
+    def test__format_id_returns_ID_6digits(self):
+        self.assertEqual("!ID 000312\n", self.idfile._format_id(312))
+
+    def test__format_id_returns_none(self):
+        self.assertIsNone(self.idfile._format_id(""))
+
+    def test__format_id_returns_none_for_input_greater_than_6digits(self):
+        self.assertIsNone(self.idfile._format_id("123456789"))
+
+    def test__format_id_returns_ID999999(self):
+        self.assertEqual("!ID 999999\n", self.idfile._format_id("999999"))
+
+    def test__format_id_returns_ID000001(self):
+        self.assertEqual("!ID 000001\n", self.idfile._format_id("1"))
+
+    def test__format_record_returns_(self):
+        if python_version < 3:
+            inputs = [
+                ("103", 
+                    [
+                        {"_": "valor\nG", "a": u"ãçá"},
+                        {"_": "valor A", "a": u"ãçá"},
+                        {"_": "valor B", "a": u"ãçá"},
+                        {"_": "valor C", "a": u"ãçá"}
+                    ]
+                ),
+                ("102", 
+                    [
+                        {"1": u"ãçá", "x": "subcampo\nA"},
+                        {"1": u"ãçá", "y": "subcampo A"},
+                        {"1": u"ãçá", "z": "subcampo A"},
+                    ]
+                ),
+                ("1", "valor\n1"),
+                ("2", {"a": u"ãçá", "b": "subcampo b", "1": "subcampo 1"}),
+                ("3", {"_": "valor", "a": u"ãçá", "1": "subcampo 1"}),
+                ("4",
+                    [
+                        {"_": "campo 4, ocorrencia 1"},
+                        {"_": "campo 4, ocorrencia 2"},
+                        {"_": "campo 4, ocorrencia 3"},
+                    ]
+                )
+            ]
+
+            values = [
+                u"!v001!valor 1",
+                u"!v002!^1subcampo 1^aãçá^bsubcampo b",
+                u"!v003!valor^1subcampo 1^aãçá",
+                u"!v004!campo 4, ocorrencia 1",
+                u"!v004!campo 4, ocorrencia 2",
+                u"!v004!campo 4, ocorrencia 3",
+                u"!v102!^1ãçá^xsubcampo A",
+                u"!v102!^1ãçá^ysubcampo A",
+                u"!v102!^1ãçá^zsubcampo A",
+                u"!v103!valor G^asubcampo a",
+                u"!v103!valor A^asubcampo a",
+                u"!v103!valor B^asubcampo a",
+                u"!v103!valor C^asubcampo a"
+            ]    
+        inputs = [
+            ("103", 
+                [
+                    {"_": "valor G", "a": "subcampo a"},
+                    {"_": "valor\nA", "a": "subcampo a"},
+                    {"_": "valor B", "a": "subcampo a"},
+                    {"_": "valor C", "a": "subcampo a"}
+                ]
+            ),
+            ("102", 
+                [
+                    {"1": "subcampo\na", "x": "subcampo A"},
+                    {"1": "subcampo a", "y": "subcampo A"},
+                    {"1": "subcampo a", "z": "subcampo A"},
+                ]
+            ),
+            ("1", "valor\n1"),
+            ("2", {"a": "subcampo a", "b": "subcampo b", "1": "subcampo 1"}),
+            ("3", {"_": "valor", "a": "subcampo a", "1": "subcampo 1"}),
+            ("4",
+                [
+                    {"_": "campo 4, ocorrencia 1"},
+                    {"_": "campo 4, ocorrencia 2"},
+                    {"_": "campo 4, ocorrencia 3"},
+                ]
+            )
+        ]
+
+        values = [
+            "!v001!valor 1",
+            "!v002!^1subcampo 1^asubcampo a^bsubcampo b",
+            "!v003!valor^1subcampo 1^asubcampo a",
+            "!v004!campo 4, ocorrencia 1",
+            "!v004!campo 4, ocorrencia 2",
+            "!v004!campo 4, ocorrencia 3",
+            "!v102!^1subcampo a^xsubcampo A",
+            "!v102!^1subcampo a^ysubcampo A",
+            "!v102!^1subcampo a^zsubcampo A",
+            "!v103!valor G^asubcampo a",
+            "!v103!valor A^asubcampo a",
+            "!v103!valor B^asubcampo a",
+            "!v103!valor C^asubcampo a"
+        ]
+
+        self.assertEqual(
+            "\n".join(values)+"\n",
+            self.idfile._format_record(dict(inputs))
+        )
 
