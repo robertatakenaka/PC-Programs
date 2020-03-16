@@ -86,33 +86,21 @@ def encode(content, encoding='utf-8', error_handler=None):
 
 
 def report_exception(function_name, e, data):
-    app_logger.exception(
-            'Exception at {}'.format(function_name))
-    try:
-        app_logger.exception(
-            'Exception at {}'.format(function_name), exc_info=True)
-    except:
-        pass
-    try:
-        app_logger.info(encode(data))
-    except:
-        app_logger.info('EXCEPTION at report_exception()')
-        app_logger.info(e)
+    app_logger.exception("Exception at %s" % function_name)
+    app_logger.exception(e, exc_info=True)
 
 
 def debugging(function_name, data):
+    app_logger.debug(function_name)
     try:
-        app_logger.info('DEBUG: {}'.format(function_name))
-        app_logger.info(data)
-    except:
-        app_logger.info('EXCEPTION at debugging()')
+        app_logger.debug(data)
+    except TypeError:
+        app_logger.debug('Unable to log data')
+    except ValueError:
+        app_logger.debug('Unable to log data')
 
 
 def display_message(msg):
-    try:
-        app_logger.info(msg)
-    except:
-        app_logger.info('EXCEPTION at display_message()')
     try:
         print(decode(encode(msg, SYS_DEFAULT_ENCODING), SYS_DEFAULT_ENCODING))
     except Exception as e:
