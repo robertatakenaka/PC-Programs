@@ -119,14 +119,9 @@ class IDFile(object):
         return first + value
 
     def tag_content(self, tag, value):
-        r = u''
-        if int(tag) <= 999:
-            if value is not None and value != u'':
-                try:
-                    r = '!v' + tag.zfill(3) + '!' + value + '\n'
-                except Exception as e:
-                    encoding.report_exception('tag_content()', e, (s, value, type(s), type(value)))
-        return r
+        if int(tag) <= 999 and value:
+            return '!v' + tag.zfill(3) + '!' + value + '\n'
+        return ""
 
     def read(self, filename):
         rec_list = []
