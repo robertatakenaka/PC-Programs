@@ -90,23 +90,21 @@ class IDFile(object):
         return s
 
     def format_subfield(self, subf, subf_value):
+        """
+        Retorna subcampo + valor
+        Na ausencia de um deles, retorna ""
+        """
         value = format_value(subf_value)
         if value and subf and subf in 'abcdefghijklmnopqrstuvwxyz123456789':
             return '^' + subf + value
-        return value
+        return ""
 
     def format_subfields(self, subf_and_value_list):
-        first = u''
-        value = u''
-        values = []
-        try:
-            first = subf_and_value_list.get('_', u'') or u''
-            values = sorted([self.format_subfield(k, v) for k, v in subf_and_value_list.items() if v is not None and len(v) > 0])
-            value = u''.join(values)
-        except Exception as e:
-            encoding.report_exception('format_subfields()', e, subf_and_value_list)
-            encoding.report_exception('format_subfields()', e, (first, values))
-        return first + value
+        first = subf_and_value_list.get('_') or ""
+        values = sorted(
+            [self.format_subfield(k, v)
+             for k, v in subf_and_value_list.items()])
+        return first + ''.join([value for value in values if value])
 
     def tag_content(self, tag, value):
         if int(tag) <= 999 and value:
