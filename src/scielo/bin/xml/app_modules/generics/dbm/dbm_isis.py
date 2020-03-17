@@ -102,58 +102,30 @@ class IDFile(object):
     def read(self, filename):
         rec_list = []
         record = {}
-        lines = fs_utils.read_file_lines(filename, 'iso-8859-1')
-        if lines is None:
-            lines = []
-            encoding.display_message('{} sem linhas. '.format(filename))
-        for line in lines:
-            if '!ID ' in line:
-                if len(record) > 0:
-                    rec_list.append(self.simplify_record(record))
-                record = {}
-            else:
-                item = line.split('!')
-                tag = None
-                if len(item) == 3:
-                    ign, tag, content = item
-                elif len(item) > 3:
-                    tag = item[1]
-                    content = line[6:]
-                if tag is not None and content != u'':
-                    tag = str(int(tag[1:]))
-                    if tag not in record.keys():
-                        record[tag] = []
-                    content = content.replace('^', 'BREAKSUBF^')
-                    subfields = content.split('BREAKSUBF')
-                    content = {}
-                    for subf in subfields:
-                        if subf.startswith('^'):
-                            c = subf[1]
-                            v = subf[2:]
-                        else:
-                            if len(subfields) == 1:
-                                c = u''
-                                v = subf
-                            else:
-                                c = '_'
-                                v = subf
-                        if len(c) > 0:
-                            content[c] = v
-                        else:
-                            content = v
-                    record[tag].append(content)
-
-        # last record
-        if len(record) > 0:
-            rec_list.append(self.simplify_record(record))
-
+        content = fs_utils.read_file(filename, 'iso-8859-1')
+        records = content.split('!ID ')
+        for record in records[1:]:
+            data = self._get_record_data(record)
+            if data:
+                rec_list.append(data)
         return rec_list
 
-    def simplify_record(self, record):
-        for tag, content in record.items():
-            if len(content) == 1:
-                record[tag] = content[0]
-        return record
+    def _get_record_data(self, record):
+        record_content = record[6:].strip()
+        fields = record_content.split("!v")[1:]
+        data = {}
+        for field in fields:
+            field_tag, field_value = field.strip().split("!")
+            field_tag = str(int(field_tag))
+            subfields = field_value.split("^")
+            d = {}
+            d.update({"_": subfields[0]})
+            for subf in subfields[1:]:
+                d.update({subf[0]: subf[1:]})
+            if d:
+                data[field_tag] = data.get(field_tag, [])
+                data[field_tag].append(d)
+        return data
 
     def save(self, filename, records):
         path = os.path.dirname(filename)

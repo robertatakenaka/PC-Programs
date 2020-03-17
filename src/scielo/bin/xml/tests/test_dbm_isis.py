@@ -1,6 +1,11 @@
 # coding=utf-8
 
-from unittest import TestCase, skip
+from unittest import TestCase
+try:
+    from unittest import mock
+except ImportError:
+    pass
+
 from app_modules.generics.dbm.dbm_isis import IDFile
 
 import sys
@@ -284,3 +289,57 @@ class TestIDFile(TestCase):
             self.idfile._format_record(dict(inputs))
         )
 
+    def test_read_id_file(self):
+        if python_version < 3:
+            rows = [
+                u"!ID 000001",
+                u"!v001!^xBá",
+                u"!v011!a^aLá",
+                u"!v021!Lã",
+                u"!ID 000002",
+                u"!v901!^vBá^xBá",
+                u"!v911!áafada^aLá",
+                u"!v921!^uLã",
+            ]
+            expected = [
+                {
+                    "1": {"_": "", "x": u"Bá"},
+                    "11": {"_": u"a", "a": u"Lá"},
+                    "21": u"Lã",
+                },
+                {
+                    "901": {"_": "", "v": u"Bá", "x": u"Bá"},
+                    "911": {"_": u"áafada", "a": u"Lá"},
+                    "921": {"_": "", "u": u"Lã"},
+                }
+            ]
+            return
+        else:
+        
+            rows = [
+                "!ID 000001",
+                "!v001!^xBá",
+                "!v011!a^aLá",
+                "!v021!Lã",
+                "!ID 000002",
+                "!v901!^vBá^xBá",
+                "!v911!áafada^aLá",
+                "!v921!^uLã",
+            ]
+            expected = [
+                {
+                    "1": {"_": "", "x": "Bá"},
+                    "11": {"_": "a", "a": "Lá"},
+                    "21": "Lã",
+                },
+                {
+                    "901": {"_": "", "v": "Bá", "x": "Bá"},
+                    "911": {"_": "áafada", "a": "Lá"},
+                    "921": {"_": "", "u": "Lã"},
+                }
+            ]
+
+        with mock.patch("app_modules.generics.fs_utils.read_file") as mock_read_file:
+            mock_read_file.return_value = "\n".join(rows)
+            result = self.idfile.read("file.id")
+            self.assertEqual(result, expected)
