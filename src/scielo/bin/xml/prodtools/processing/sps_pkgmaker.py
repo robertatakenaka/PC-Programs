@@ -373,6 +373,7 @@ class PackageMaker(object):
             package.SPPackage: instância com dados de um pacote com 1 ou mais
             documentos XML SP, issue e articles
         """
+        xml_list = xml_list or self.source_folder.xml_list
         _xml_names = [
             os.path.basename(item)
             for item in xml_list or []

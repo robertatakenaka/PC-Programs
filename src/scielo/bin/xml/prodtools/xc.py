@@ -82,8 +82,10 @@ class Reception(object):
 
     def receive_package(self, package_path=None):
         if self.collection_acron:
+            print("for server")
             return self._receive_package_for_server()
         else:
+            print("for desktop")
             return self._receive_package_for_desktop(package_path)
 
     def _receive_package_for_desktop(self, package_path=None):
