@@ -23,14 +23,14 @@ Para descartar se este é o problema
 
 No terminal do DOS, digite:
 
-.. code-block::
+
 
    python
 
 
 Se obtiver uma mensagem:
 
-.. code-block::
+
 
    'python' não é reconhecido como um comando interno
    ou externo, um programa operável ou um arquivo em lotes.
@@ -70,18 +70,18 @@ Reinstale o Python com atenção a:
 Ainda no terminal do Python, execute os comandos:
 
 
-.. code-block::
+
 
    import PIL
 
 
 
-.. code-block::
+
 
    import packtools
 
 
-.. code-block::
+
 
    exit()
 
@@ -94,12 +94,12 @@ Se não obtiver nenhuma mensagem é porque estão instalados.
 Se para algum deles obtiver a mensagem:
 
 
-.. code-block::
+
 
    ImportError: No module named 'PIL'
 
 
-.. code-block::
+
 
    ImportError: No module named 'packtools'
 
@@ -110,12 +110,12 @@ Se para algum deles obtiver a mensagem:
 
 No terminal do DOS, execute:
 
-.. code-block::
+
 
    pip install pillow==6.2.2
 
 
-.. code-block::
+
 
    pip install packtools==2.5.1
 
@@ -125,7 +125,7 @@ Se apresentar qualquer mensagem de **WARNING**, pode **ignorar**. E **teste a ge
 
 Mas se obtiver a mensagem:
 
-.. code-block::
+
 
    'pip' não é reconhecido como um comando interno
    ou externo, um programa operável ou um arquivo em lotes.
@@ -157,7 +157,7 @@ No arquivo XML é esperado que contenha etiquetas ou *tags* de abertura e fecham
 
 Por exemplo, as etiquetas de parágrafo indicam que determinado conteúdo é parágrafo:
 
-.. code-block::
+
 
    [p]Isto é um parágrafo no artigo[/p]
 
@@ -166,7 +166,7 @@ Por exemplo, as etiquetas de parágrafo indicam que determinado conteúdo é par
 Etiquetas podem agrupar um conjunto de conteúdos etiquetados (*tagueados*):
 
 
-.. code-block::
+
 
    [section]
    [p]Isto é um parágrafo no artigo[/p]
@@ -189,7 +189,7 @@ Atributos são dados identificados dentro da etiqueta de abertura, por exemplo n
 
 A sintaxe dos atributos é:
 
-.. code-block::
+
 
    nome="dado"
 
@@ -247,7 +247,7 @@ Problema 3: Bug no programa
 
 Logo após tentar gerar o XML, antes de fechar o programa, acesse pelo Windows Explorer a pasta do programa Markup, por exemplo:
 
-.. code-block::
+
 
    c:\scielo\bin\markup\tmp
 
